@@ -22,7 +22,7 @@ import { pathToFileURL } from 'node:url'
 
 const HERE = import.meta.dirname
 const BACKEND = process.env.BACKEND_DIR
-  ?? path.resolve(HERE, '..', '..', '..', 'backend')
+  ?? path.resolve(HERE, '..', '..', '..', 'bng-metric-backend')
 // The calculator the service itself uses, loaded straight out of the
 // backend's dependencies so there is no second copy to drift.
 const engine = await import(

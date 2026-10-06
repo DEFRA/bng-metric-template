@@ -116,7 +116,7 @@ example `Moderate`.
 
 ## Running it
 
-Run all commands from the `qgis-template` folder.
+Run all commands from the root of this repo.
 
 ```sh
 python3 scale-test-nsip/generator/generate.py

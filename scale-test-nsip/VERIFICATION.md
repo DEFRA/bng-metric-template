@@ -8,7 +8,7 @@ step to its claims.
 **Values in bold are measured.** A step with no bold value has no recorded
 result.
 
-Run all commands from the `qgis-template` folder.
+Run all commands from the root of this repo.
 
 ## 0. Before you start
 
@@ -428,8 +428,8 @@ node scale-test-nsip/verify/validate-legacy.mjs \
     postIntervention
 ```
 
-The script uses the harness `backend` folder. Set `BACKEND_DIR` to use a
-different checkout.
+The script uses `../bng-metric-backend`, the backend checkout beside this
+repo. Set `BACKEND_DIR` to use a different checkout.
 
 **Pass:** `valid true`, and a summed parcel area of **31,840,368.775235** m²
 for both files. This is what "the parcels reassemble exactly" means.
@@ -441,8 +441,8 @@ provides. It also needs a backend checkout that holds
 `src/validation/geopackage/lineage/`. Make one as a worktree:
 
 ```sh
-git -C ../backend worktree add /tmp/staged spike/baseline-pi-lineage
-ln -s "$PWD/../backend/node_modules" /tmp/staged/node_modules
+git -C ../bng-metric-backend worktree add /tmp/staged spike/baseline-pi-lineage
+ln -s "$PWD/../bng-metric-backend/node_modules" /tmp/staged/node_modules
 STAGED_BACKEND_DIR=/tmp/staged node scale-test-nsip/verify/validate-staged.mjs \
     "scale-test-nsip/hs2-phase2a-subsection/Layers/BNG Service Layers.gpkg"
 ```

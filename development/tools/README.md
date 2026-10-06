@@ -50,7 +50,7 @@ text is already in place counts as made.
 
 ## Running the tools
 
-Run these from the `qgis-template` folder:
+Run these from the root of this repo:
 
 ```sh
 python3 development/tools/rename_actions.py "templates/bng-service/BNG Service Habitat Mapping.qgz"

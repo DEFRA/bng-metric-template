@@ -10,7 +10,7 @@ no site is a survey of real land.
 
 ## Build a site
 
-Run the generator from the `qgis-template` folder:
+Run the generator from the root of this repo:
 
 ```sh
 python3 site-generator/generate_site.py                  # 20 parcels, 5 ha, housing

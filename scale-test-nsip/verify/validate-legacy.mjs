@@ -2,16 +2,16 @@
 //
 //   node verify/validate-legacy.mjs <file.gpkg> [baseline|postIntervention]
 //
-// BACKEND_DIR defaults to the harness's `backend` symlink. Any branch
+// BACKEND_DIR defaults to the backend checkout beside this repo. Any branch
 // carrying the single-stage validation pipeline will do.
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-// Default to the harness's own `backend` symlink, three levels up from
-// qgis-template/scale-test-nsip/verify. Override with
+// Default to ../bng-metric-backend, the checkout beside this repo, three
+// levels up from scale-test-nsip/verify. Override with
 // BACKEND_DIR for any other checkout.
 const BACKEND = process.env.BACKEND_DIR
-  ?? path.resolve(import.meta.dirname, '..', '..', '..', 'backend')
+  ?? path.resolve(import.meta.dirname, '..', '..', '..', 'bng-metric-backend')
 const load = (relative) =>
   import(pathToFileURL(path.join(BACKEND, relative)).href)
 
