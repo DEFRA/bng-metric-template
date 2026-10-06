@@ -1,0 +1,52 @@
+name: Tests
+
+# Every pull request runs two suites:
+# - tests/: the converters, generators, plugin build and template files, with
+#   the Python standard library only.
+# - tests_qgis/: the template's field rules and buttons, run by QGIS itself in
+#   the official qgis/qgis image, at the version the template is built in.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Converters, generators and template files
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Run the tests
+        run: python3 -m unittest discover -s tests -t . -v
+
+  qgis:
+    name: Template behaviour in QGIS 3.42.1
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      # Official image from qgis.org, pinned by digest.
+      image: qgis/qgis:3.42.1@sha256:3ad07a6ee0d9ba0595e6960678bbfcf083a9c31ea37a65ed9e879887e2cfe09a
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Run the tests
+        run: python3 -m unittest discover -s tests_qgis -t . -v

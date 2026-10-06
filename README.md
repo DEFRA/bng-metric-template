@@ -66,6 +66,25 @@ python3 scale-test-nsip/generator/generate.py      # NSIP-scale rail corridor, a
 python3 site-generator/generate_site.py --habitats 10 --area-ha 3 --centre 451000,206000
 ```
 
+## Tests
+
+The tests in `tests/` cover the converters, the generators, the plugin build
+and the template files. They use the Python standard library only, and take
+about 20 seconds. Run them from this folder:
+
+```sh
+python3 -m unittest discover -s tests -t .
+```
+
+They work on copies in a temporary folder and leave the repo unchanged.
+`tests/README.md` says what each module checks. A test marked as an expected
+failure records a known bug in the code it tests.
+
+The tests in `tests_qgis/` check the template's field rules and buttons as
+QGIS itself applies them. They run in the official `qgis/qgis` Docker image;
+`tests_qgis/README.md` gives the command. `.github/workflows/tests.yml` runs
+both suites on every pull request.
+
 ## Rules for changing the template
 
 - **Never save the template from QGIS.** The template's Action buttons are
