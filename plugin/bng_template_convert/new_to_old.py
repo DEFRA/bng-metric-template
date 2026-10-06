@@ -43,6 +43,7 @@ try:
         read_only_uri,
         read_srs_rows,
         part_path,
+        require_service_tables,
         parts_needed,
         resolve_table_name,
         split_into_parts,
@@ -66,6 +67,7 @@ except ImportError:  # pragma: no cover - running as a plain script
         read_only_uri,
         read_srs_rows,
         part_path,
+        require_service_tables,
         parts_needed,
         resolve_table_name,
         split_into_parts,
@@ -1042,6 +1044,9 @@ def resolve_staged_tables(source, report):
     silently empty conversion — indistinguishable from a genuinely empty layer.
     """
     present = feature_table_names(source)
+    require_service_tables(present, [
+        name for spec in STAGED_TABLES.values()
+        for stage, _ in STAGED_STAGES for name in spec[stage]])
     resolved = {}
     for habitat_type, spec in STAGED_TABLES.items():
         names = {}
@@ -1075,7 +1080,11 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
     report = Report()
     source = sqlite3.connect(read_only_uri(input_path), uri=True)
 
-    staged_tables = resolve_staged_tables(source, report)
+    try:
+        staged_tables = resolve_staged_tables(source, report)
+    except ValueError:
+        source.close()
+        raise
     staged = {}
     for habitat_type, names in staged_tables.items():
         staged[habitat_type] = {

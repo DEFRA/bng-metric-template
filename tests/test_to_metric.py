@@ -166,20 +166,32 @@ class OldTableNamesTest(support.TempDirTestCase):
         cls.old = support.make_old_named_gpkg(cls.tmp / "old.gpkg")
         cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
 
-    def test_warns_that_nothing_was_written(self):
-        report = to_metric.convert(self.old, self.blank,
-                                   self.tmp / "empty.xlsx")
+    def test_refuses_a_file_with_the_old_table_names(self):
+        out = self.tmp / "refused.xlsx"
+        with self.assertRaisesRegex(ValueError, "earlier version") as caught:
+            to_metric.convert(self.old, self.blank, out)
+        self.assertIn('"Trees Baseline"', str(caught.exception))
+        self.assertFalse(out.exists())
+
+    def test_refuses_a_file_with_no_habitat_tables(self):
+        redline_only = support.make_redline_only_gpkg(
+            self.tmp / "redline-only.gpkg")
+        with self.assertRaisesRegex(ValueError, "none of the BNG Service"):
+            to_metric.convert(redline_only, self.blank,
+                              self.tmp / "none.xlsx")
+
+    def test_an_empty_current_file_still_warns_it_has_no_habitats(self):
+        empty = support.copy_to(support.SERVICE_GPKG, self.tmp / "empty")
+        report = to_metric.convert(empty, self.blank, self.tmp / "empty.xlsx")
         self.assertTrue(any(NO_HABITATS in w for w in report.warnings))
 
-    # BUG (doc vs code): plugin/README.md says "A file or template with the
-    # older table names (`Habitats Baseline`, `Trees Baseline`) is refused".
-    # to_metric.read_staged (to_metric.py:298-314) reads a missing table as
-    # empty, so the old file gives a blank metric and only the warning
-    # "the GeoPackage holds no habitats", which does not name the cause.
-    @unittest.expectedFailure
-    def test_refuses_a_file_with_the_old_table_names(self):
-        with self.assertRaises(ValueError):
-            to_metric.convert(self.old, self.blank, self.tmp / "refused.xlsx")
+    def test_command_line_explains_the_refusal(self):
+        result = support.run_python(
+            support.PACKAGE_DIR / "to_metric.py", self.old,
+            "--metric", self.blank, "-o", self.tmp / "cli.xlsx")
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("earlier version", result.stderr + result.stdout)
+        self.assertNotIn("Traceback", result.stderr)
 
 
 if __name__ == "__main__":

@@ -260,9 +260,12 @@ class ConvertToLegacyAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException(f"Cannot find the input file: {source}")
         feedback.pushInfo(f"Reading: {source}")
         feedback.pushInfo(f"Converting to the legacy template — {label}…")
-        report = new_to_old.convert(
-            source, out_dir, carry, False, formats,
-            consolidate=consolidate, split_irreplaceable=split)
+        try:
+            report = new_to_old.convert(
+                source, out_dir, carry, False, formats,
+                consolidate=consolidate, split_irreplaceable=split)
+        except ValueError as error:
+            raise QgsProcessingException(str(error))
         report_to_feedback(report, feedback)
 
         feedback.pushInfo("")

@@ -288,25 +288,40 @@ class OldTableNamesTest(support.TempDirTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.old = support.make_old_named_gpkg(cls.tmp / "old.gpkg")
+        cls.redline_only = support.make_redline_only_gpkg(
+            cls.tmp / "redline-only.gpkg")
+        cls.partial = support.make_partial_gpkg(cls.tmp / "partial.gpkg")
 
-    def test_names_each_missing_table(self):
-        report = new_to_old.convert(self.old, self.tmp / "out",
+    def test_refuses_a_file_with_the_old_table_names(self):
+        with self.assertRaisesRegex(ValueError, "earlier version") as caught:
+            new_to_old.convert(self.old, self.tmp / "refused",
+                               carry_lineage=False, dry_run=False)
+        self.assertIn('"Habitats Baseline"', str(caught.exception))
+        self.assertFalse((self.tmp / "refused").exists())
+
+    def test_refuses_a_file_with_no_habitat_tables(self):
+        with self.assertRaisesRegex(ValueError, "none of the BNG Service"):
+            new_to_old.convert(self.redline_only, self.tmp / "none",
+                               carry_lineage=False, dry_run=True)
+
+    def test_names_each_missing_table_of_a_partial_file(self):
+        report = new_to_old.convert(self.partial, self.tmp / "out",
                                     carry_lineage=False, dry_run=True)
         missing = [w for w in report.warnings
                    if re.search(r"no (baseline|post-intervention) table", w)]
-        self.assertTrue(any('"Area Habitats Baseline"' in w for w in missing))
+        self.assertTrue(any('"Hedgerows Baseline"' in w for w in missing))
         self.assertTrue(any('"Individual Trees Baseline"' in w
                             for w in missing))
+        self.assertFalse(any('"Area Habitats Baseline"' in w
+                             for w in missing))
 
-    # BUG (doc vs code): plugin/README.md says "A file or template with the
-    # older table names (`Habitats Baseline`, `Trees Baseline`) is refused",
-    # but new_to_old.convert (new_to_old.py:1037-1060, resolve_staged_tables)
-    # only warns and goes on to write empty legacy files.
-    @unittest.expectedFailure
-    def test_refuses_a_file_with_the_old_table_names(self):
-        with self.assertRaises(ValueError):
-            new_to_old.convert(self.old, self.tmp / "refused",
-                               carry_lineage=False, dry_run=False)
+    def test_command_line_explains_the_refusal(self):
+        result = support.run_python(
+            support.PACKAGE_DIR / "new_to_old.py", self.old,
+            "-o", self.tmp / "cli")
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("earlier version", result.stderr + result.stdout)
+        self.assertNotIn("Traceback", result.stderr)
 
 
 if __name__ == "__main__":

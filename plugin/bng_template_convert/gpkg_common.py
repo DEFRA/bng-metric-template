@@ -663,6 +663,42 @@ def quoted_names(names):
     return ", ".join(f'"{name}"' for name in names)
 
 
+# The habitat tables of the BNG Service template before version 1.5.0 renamed
+# them to "Area Habitats *" and "Individual Trees *". The tools read the
+# current names only.
+FORMER_SERVICE_TABLES = (
+    "Habitats Baseline",
+    "Habitats Post-Intervention",
+    "Trees Baseline",
+    "Trees Post-Intervention",
+)
+
+
+def require_service_tables(present, expected):
+    """Refuse a GeoPackage that is not a current BNG Service template file.
+
+    `present` is the feature tables the file holds and `expected` the habitat
+    tables the caller reads. A file from before the rename, or one with none
+    of the habitat tables, would otherwise convert to empty output that looks
+    like a success. A file that lacks only some of the tables is let through,
+    for the caller to report.
+    """
+    former = [name for name in FORMER_SERVICE_TABLES if name in present]
+    if former:
+        raise ValueError(
+            f"The GeoPackage has the table names of an earlier version of the "
+            f"BNG Service template ({quoted_names(former)}), which these tools "
+            "no longer read. Copy its features into a fresh copy of the "
+            "current template, then convert that."
+        )
+    if not any(name in present for name in expected):
+        raise ValueError(
+            "The GeoPackage holds none of the BNG Service template's habitat "
+            f"tables (looked for {quoted_names(expected)}). Check that it is "
+            "a BNG Service template file."
+        )
+
+
 def read_feature_table(conn, table):
     """Read a feature table as dicts, with geometry under the `_geom` key."""
     exists = conn.execute(

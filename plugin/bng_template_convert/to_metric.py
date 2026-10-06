@@ -71,6 +71,7 @@ try:
         parts_needed,
         plain_label,
         read_only_uri,
+        require_service_tables,
         split_into_parts,
         summarise_refs,
     )
@@ -82,6 +83,7 @@ except ImportError:  # pragma: no cover - running as a plain script
         parts_needed,
         plain_label,
         read_only_uri,
+        require_service_tables,
         split_into_parts,
         summarise_refs,
     )
@@ -303,6 +305,9 @@ def read_staged(path):
             row[0] for row in conn.execute(
                 "SELECT table_name FROM gpkg_contents WHERE data_type='features'")
         }
+        require_service_tables(present, [
+            name for _kind, base, pi, _size, _type, _scale in MODULES
+            for name in (base, pi)])
         staged = {
             kind: {"baseline": read_table(conn, base, present),
                    "pi": read_table(conn, pi, present)}

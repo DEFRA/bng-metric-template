@@ -2,7 +2,7 @@
 name=BNG Template Convert
 qgisMinimumVersion=3.22
 description=Convert habitat mapping between the legacy Natural England template and the BNG Service template.
-version=1.5.1
+version=1.5.2
 author=Defra BNG Metric Service
 email=
 
@@ -12,7 +12,9 @@ about=Moves a habitat map out of the BNG Service QGIS template without anyone ne
     Export to the Statutory Metric fills a copy of the metric workbook directly, with no CSVs and no import tool in between.
     All three appear in the Processing Toolbox and under Plugins > BNG Template Convert. No dependencies beyond QGIS itself.
 
-changelog=1.5.1
+changelog=1.5.2
+    Convert to legacy and Export to the Statutory Metric now refuse a GeoPackage with the table names of an earlier BNG Service template ("Habitats Baseline", "Trees Baseline"), or with none of the template's habitat tables, as Convert from legacy already did. Before, they wrote empty files and a warning that did not say why.
+  1.5.1
     Convert from legacy writes Low as the Proposed Strategic Significance of every Retained row, as the template holds it, and names the rows that held something else. It names the rows with both years created in advance and years of delay above 0, which the metric does not allow.
   1.5.0
     For the new BNG Service template only. Its tables are now "Area Habitats" and "Individual Trees", and every habitat table holds its reference in one column, "Habitat Ref". Files and templates with the old table names are refused. The code that filled an earlier template with numbered labels is removed.

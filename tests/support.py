@@ -165,25 +165,44 @@ def line(points):
     return gpkg_write.line_blob(points)
 
 
-def make_old_named_gpkg(path):
-    """A GeoPackage with the table names from before the 1.5.0 rename."""
+def make_gpkg_with_tables(path, tables):
+    """An empty GeoPackage holding the given (name, geometry type) tables."""
     conn = sqlite3.connect(path)
     try:
         source = connect_read_only(SERVICE_GPKG)
         srs_rows = gpkg_common.read_srs_rows(source)
         source.close()
         gpkg_common.create_gpkg_system_tables(conn, srs_rows)
-        for table, kind in (("Red Line Boundary", "POLYGON"),
-                            ("Habitats Baseline", "POLYGON"),
-                            ("Habitats Post-Intervention", "POLYGON"),
-                            ("Trees Baseline", "POINT"),
-                            ("Trees Post-Intervention", "POINT")):
+        for table, kind in tables:
             gpkg_common.create_feature_table(
                 conn, table, "geom", kind, [("Habitat Ref", "TEXT")])
         conn.commit()
     finally:
         conn.close()
     return Path(path)
+
+
+def make_old_named_gpkg(path):
+    """A GeoPackage with the table names from before the 1.5.0 rename."""
+    return make_gpkg_with_tables(path, (
+        ("Red Line Boundary", "POLYGON"),
+        ("Habitats Baseline", "POLYGON"),
+        ("Habitats Post-Intervention", "POLYGON"),
+        ("Trees Baseline", "POINT"),
+        ("Trees Post-Intervention", "POINT")))
+
+
+def make_redline_only_gpkg(path):
+    """A GeoPackage with a red line but none of the habitat tables."""
+    return make_gpkg_with_tables(path, (("Red Line Boundary", "POLYGON"),))
+
+
+def make_partial_gpkg(path):
+    """A current GeoPackage that holds the area habitat tables only."""
+    return make_gpkg_with_tables(path, (
+        ("Red Line Boundary", "POLYGON"),
+        ("Area Habitats Baseline", "POLYGON"),
+        ("Area Habitats Post-Intervention", "POLYGON")))
 
 
 class TempDirTestCase(unittest.TestCase):
