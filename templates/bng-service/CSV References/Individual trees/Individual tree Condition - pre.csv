@@ -1,0 +1,7 @@
+Category,Condition,Label,Order
+Existing,Good,Good,1
+Existing,Fairly Good,Fairly Good,2
+Existing,Moderate,Moderate,3
+Existing,Fairly Poor,Fairly Poor,4
+Existing,Poor,Poor,5
+Newly Planted,N/A,N/A,6

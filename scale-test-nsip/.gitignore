@@ -1,0 +1,19 @@
+# Everything below is generated, and regenerated in about seven seconds by
+# `python3 generator/generate.py` followed by the converters. It comes to roughly 100 MB,
+# which does not belong in git when the generator is deterministic to the byte.
+
+# The working copies of the template, made by generate.py from
+# templates/bng-service. The trailing wildcard catches the shorter sections
+# --fraction writes, which are just as generated as the whole site.
+hs2-phase2a-subsection*/
+
+# Converter output
+legacy/
+roundtrip/
+csv-out/
+csv-consolidated/
+csv-merged/
+metric-out/
+
+__pycache__/
+*.pyc

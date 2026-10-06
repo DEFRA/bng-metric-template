@@ -1,0 +1,51 @@
+[general]
+name=BNG Template Convert
+qgisMinimumVersion=3.22
+description=Convert habitat mapping between the legacy Natural England template and the BNG Service template.
+version=1.5.1
+author=Defra BNG Metric Service
+email=
+
+about=Moves a habitat map out of the BNG Service QGIS template without anyone needing a command line.
+    Convert to legacy splits a BNG Service GeoPackage into the baseline and post-intervention pair the older Biodiversity Metric service expects, and can also write the three CSVs the Excel GIS import tool reads.
+    Convert from legacy joins a legacy baseline and post-intervention pair back into a single BNG Service GeoPackage, rebuilding as much baseline-to-post-intervention lineage as the legacy files allow and reporting exactly what had to be inferred.
+    Export to the Statutory Metric fills a copy of the metric workbook directly, with no CSVs and no import tool in between.
+    All three appear in the Processing Toolbox and under Plugins > BNG Template Convert. No dependencies beyond QGIS itself.
+
+changelog=1.5.1
+    Convert from legacy writes Low as the Proposed Strategic Significance of every Retained row, as the template holds it, and names the rows that held something else. It names the rows with both years created in advance and years of delay above 0, which the metric does not allow.
+  1.5.0
+    For the new BNG Service template only. Its tables are now "Area Habitats" and "Individual Trees", and every habitat table holds its reference in one column, "Habitat Ref". Files and templates with the old table names are refused. The code that filled an earlier template with numbered labels is removed.
+    Strategic significance is "Low" or "High" in the template. Convert to legacy and Export to the Statutory Metric write Low as "Area/compensation not in local strategy/ no local strategy" and High as "Formally identified in local strategy" ("Within area formally identified in local strategy" for trees). A blank is written as before: "N/A" for a hedgerow or watercourse "To be created", a newly planted tree and a lost tree, and blank elsewhere.
+    Convert from legacy writes Low on every baseline row and names the rows whose legacy value was something else. On post-intervention rows, Baseline Strategic Significance is Low where the row has a baseline habitat and blank where it has none. "Location ecologically desirable but not in local strategy" has no place in the template, so it is left blank, and the log names the rows.
+    Convert from legacy writes "N/A" in Spatial risk category on every post-intervention row, and names the rows whose legacy value was something else. It fills the blanks the template fills itself: distinctiveness from the habitat type, a condition where the habitat allows only one, and Irreplaceable Habitat where the habitat allows only one answer.
+  1.4.1
+    Convert from legacy writes an empty or all-space text value as NULL. An empty string is not in a drop-down's list, and QGIS shows it as "()".
+  1.4.0
+    Convert from legacy records the shape of each linked feature's parent in parent_geom, at three decimal places, as the template's buttons do. The parent_checksum column is gone from the template and is no longer written.
+    Convert from legacy can fill a copy of an earlier template. It writes only the columns the template has. The log names each column that the template lacks, whose values are not written, and each column that it leaves blank, such as parent_checksum. When the template's own drop-down lists number their labels, the values are written in that numbered form.
+    The BNG Service template now stores conditions, watercourse retention categories and riparian encroachment without the list number in front. Convert from legacy takes the number off. Convert to legacy puts the Natural England number back, taken from the Natural England template's own drop-down lists, with three exceptions. Created on an existing watercourse becomes "4. Created", which the Natural England list does not offer. A watercourse loss row that the conversion adds is written as "Lost", which the Natural England list offers only as "4. Lost". A tree's proposed condition is written without a number, because the Natural England template stores it that way.
+    A legacy watercourse marked "4. Lost" is now read as removed.
+    Files made with an earlier template, with the numbers still in them, convert and export as before.
+  1.3.0
+    Export to the Statutory Metric takes either version of the metric, with macros (.xlsm) or without (.xlsx), and the filled copy keeps the version it was given.
+    The baseline tabs now hold the whole baseline layer. The ground under a created parcel, a shortened hedge's missing length and a feature not carried forward are written as lost, where before they dropped out of the baseline. A watercourse that continues is written at its surveyed length.
+    Watercourse encroachment values are written, without which the metric gave watercourses no units.
+    A site part-way through is supported: the log lists every blank value the metric needs, layer by layer, says when a post-intervention layer is empty, and names irreplaceable habitat written as lost.
+    Convert to legacy: the import tool CSVs now carry a Lost row for area habitat not yet carried forward to post-intervention, so a site part-way through keeps its whole baseline there. The log says when the legacy post-intervention file does not yet cover the red line, and both legacy tools list blank values the metric needs.
+  1.2.0
+    Conditions and retention categories now reach the Statutory Metric and the import tool CSVs without the list number in front of them, so habitat and watercourse rows score instead of reporting Check Data. Watercourse rows also reach the retained, enhanced and enhancement columns for the first time.
+    Filling the metric is about ten times faster, shows how far along it is, and no longer holds up the rest of QGIS while it runs.
+    Converting back from legacy separates features whose recorded parent is missing from features that are simply new, rather than warning about both.
+  1.1.0
+    Export to the Statutory Metric, and multi-workbook output for a site too large for one.
+
+tracker=
+repository=
+homepage=
+
+category=Vector
+icon=icon.svg
+experimental=False
+deprecated=False
+hasProcessingProvider=yes

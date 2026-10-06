@@ -1,0 +1,16 @@
+ID,New,Label,Order
+GoodRetained,Good,Good,1
+N/ACreated,Good,Good,1
+Fairly GoodRetained,Fairly Good,Fairly Good,2
+N/ACreated,Fairly Good,Fairly Good,2
+ModerateRetained,Moderate,Moderate,3
+N/ACreated,Moderate,Moderate,3
+Fairly PoorRetained,Fairly Poor,Fairly Poor,4
+N/ACreated,Fairly Poor,Fairly Poor,4
+PoorRetained,Poor,Poor,5
+N/ACreated,Poor,Poor,5
+GoodCreated,N/A,N/A,6
+Fairly GoodCreated,N/A,N/A,6
+ModerateCreated,N/A,N/A,6
+Fairly PoorCreated,N/A,N/A,6
+PoorCreated,N/A,N/A,6
