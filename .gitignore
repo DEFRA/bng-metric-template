@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+
+# Build output: the installable plugin zip.
+plugin/dist/
+
+# Timestamped project backups left by development/tools/. Git already has the
+# previous version of anything tracked, so keeping these would only add noise.
+*.qgz.backup-*
+
+# SQLite side files, written while QGIS has a GeoPackage open.
+*.gpkg-shm
+*.gpkg-wal
+
+.DS_Store

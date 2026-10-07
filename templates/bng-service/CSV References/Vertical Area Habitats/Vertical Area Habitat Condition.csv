@@ -1,0 +1,569 @@
+UKHAB,Condition,Label,Order
+Allotments,Good,Good,1
+Aquifer fed naturally fluctuating water bodies,Good,Good,1
+Artificial features of hard structures,Good,Good,1
+Artificial hard structures,Good,Good,1
+Artificial hard structures with integrated greening of grey infrastructure (IGGI),Good,Good,1
+Artificial littoral biogenic reefs,Good,Good,1
+Artificial littoral coarse sediment,Good,Good,1
+Artificial littoral mixed sediments,Good,Good,1
+Artificial littoral mud,Good,Good,1
+Artificial littoral muddy sand,Good,Good,1
+Artificial littoral sand,Good,Good,1
+Artificial littoral seagrass,Good,Good,1
+Artificial saltmarshes and saline reedbeds,Good,Good,1
+Bare ground,Good,Good,1
+Bioswale,Good,Good,1
+Blackthorn scrub,Good,Good,1
+Blanket bog,Good,Good,1
+Biodiverse green roof,Good,Good,1
+Calaminarian grasslands,Good,Good,1
+Cemeteries and churchyards,Good,Good,1
+Coastal lagoons,Good,Good,1
+Coastal sand dunes,Good,Good,1
+Coastal vegetated shingle,Good,Good,1
+Depressions on peat substrates (H7150),Good,Good,1
+Dunes with sea buckthorn (H2160),Good,Good,1
+Features of littoral rock,Good,Good,1
+"Features of littoral rock - on peat, clay or chalk",Good,Good,1
+Features of littoral sediment,Good,Good,1
+Fens (upland and lowland),Good,Good,1
+Floodplain wetland mosaic and CFGM,Good,Good,1
+Gorse scrub,Good,Good,1
+Hawthorn scrub,Good,Good,1
+Hazel scrub,Good,Good,1
+High alkalinity lakes,Good,Good,1
+High energy littoral rock,Good,Good,1
+"High energy littoral rock - on peat, clay or chalk",Good,Good,1
+Inland rock outcrop and scree habitats,Good,Good,1
+Intensive green roof,Good,Good,1
+Limestone pavement,Good,Good,1
+Littoral biogenic reefs - Mussels,Good,Good,1
+Littoral biogenic reefs - Sabellaria,Good,Good,1
+Littoral coarse sediment,Good,Good,1
+Littoral mixed sediments,Good,Good,1
+Littoral mud,Good,Good,1
+Littoral muddy sand,Good,Good,1
+Littoral sand,Good,Good,1
+Littoral seagrass,Good,Good,1
+"Littoral seagrass on peat, clay or chalk",Good,Good,1
+Low alkalinity lakes,Good,Good,1
+Low energy littoral rock,Good,Good,1
+"Low energy littoral rock - on peat, clay or chalk",Good,Good,1
+Lowland beech and yew woodland,Good,Good,1
+Lowland calcareous grassland,Good,Good,1
+Lowland dry acid grassland,Good,Good,1
+Lowland heathland,Good,Good,1
+Lowland meadows,Good,Good,1
+Lowland mixed deciduous woodland,Good,Good,1
+Lowland raised bog,Good,Good,1
+Maritime cliff and slopes,Good,Good,1
+Marl lakes,Good,Good,1
+Mixed scrub,Good,Good,1
+Moderate alkalinity lakes,Good,Good,1
+Moderate energy littoral rock,Good,Good,1
+"Moderate energy littoral rock - on peat, clay or chalk",Good,Good,1
+Modified grassland,Good,Good,1
+Mountain heaths and willow scrub,Good,Good,1
+Native pine woodlands,Good,Good,1
+Open mosaic habitats on previously developed land,Good,Good,1
+Ornamental lake or pond,Good,Good,1
+Other coniferous woodland,Good,Good,1
+Other inland rock and scree,Good,Good,1
+Other lowland acid grassland,Good,Good,1
+Other neutral grassland,Good,Good,1
+Other Scot's pine woodland,Good,Good,1
+Other woodland; broadleaved,Good,Good,1
+Other woodland; mixed,Good,Good,1
+Peat lakes,Good,Good,1
+Ponds (non-priority habitat),Good,Good,1
+Ponds (priority habitat),Good,Good,1
+Purple moor grass and rush pastures,Good,Good,1
+Rain garden,Good,Good,1
+Reedbeds,Good,Good,1
+Reservoirs,Good,Good,1
+Ruderal/Ephemeral,Good,Good,1
+Saltmarshes and saline reedbeds,Good,Good,1
+Sustainable drainage system,Good,Good,1
+Tall forbs,Good,Good,1
+Tall herb communities (H6430),Good,Good,1
+Temporary lakes ponds and pools (H3170),Good,Good,1
+Traditional orchards,Good,Good,1
+Transition mires and quaking bogs (H7140),Good,Good,1
+Upland acid grassland,Good,Good,1
+Upland birchwoods,Good,Good,1
+Upland calcareous grassland,Good,Good,1
+Upland hay meadows,Good,Good,1
+Upland heathland,Good,Good,1
+Upland mixed ashwoods,Good,Good,1
+Upland oakwood,Good,Good,1
+Vacant or derelict land,Good,Good,1
+Wet woodland,Good,Good,1
+Willow scrub,Good,Good,1
+Oceanic valley mire[1] (D2.1),Good,Good,1
+Wood-pasture and parkland,Good,Good,1
+Felled,Good,Good,1
+Replacement for felled woodland,Good,Good,1
+Facade-bound green wall,Good,Good,1
+Ground based green wall,Good,Good,1
+Allotments,Fairly Good,Fairly Good,2
+Aquifer fed naturally fluctuating water bodies,Fairly Good,Fairly Good,2
+Artificial features of hard structures,Fairly Good,Fairly Good,2
+Artificial hard structures,Fairly Good,Fairly Good,2
+Artificial hard structures with integrated greening of grey infrastructure (IGGI),Fairly Good,Fairly Good,2
+Artificial littoral biogenic reefs,Fairly Good,Fairly Good,2
+Artificial littoral coarse sediment,Fairly Good,Fairly Good,2
+Artificial littoral mixed sediments,Fairly Good,Fairly Good,2
+Artificial littoral mud,Fairly Good,Fairly Good,2
+Artificial littoral muddy sand,Fairly Good,Fairly Good,2
+Artificial littoral sand,Fairly Good,Fairly Good,2
+Artificial littoral seagrass,Fairly Good,Fairly Good,2
+Artificial saltmarshes and saline reedbeds,Fairly Good,Fairly Good,2
+Bare ground,Fairly Good,Fairly Good,2
+Bioswale,Fairly Good,Fairly Good,2
+Blackthorn scrub,Fairly Good,Fairly Good,2
+Blanket bog,Fairly Good,Fairly Good,2
+Biodiverse green roof,Fairly Good,Fairly Good,2
+Calaminarian grasslands,Fairly Good,Fairly Good,2
+Cemeteries and churchyards,Fairly Good,Fairly Good,2
+Coastal lagoons,Fairly Good,Fairly Good,2
+Coastal sand dunes,Fairly Good,Fairly Good,2
+Coastal vegetated shingle,Fairly Good,Fairly Good,2
+Depressions on peat substrates (H7150),Fairly Good,Fairly Good,2
+Dunes with sea buckthorn (H2160),Fairly Good,Fairly Good,2
+Features of littoral rock,Fairly Good,Fairly Good,2
+"Features of littoral rock - on peat, clay or chalk",Fairly Good,Fairly Good,2
+Features of littoral sediment,Fairly Good,Fairly Good,2
+Fens (upland and lowland),Fairly Good,Fairly Good,2
+Floodplain wetland mosaic and CFGM,Fairly Good,Fairly Good,2
+Gorse scrub,Fairly Good,Fairly Good,2
+Hawthorn scrub,Fairly Good,Fairly Good,2
+Hazel scrub,Fairly Good,Fairly Good,2
+High alkalinity lakes,Fairly Good,Fairly Good,2
+High energy littoral rock,Fairly Good,Fairly Good,2
+"High energy littoral rock - on peat, clay or chalk",Fairly Good,Fairly Good,2
+Inland rock outcrop and scree habitats,Fairly Good,Fairly Good,2
+Intensive green roof,Fairly Good,Fairly Good,2
+Limestone pavement,Fairly Good,Fairly Good,2
+Littoral biogenic reefs - Mussels,Fairly Good,Fairly Good,2
+Littoral biogenic reefs - Sabellaria,Fairly Good,Fairly Good,2
+Littoral coarse sediment,Fairly Good,Fairly Good,2
+Littoral mixed sediments,Fairly Good,Fairly Good,2
+Littoral mud,Fairly Good,Fairly Good,2
+Littoral muddy sand,Fairly Good,Fairly Good,2
+Littoral sand,Fairly Good,Fairly Good,2
+Littoral seagrass,Fairly Good,Fairly Good,2
+"Littoral seagrass on peat, clay or chalk",Fairly Good,Fairly Good,2
+Low alkalinity lakes,Fairly Good,Fairly Good,2
+Low energy littoral rock,Fairly Good,Fairly Good,2
+"Low energy littoral rock - on peat, clay or chalk",Fairly Good,Fairly Good,2
+Lowland beech and yew woodland,Fairly Good,Fairly Good,2
+Lowland calcareous grassland,Fairly Good,Fairly Good,2
+Lowland dry acid grassland,Fairly Good,Fairly Good,2
+Lowland heathland,Fairly Good,Fairly Good,2
+Lowland meadows,Fairly Good,Fairly Good,2
+Lowland mixed deciduous woodland,Fairly Good,Fairly Good,2
+Lowland raised bog,Fairly Good,Fairly Good,2
+Maritime cliff and slopes,Fairly Good,Fairly Good,2
+Marl lakes,Fairly Good,Fairly Good,2
+Mixed scrub,Fairly Good,Fairly Good,2
+Moderate alkalinity lakes,Fairly Good,Fairly Good,2
+Moderate energy littoral rock,Fairly Good,Fairly Good,2
+"Moderate energy littoral rock - on peat, clay or chalk",Fairly Good,Fairly Good,2
+Modified grassland,Fairly Good,Fairly Good,2
+Mountain heaths and willow scrub,Fairly Good,Fairly Good,2
+Native pine woodlands,Fairly Good,Fairly Good,2
+Open mosaic habitats on previously developed land,Fairly Good,Fairly Good,2
+Ornamental lake or pond,Fairly Good,Fairly Good,2
+Other coniferous woodland,Fairly Good,Fairly Good,2
+Other inland rock and scree,Fairly Good,Fairly Good,2
+Other lowland acid grassland,Fairly Good,Fairly Good,2
+Other neutral grassland,Fairly Good,Fairly Good,2
+Other Scot's pine woodland,Fairly Good,Fairly Good,2
+Other woodland; broadleaved,Fairly Good,Fairly Good,2
+Other woodland; mixed,Fairly Good,Fairly Good,2
+Peat lakes,Fairly Good,Fairly Good,2
+Ponds (non-priority habitat),Fairly Good,Fairly Good,2
+Ponds (priority habitat),Fairly Good,Fairly Good,2
+Purple moor grass and rush pastures,Fairly Good,Fairly Good,2
+Rain garden,Fairly Good,Fairly Good,2
+Reedbeds,Fairly Good,Fairly Good,2
+Reservoirs,Fairly Good,Fairly Good,2
+Ruderal/Ephemeral,Fairly Good,Fairly Good,2
+Saltmarshes and saline reedbeds,Fairly Good,Fairly Good,2
+Sustainable drainage system,Fairly Good,Fairly Good,2
+Tall forbs,Fairly Good,Fairly Good,2
+Tall herb communities (H6430),Fairly Good,Fairly Good,2
+Temporary lakes ponds and pools (H3170),Fairly Good,Fairly Good,2
+Traditional orchards,Fairly Good,Fairly Good,2
+Transition mires and quaking bogs (H7140),Fairly Good,Fairly Good,2
+Upland acid grassland,Fairly Good,Fairly Good,2
+Upland birchwoods,Fairly Good,Fairly Good,2
+Upland calcareous grassland,Fairly Good,Fairly Good,2
+Upland hay meadows,Fairly Good,Fairly Good,2
+Upland heathland,Fairly Good,Fairly Good,2
+Upland mixed ashwoods,Fairly Good,Fairly Good,2
+Upland oakwood,Fairly Good,Fairly Good,2
+Vacant or derelict land,Fairly Good,Fairly Good,2
+Wet woodland,Fairly Good,Fairly Good,2
+Willow scrub,Fairly Good,Fairly Good,2
+Oceanic valley mire[1] (D2.1),Fairly Good,Fairly Good,2
+Wood-pasture and parkland,Fairly Good,Fairly Good,2
+Facade-bound green wall,Fairly Good,Fairly Good,2
+Ground based green wall,Fairly Good,Fairly Good,2
+Allotments,Moderate,Moderate,3
+Aquifer fed naturally fluctuating water bodies,Moderate,Moderate,3
+Artificial features of hard structures,Moderate,Moderate,3
+Artificial hard structures,Moderate,Moderate,3
+Artificial hard structures with integrated greening of grey infrastructure (IGGI),Moderate,Moderate,3
+Artificial littoral biogenic reefs,Moderate,Moderate,3
+Artificial littoral coarse sediment,Moderate,Moderate,3
+Artificial littoral mixed sediments,Moderate,Moderate,3
+Artificial littoral mud,Moderate,Moderate,3
+Artificial littoral muddy sand,Moderate,Moderate,3
+Artificial littoral sand,Moderate,Moderate,3
+Artificial littoral seagrass,Moderate,Moderate,3
+Artificial saltmarshes and saline reedbeds,Moderate,Moderate,3
+Bare ground,Moderate,Moderate,3
+Bioswale,Moderate,Moderate,3
+Blackthorn scrub,Moderate,Moderate,3
+Blanket bog,Moderate,Moderate,3
+Biodiverse green roof,Moderate,Moderate,3
+Calaminarian grasslands,Moderate,Moderate,3
+Cemeteries and churchyards,Moderate,Moderate,3
+Coastal lagoons,Moderate,Moderate,3
+Coastal sand dunes,Moderate,Moderate,3
+Coastal vegetated shingle,Moderate,Moderate,3
+Depressions on peat substrates (H7150),Moderate,Moderate,3
+Dunes with sea buckthorn (H2160),Moderate,Moderate,3
+Features of littoral rock,Moderate,Moderate,3
+"Features of littoral rock - on peat, clay or chalk",Moderate,Moderate,3
+Features of littoral sediment,Moderate,Moderate,3
+Fens (upland and lowland),Moderate,Moderate,3
+Floodplain wetland mosaic and CFGM,Moderate,Moderate,3
+Gorse scrub,Moderate,Moderate,3
+Hawthorn scrub,Moderate,Moderate,3
+Hazel scrub,Moderate,Moderate,3
+High alkalinity lakes,Moderate,Moderate,3
+High energy littoral rock,Moderate,Moderate,3
+"High energy littoral rock - on peat, clay or chalk",Moderate,Moderate,3
+Inland rock outcrop and scree habitats,Moderate,Moderate,3
+Intensive green roof,Moderate,Moderate,3
+Limestone pavement,Moderate,Moderate,3
+Littoral biogenic reefs - Mussels,Moderate,Moderate,3
+Littoral biogenic reefs - Sabellaria,Moderate,Moderate,3
+Littoral coarse sediment,Moderate,Moderate,3
+Littoral mixed sediments,Moderate,Moderate,3
+Littoral mud,Moderate,Moderate,3
+Littoral muddy sand,Moderate,Moderate,3
+Littoral sand,Moderate,Moderate,3
+Littoral seagrass,Moderate,Moderate,3
+"Littoral seagrass on peat, clay or chalk",Moderate,Moderate,3
+Low alkalinity lakes,Moderate,Moderate,3
+Low energy littoral rock,Moderate,Moderate,3
+"Low energy littoral rock - on peat, clay or chalk",Moderate,Moderate,3
+Lowland beech and yew woodland,Moderate,Moderate,3
+Lowland calcareous grassland,Moderate,Moderate,3
+Lowland dry acid grassland,Moderate,Moderate,3
+Lowland heathland,Moderate,Moderate,3
+Lowland meadows,Moderate,Moderate,3
+Lowland mixed deciduous woodland,Moderate,Moderate,3
+Lowland raised bog,Moderate,Moderate,3
+Maritime cliff and slopes,Moderate,Moderate,3
+Marl lakes,Moderate,Moderate,3
+Mixed scrub,Moderate,Moderate,3
+Moderate alkalinity lakes,Moderate,Moderate,3
+Moderate energy littoral rock,Moderate,Moderate,3
+"Moderate energy littoral rock - on peat, clay or chalk",Moderate,Moderate,3
+Modified grassland,Moderate,Moderate,3
+Mountain heaths and willow scrub,Moderate,Moderate,3
+Native pine woodlands,Moderate,Moderate,3
+Open mosaic habitats on previously developed land,Moderate,Moderate,3
+Ornamental lake or pond,Moderate,Moderate,3
+Other coniferous woodland,Moderate,Moderate,3
+Other inland rock and scree,Moderate,Moderate,3
+Other lowland acid grassland,Moderate,Moderate,3
+Other neutral grassland,Moderate,Moderate,3
+Other Scot's pine woodland,Moderate,Moderate,3
+Other woodland; broadleaved,Moderate,Moderate,3
+Other woodland; mixed,Moderate,Moderate,3
+Peat lakes,Moderate,Moderate,3
+Ponds (non-priority habitat),Moderate,Moderate,3
+Ponds (priority habitat),Moderate,Moderate,3
+Purple moor grass and rush pastures,Moderate,Moderate,3
+Rain garden,Moderate,Moderate,3
+Reedbeds,Moderate,Moderate,3
+Reservoirs,Moderate,Moderate,3
+Ruderal/Ephemeral,Moderate,Moderate,3
+Saltmarshes and saline reedbeds,Moderate,Moderate,3
+Sustainable drainage system,Moderate,Moderate,3
+Tall forbs,Moderate,Moderate,3
+Tall herb communities (H6430),Moderate,Moderate,3
+Temporary lakes ponds and pools (H3170),Moderate,Moderate,3
+Traditional orchards,Moderate,Moderate,3
+Transition mires and quaking bogs (H7140),Moderate,Moderate,3
+Upland acid grassland,Moderate,Moderate,3
+Upland birchwoods,Moderate,Moderate,3
+Upland calcareous grassland,Moderate,Moderate,3
+Upland hay meadows,Moderate,Moderate,3
+Upland heathland,Moderate,Moderate,3
+Upland mixed ashwoods,Moderate,Moderate,3
+Upland oakwood,Moderate,Moderate,3
+Vacant or derelict land,Moderate,Moderate,3
+Wet woodland,Moderate,Moderate,3
+Willow scrub,Moderate,Moderate,3
+Oceanic valley mire[1] (D2.1),Moderate,Moderate,3
+Wood-pasture and parkland,Moderate,Moderate,3
+Facade-bound green wall,Moderate,Moderate,3
+Ground based green wall,Moderate,Moderate,3
+Allotments,Fairly Poor,Fairly Poor,4
+Aquifer fed naturally fluctuating water bodies,Fairly Poor,Fairly Poor,4
+Artificial features of hard structures,Fairly Poor,Fairly Poor,4
+Artificial hard structures,Fairly Poor,Fairly Poor,4
+Artificial hard structures with integrated greening of grey infrastructure (IGGI),Fairly Poor,Fairly Poor,4
+Artificial littoral biogenic reefs,Fairly Poor,Fairly Poor,4
+Artificial littoral coarse sediment,Fairly Poor,Fairly Poor,4
+Artificial littoral mixed sediments,Fairly Poor,Fairly Poor,4
+Artificial littoral mud,Fairly Poor,Fairly Poor,4
+Artificial littoral muddy sand,Fairly Poor,Fairly Poor,4
+Artificial littoral sand,Fairly Poor,Fairly Poor,4
+Artificial littoral seagrass,Fairly Poor,Fairly Poor,4
+Artificial saltmarshes and saline reedbeds,Fairly Poor,Fairly Poor,4
+Bare ground,Fairly Poor,Fairly Poor,4
+Bioswale,Fairly Poor,Fairly Poor,4
+Blackthorn scrub,Fairly Poor,Fairly Poor,4
+Blanket bog,Fairly Poor,Fairly Poor,4
+Biodiverse green roof,Fairly Poor,Fairly Poor,4
+Calaminarian grasslands,Fairly Poor,Fairly Poor,4
+Cemeteries and churchyards,Fairly Poor,Fairly Poor,4
+Coastal lagoons,Fairly Poor,Fairly Poor,4
+Coastal sand dunes,Fairly Poor,Fairly Poor,4
+Coastal vegetated shingle,Fairly Poor,Fairly Poor,4
+Depressions on peat substrates (H7150),Fairly Poor,Fairly Poor,4
+Dunes with sea buckthorn (H2160),Fairly Poor,Fairly Poor,4
+Features of littoral rock,Fairly Poor,Fairly Poor,4
+"Features of littoral rock - on peat, clay or chalk",Fairly Poor,Fairly Poor,4
+Features of littoral sediment,Fairly Poor,Fairly Poor,4
+Fens (upland and lowland),Fairly Poor,Fairly Poor,4
+Floodplain wetland mosaic and CFGM,Fairly Poor,Fairly Poor,4
+Gorse scrub,Fairly Poor,Fairly Poor,4
+Hawthorn scrub,Fairly Poor,Fairly Poor,4
+Hazel scrub,Fairly Poor,Fairly Poor,4
+High alkalinity lakes,Fairly Poor,Fairly Poor,4
+High energy littoral rock,Fairly Poor,Fairly Poor,4
+"High energy littoral rock - on peat, clay or chalk",Fairly Poor,Fairly Poor,4
+Inland rock outcrop and scree habitats,Fairly Poor,Fairly Poor,4
+Intensive green roof,Fairly Poor,Fairly Poor,4
+Limestone pavement,Fairly Poor,Fairly Poor,4
+Littoral biogenic reefs - Mussels,Fairly Poor,Fairly Poor,4
+Littoral biogenic reefs - Sabellaria,Fairly Poor,Fairly Poor,4
+Littoral coarse sediment,Fairly Poor,Fairly Poor,4
+Littoral mixed sediments,Fairly Poor,Fairly Poor,4
+Littoral mud,Fairly Poor,Fairly Poor,4
+Littoral muddy sand,Fairly Poor,Fairly Poor,4
+Littoral sand,Fairly Poor,Fairly Poor,4
+Littoral seagrass,Fairly Poor,Fairly Poor,4
+"Littoral seagrass on peat, clay or chalk",Fairly Poor,Fairly Poor,4
+Low alkalinity lakes,Fairly Poor,Fairly Poor,4
+Low energy littoral rock,Fairly Poor,Fairly Poor,4
+"Low energy littoral rock - on peat, clay or chalk",Fairly Poor,Fairly Poor,4
+Lowland beech and yew woodland,Fairly Poor,Fairly Poor,4
+Lowland calcareous grassland,Fairly Poor,Fairly Poor,4
+Lowland dry acid grassland,Fairly Poor,Fairly Poor,4
+Lowland heathland,Fairly Poor,Fairly Poor,4
+Lowland meadows,Fairly Poor,Fairly Poor,4
+Lowland mixed deciduous woodland,Fairly Poor,Fairly Poor,4
+Lowland raised bog,Fairly Poor,Fairly Poor,4
+Maritime cliff and slopes,Fairly Poor,Fairly Poor,4
+Marl lakes,Fairly Poor,Fairly Poor,4
+Mixed scrub,Fairly Poor,Fairly Poor,4
+Moderate alkalinity lakes,Fairly Poor,Fairly Poor,4
+Moderate energy littoral rock,Fairly Poor,Fairly Poor,4
+"Moderate energy littoral rock - on peat, clay or chalk",Fairly Poor,Fairly Poor,4
+Modified grassland,Fairly Poor,Fairly Poor,4
+Mountain heaths and willow scrub,Fairly Poor,Fairly Poor,4
+Native pine woodlands,Fairly Poor,Fairly Poor,4
+Open mosaic habitats on previously developed land,Fairly Poor,Fairly Poor,4
+Ornamental lake or pond,Fairly Poor,Fairly Poor,4
+Other coniferous woodland,Fairly Poor,Fairly Poor,4
+Other inland rock and scree,Fairly Poor,Fairly Poor,4
+Other lowland acid grassland,Fairly Poor,Fairly Poor,4
+Other neutral grassland,Fairly Poor,Fairly Poor,4
+Other Scot's pine woodland,Fairly Poor,Fairly Poor,4
+Other woodland; broadleaved,Fairly Poor,Fairly Poor,4
+Other woodland; mixed,Fairly Poor,Fairly Poor,4
+Peat lakes,Fairly Poor,Fairly Poor,4
+Ponds (non-priority habitat),Fairly Poor,Fairly Poor,4
+Ponds (priority habitat),Fairly Poor,Fairly Poor,4
+Purple moor grass and rush pastures,Fairly Poor,Fairly Poor,4
+Rain garden,Fairly Poor,Fairly Poor,4
+Reedbeds,Fairly Poor,Fairly Poor,4
+Reservoirs,Fairly Poor,Fairly Poor,4
+Ruderal/Ephemeral,Fairly Poor,Fairly Poor,4
+Saltmarshes and saline reedbeds,Fairly Poor,Fairly Poor,4
+Sustainable drainage system,Fairly Poor,Fairly Poor,4
+Tall forbs,Fairly Poor,Fairly Poor,4
+Tall herb communities (H6430),Fairly Poor,Fairly Poor,4
+Temporary lakes ponds and pools (H3170),Fairly Poor,Fairly Poor,4
+Traditional orchards,Fairly Poor,Fairly Poor,4
+Transition mires and quaking bogs (H7140),Fairly Poor,Fairly Poor,4
+Upland acid grassland,Fairly Poor,Fairly Poor,4
+Upland birchwoods,Fairly Poor,Fairly Poor,4
+Upland calcareous grassland,Fairly Poor,Fairly Poor,4
+Upland hay meadows,Fairly Poor,Fairly Poor,4
+Upland heathland,Fairly Poor,Fairly Poor,4
+Upland mixed ashwoods,Fairly Poor,Fairly Poor,4
+Upland oakwood,Fairly Poor,Fairly Poor,4
+Vacant or derelict land,Fairly Poor,Fairly Poor,4
+Wet woodland,Fairly Poor,Fairly Poor,4
+Oceanic valley mire[1] (D2.1),Fairly Poor,Fairly Poor,4
+Willow scrub,Fairly Poor,Fairly Poor,4
+Wood-pasture and parkland,Fairly Poor,Fairly Poor,4
+Facade-bound green wall,Fairly Poor,Fairly Poor,4
+Ground based green wall,Fairly Poor,Fairly Poor,4
+Allotments,Poor,Poor,5
+Aquifer fed naturally fluctuating water bodies,Poor,Poor,5
+Artificial features of hard structures,Poor,Poor,5
+Artificial hard structures,Poor,Poor,5
+Artificial hard structures with integrated greening of grey infrastructure (IGGI),Poor,Poor,5
+Artificial littoral biogenic reefs,Poor,Poor,5
+Artificial littoral coarse sediment,Poor,Poor,5
+Artificial littoral mixed sediments,Poor,Poor,5
+Artificial littoral mud,Poor,Poor,5
+Artificial littoral muddy sand,Poor,Poor,5
+Artificial littoral sand,Poor,Poor,5
+Artificial littoral seagrass,Poor,Poor,5
+Artificial saltmarshes and saline reedbeds,Poor,Poor,5
+Bare ground,Poor,Poor,5
+Bioswale,Poor,Poor,5
+Blackthorn scrub,Poor,Poor,5
+Blanket bog,Poor,Poor,5
+Biodiverse green roof,Poor,Poor,5
+Calaminarian grasslands,Poor,Poor,5
+Cemeteries and churchyards,Poor,Poor,5
+Coastal lagoons,Poor,Poor,5
+Coastal sand dunes,Poor,Poor,5
+Coastal vegetated shingle,Poor,Poor,5
+Depressions on peat substrates (H7150),Poor,Poor,5
+Dunes with sea buckthorn (H2160),Poor,Poor,5
+Features of littoral rock,Poor,Poor,5
+"Features of littoral rock - on peat, clay or chalk",Poor,Poor,5
+Features of littoral sediment,Poor,Poor,5
+Fens (upland and lowland),Poor,Poor,5
+Floodplain wetland mosaic and CFGM,Poor,Poor,5
+Gorse scrub,Poor,Poor,5
+Hawthorn scrub,Poor,Poor,5
+Hazel scrub,Poor,Poor,5
+High alkalinity lakes,Poor,Poor,5
+High energy littoral rock,Poor,Poor,5
+"High energy littoral rock - on peat, clay or chalk",Poor,Poor,5
+Inland rock outcrop and scree habitats,Poor,Poor,5
+Intensive green roof,Poor,Poor,5
+Limestone pavement,Poor,Poor,5
+Littoral biogenic reefs - Mussels,Poor,Poor,5
+Littoral biogenic reefs - Sabellaria,Poor,Poor,5
+Littoral coarse sediment,Poor,Poor,5
+Littoral mixed sediments,Poor,Poor,5
+Littoral mud,Poor,Poor,5
+Littoral muddy sand,Poor,Poor,5
+Littoral sand,Poor,Poor,5
+Littoral seagrass,Poor,Poor,5
+"Littoral seagrass on peat, clay or chalk",Poor,Poor,5
+Low alkalinity lakes,Poor,Poor,5
+Low energy littoral rock,Poor,Poor,5
+"Low energy littoral rock - on peat, clay or chalk",Poor,Poor,5
+Lowland beech and yew woodland,Poor,Poor,5
+Lowland calcareous grassland,Poor,Poor,5
+Lowland dry acid grassland,Poor,Poor,5
+Lowland heathland,Poor,Poor,5
+Lowland meadows,Poor,Poor,5
+Lowland mixed deciduous woodland,Poor,Poor,5
+Lowland raised bog,Poor,Poor,5
+Maritime cliff and slopes,Poor,Poor,5
+Marl lakes,Poor,Poor,5
+Mixed scrub,Poor,Poor,5
+Moderate alkalinity lakes,Poor,Poor,5
+Moderate energy littoral rock,Poor,Poor,5
+"Moderate energy littoral rock - on peat, clay or chalk",Poor,Poor,5
+Modified grassland,Poor,Poor,5
+Mountain heaths and willow scrub,Poor,Poor,5
+Native pine woodlands,Poor,Poor,5
+Open mosaic habitats on previously developed land,Poor,Poor,5
+Ornamental lake or pond,Poor,Poor,5
+Other coniferous woodland,Poor,Poor,5
+Other inland rock and scree,Poor,Poor,5
+Other lowland acid grassland,Poor,Poor,5
+Other neutral grassland,Poor,Poor,5
+Other Scot's pine woodland,Poor,Poor,5
+Other woodland; broadleaved,Poor,Poor,5
+Other woodland; mixed,Poor,Poor,5
+Peat lakes,Poor,Poor,5
+Ponds (non-priority habitat),Poor,Poor,5
+Ponds (priority habitat),Poor,Poor,5
+Purple moor grass and rush pastures,Poor,Poor,5
+Rain garden,Poor,Poor,5
+Reedbeds,Poor,Poor,5
+Reservoirs,Poor,Poor,5
+Ruderal/Ephemeral,Poor,Poor,5
+Saltmarshes and saline reedbeds,Poor,Poor,5
+Sustainable drainage system,Poor,Poor,5
+Tall forbs,Poor,Poor,5
+Tall herb communities (H6430),Poor,Poor,5
+Temporary lakes ponds and pools (H3170),Poor,Poor,5
+Traditional orchards,Poor,Poor,5
+Transition mires and quaking bogs (H7140),Poor,Poor,5
+Upland acid grassland,Poor,Poor,5
+Upland birchwoods,Poor,Poor,5
+Upland calcareous grassland,Poor,Poor,5
+Upland hay meadows,Poor,Poor,5
+Upland heathland,Poor,Poor,5
+Upland mixed ashwoods,Poor,Poor,5
+Upland oakwood,Poor,Poor,5
+Vacant or derelict land,Poor,Poor,5
+Wet woodland,Poor,Poor,5
+Willow scrub,Poor,Poor,5
+Oceanic valley mire[1] (D2.1),Poor,Poor,5
+Wood-pasture and parkland,Poor,Poor,5
+Facade-bound green wall,Poor,Poor,5
+Ground based green wall,Poor,Poor,5
+"Artificial unvegetated, unsealed surface",N/A - Other,N/A - Other,6
+Built linear features,N/A - Other,N/A - Other,6
+Developed land; sealed surface,N/A - Other,N/A - Other,6
+Unvegetated garden,N/A - Other,N/A - Other,6
+Other sea buckthorn scrub,Condition Assessment N/A,Condition Assessment N/A,7
+Arable field margins cultivated annually,Condition Assessment N/A,Condition Assessment N/A,7
+Arable field margins game bird mix,Condition Assessment N/A,Condition Assessment N/A,7
+Arable field margins pollen and nectar,Condition Assessment N/A,Condition Assessment N/A,7
+Arable field margins tussocky,Condition Assessment N/A,Condition Assessment N/A,7
+Cereal crops,Condition Assessment N/A,Condition Assessment N/A,7
+Winter stubble,Condition Assessment N/A,Condition Assessment N/A,7
+Horticulture,Condition Assessment N/A,Condition Assessment N/A,7
+Intensive orchards,Condition Assessment N/A,Condition Assessment N/A,7
+Non-cereal crops,Condition Assessment N/A,Condition Assessment N/A,7
+Temporary grass and clover leys,Condition Assessment N/A,Condition Assessment N/A,7
+Bracken,Condition Assessment N/A,Condition Assessment N/A,7
+Bramble scrub,Condition Assessment N/A,Condition Assessment N/A,7
+Other green roof,Condition Assessment N/A,Condition Assessment N/A,7
+Ground level planters,Condition Assessment N/A,Condition Assessment N/A,7
+Introduced shrub,Condition Assessment N/A,Condition Assessment N/A,7
+Rhododendron scrub,Condition Assessment N/A,Condition Assessment N/A,7
+Actively worked sand pit quarry or open cast mine,Condition Assessment N/A,Condition Assessment N/A,7
+Vegetated garden,Condition Assessment N/A,Condition Assessment N/A,7
+Watercourse footprint,N/A - Other,N/A - Other,8
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,
+,,,

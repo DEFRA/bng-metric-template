@@ -1,0 +1,17 @@
+Value,Options,Label,Order
+To be created,Created,Created,1
+Canals,Retained,Retained,2
+Culvert,Retained,Retained,2
+Ditches,Retained,Retained,2
+Other rivers and streams,Retained,Retained,2
+Priority habitat,Retained,Retained,2
+Canals,Enhanced,Enhanced,3
+Culvert,Enhanced,Enhanced,3
+Ditches,Enhanced,Enhanced,3
+Other rivers and streams,Enhanced,Enhanced,3
+Priority habitat,Enhanced,Enhanced,3
+Canals,Created,Created,4
+Culvert,Created,Created,4
+Ditches,Created,Created,4
+Other rivers and streams,Created,Created,4
+Priority habitat,Created,Created,4
