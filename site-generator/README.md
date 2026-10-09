@@ -35,9 +35,8 @@ metric in Excel and let it recalculate.
 
 **The two Natural England files are the ones the service asks a user to
 upload.** Each is the template's own GeoPackage, so it keeps the template's
-styles and layers. The metric holds the area habitats and hedgerows.
-Individual trees are not written to it, because the metric works out their
-size from a band.
+styles and layers. The metric holds the area habitats, hedgerows and
+individual trees.
 
 | Input | Default | What it sets |
 | --- | --- | --- |
@@ -97,8 +96,10 @@ outside it are kept. Housing and solar schemes can also plant a new hedgerow
 along the edge of the development.
 
 **Trees stand near a hedgerow or inside a parcel.** A tree inside the
-development is lost. New trees are planted in the development and in the
-green margin.
+development is lost. About a third of the kept trees that are not already in
+Good condition are enhanced, one condition better, with a comment that says
+how. Some baseline trees carry a comment about their veteran features. New
+trees are planted in the development and in the green margin.
 
 **The values the template fills itself are written as it fills them.** Each
 row holds its reference in `Habitat Ref`. Baseline Strategic Significance is

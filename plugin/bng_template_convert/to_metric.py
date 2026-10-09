@@ -45,12 +45,26 @@ HOW IT MAPS
     total including it can read Check Data, so the report lists every such
     gap, layer by layer (see BASELINE_NEEDS and PROPOSED_NEEDS).
 
+    Comments go into each sheet's "User comments" column. A baseline line
+    carries its baseline feature's comment. A Retained part's line adds the
+    part's own comment after it, an Enhanced part's comment goes on its
+    enhancement row, and a Created part's on its creation row.
+
+INDIVIDUAL TREES
+    The metric holds trees on the area habitat sheets, as the broad habitat
+    "Individual trees" with the habitat type "Urban tree" or "Rural tree". A
+    tree's area is not measured: it is the tree count times the area of its
+    size class, from the tree helper (User Guide, Table 15). A tree can be
+    retained, enhanced, created or lost like any area habitat. Enhancing a
+    tree improves its condition only. Its size class, and so its area, stays
+    the baseline one, because the metric does not record natural growth
+    (User Guide, page 64). Tree lines follow the area habitat lines on each
+    sheet.
+
 SCOPE
     On-site only. The off-site sheets (D, E and F) carry extra allocation
     columns and a different layout, so they are deliberately not written rather
-    than guessed at. Individual trees are not written either: the metric treats
-    them as an area habitat with a notional size from a band lookup, which is a
-    calculation this does not yet do.
+    than guessed at.
 """
 
 import argparse
@@ -199,7 +213,8 @@ LAYOUT = {
                           comment="Z", ref="AB")),
         "enhancement": ("A-3 On-Site Habitat Enhancement", 12, 257,
                         dict(habitat="R", condition="Y", significance="AA",
-                             advance="AE", delay="AF")),
+                             advance="AE", delay="AF", comment="AO",
+                             ref="AQ")),
     },
     "hedgerows": {
         "baseline": ("B-1 On-Site Hedge Baseline", 10, 257,
@@ -212,7 +227,7 @@ LAYOUT = {
                           comment="X", ref="Z")),
         "enhancement": ("B-3 On-Site Hedge Enhancement", 12, 257,
                         dict(habitat="M", condition="S", significance="U",
-                             advance="Y", delay="Z")),
+                             advance="Y", delay="Z", comment="AI", ref="AK")),
     },
     "watercourses": {
         "baseline": ("C-1 On-Site WaterC' Baseline", 10, 257,
@@ -228,7 +243,7 @@ LAYOUT = {
         "enhancement": ("C-3 On-Site WaterC' Enhancement", 12, 257,
                         dict(habitat="N", condition="T", significance="V",
                              advance="Z", delay="AA", encroachment="AI",
-                             riparian="AK")),
+                             riparian="AK", comment="AN", ref="AP")),
     },
 }
 
@@ -244,8 +259,38 @@ MODULES = (
      "Length", "River Type", 1.0 / METRES_PER_KM),
 )
 
+# Individual trees go onto the area habitat sheets, after the area habitats.
+TREE_TABLES = ("Individual Trees Baseline",
+               "Individual Trees Post-Intervention")
+TREES_BROAD = "Individual trees"
+# The tree helper's area for one tree of each size class, in hectares
+# (User Guide, Table 15). bng-library holds the same figures in square metres.
+TREE_AREA_HA = {
+    "Small": 0.0041,
+    "Medium": 0.0163,
+    "Large": 0.0366,
+    "Very large": 0.0765,
+}
+TREE_ADVANCE = "Habitat Created/Enhanced in advance/years"
+TREE_DELAY = "Delay in starting habitat creation/enhancement in years"
+TREE_BASELINE_NEEDS = ("Baseline Tree Size", "Baseline Rural or Urban Tree",
+                       "Baseline Condition", "Baseline Strategic Significance",
+                       "Count")
+TREE_PROPOSED_NEEDS = ("Proposed Tree Size", "Proposed Rural or Urban Tree",
+                       "Proposed Condition", "Proposed Strategic Significance")
+# The metric's condition scale for trees, worst first. An enhancement has to
+# move up it: the metric shows "Error - No enhancement" for the same
+# condition and "Error - Can not reduce condition" for a lower one.
+TREE_CONDITIONS = ("Poor", "Fairly Poor", "Moderate", "Fairly Good", "Good")
+
 # Every habitat table holds its reference in this column.
 REF_FIELD = "Habitat Ref"
+COMMENT_FIELD = "Comment"
+# Excel holds at most this many characters in a cell.
+EXCEL_CELL_LIMIT = 32767
+# Characters XML 1.0 cannot carry: a workbook holding one does not open.
+XML_ILLEGAL = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\ufffe\uffff]")
+POST_INTERVENTION_PREFIX = "Post-intervention: "
 
 # A cell that proves the workbook already holds a site.
 OCCUPIED_PROBE = ("A-1 On-Site Habitat Baseline", "E11")
@@ -313,10 +358,106 @@ def read_staged(path):
                    "pi": read_table(conn, pi, present)}
             for kind, base, pi, _size, _type, _scale in MODULES
         }
+        trees = {"baseline": read_table(conn, TREE_TABLES[0], present),
+                 "pi": read_table(conn, TREE_TABLES[1], present)}
     finally:
         conn.close()
     to_legacy_significance(staged)
+    staged["trees"] = trees
     return staged
+
+
+def comment_of(row):
+    """A row's comment, or None when it has none."""
+    value = row.get(COMMENT_FIELD)
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def joined_comment(baseline_comment, part_comment):
+    """A baseline comment followed by a post-intervention one."""
+    if not part_comment:
+        return baseline_comment
+    part_comment = POST_INTERVENTION_PREFIX + part_comment
+    if not baseline_comment:
+        return part_comment
+    return f"{baseline_comment} | {part_comment}"
+
+
+# ---------------------------------------------------------------------------
+# Individual trees, as the area habitat lines the metric holds them as
+# ---------------------------------------------------------------------------
+
+
+def tree_area(size, count):
+    """Hectares for `count` trees of a size class, or None if either is unknown."""
+    per_tree = TREE_AREA_HA.get(plain_label(size) if size else None)
+    trees = numeric(count)
+    if per_tree is None or trees is None:
+        return None
+    return per_tree * trees
+
+
+def tree_as_area_baseline(row):
+    return {
+        "fid": row.get("fid"),
+        REF_FIELD: row.get(REF_FIELD),
+        "feature_uuid": row.get("feature_uuid"),
+        "Baseline Broad Habitat Type": TREES_BROAD,
+        "Baseline Habitat Type": row.get("Baseline Rural or Urban Tree"),
+        "Baseline Condition": row.get("Baseline Condition"),
+        "Baseline Strategic Significance": row.get(
+            "Baseline Strategic Significance"),
+        # The template has no irreplaceable flag for trees. The metric
+        # refuses to enhance an irreplaceable tree, so No is also the only
+        # answer under which an enhanced tree can score.
+        "Irreplaceable Habitat": "No",
+        "Area": tree_area(row.get("Baseline Tree Size"), row.get("Count")),
+        COMMENT_FIELD: row.get(COMMENT_FIELD),
+    }
+
+
+def tree_as_area_part(row, parent):
+    """A post-intervention tree. A kept tree keeps its parent's size class."""
+    kept = parent is not None and retention_of(row) in (RETAINED, ENHANCED)
+    size = (parent.get("Baseline Tree Size") if kept
+            else row.get("Proposed Tree Size"))
+    return {
+        "fid": row.get("fid"),
+        REF_FIELD: row.get(REF_FIELD),
+        "parent_uuid": row.get("parent_uuid"),
+        RETENTION_FIELD: row.get(RETENTION_FIELD),
+        "Irreplaceable Habitat": "No",
+        "Proposed Broad Habitat Type": TREES_BROAD,
+        "Proposed Habitat Type": row.get("Proposed Rural or Urban Tree"),
+        "Proposed Condition": row.get("Proposed Condition"),
+        "Proposed Strategic Significance": row.get(
+            "Proposed Strategic Significance"),
+        "Habitat created in advance/years": row.get(TREE_ADVANCE),
+        "Delay in starting habitat creation/years": row.get(TREE_DELAY),
+        "Area": tree_area(size, row.get("Count")),
+        COMMENT_FIELD: row.get(COMMENT_FIELD),
+    }
+
+
+def trees_as_areas(trees):
+    """The tree layers as area habitat rows, significance in metric wording.
+
+    The metric words strategic significance the same way for trees as for
+    every other area habitat, so the tree wording of the legacy template is
+    not used here.
+    """
+    parents = {row.get("feature_uuid"): row for row in trees["baseline"]
+               if row.get("feature_uuid")}
+    tables = {
+        "baseline": [tree_as_area_baseline(row) for row in trees["baseline"]],
+        "pi": [tree_as_area_part(row, parents.get(row.get("parent_uuid")))
+               for row in trees["pi"]],
+    }
+    to_legacy_significance({"areas": tables})
+    return tables
 
 
 def is_irreplaceable(row):
@@ -346,6 +487,7 @@ def baseline_line(row, size, type_field):
             row.get("Baseline Encroachment into riparian zone")),
         "retained": 0,
         "enhanced": 0,
+        "comment": comment_of(row),
     }
 
 
@@ -405,6 +547,7 @@ def build_lines(tables, size_field, type_field, consolidate,
                 "number": row.get(REF_FIELD),
                 "broad": row.get("Proposed Broad Habitat Type"),
                 "size": numeric(row.get(size_field)) or 0.0,
+                "comment": comment_of(row),
             })
             creation.append(line)
         # A part with a parent and no retention the metric knows carries
@@ -435,7 +578,13 @@ def build_lines(tables, size_field, type_field, consolidate,
                 "enhanced": size if retention == ENHANCED else 0,
             })
             if retention == ENHANCED:
-                line[ENHANCEMENT_KEY] = proposed_values(part, type_field)
+                enhancement = proposed_values(part, type_field)
+                enhancement.update({"ref": part.get(REF_FIELD),
+                                    "comment": comment_of(part)})
+                line[ENHANCEMENT_KEY] = enhancement
+            else:
+                line["comment"] = joined_comment(line["comment"],
+                                                 comment_of(part))
             baseline.append(line)
             carried += size
 
@@ -576,6 +725,74 @@ def check_post_intervention(staged, report):
             "post-intervention units and net change for now.")
 
 
+def condition_rank(value):
+    words = plain_label(value) if value else None
+    return TREE_CONDITIONS.index(words) if words in TREE_CONDITIONS else None
+
+
+def check_trees(trees, report):
+    """What the metric needs from the tree layers, and what it refuses.
+
+    The gaps are reported as for the other layers. An Enhanced tree has to
+    move to a better condition, and keeps its baseline size class, so the
+    report names a tree that does neither.
+    """
+    if not trees:
+        return
+    baseline_table, pi_table = TREE_TABLES
+    gaps = OrderedDict()
+    for row in trees["baseline"]:
+        for column in TREE_BASELINE_NEEDS:
+            if is_blank(row.get(column)):
+                gaps.setdefault(column, []).append(row_label(row, REF_FIELD))
+    report_gaps(baseline_table, gaps, report)
+
+    parents = {row.get("feature_uuid"): row for row in trees["baseline"]
+               if row.get("feature_uuid")}
+    gaps = OrderedDict()
+    not_better, resized = [], []
+    for row in trees["pi"]:
+        retention = retention_of(row)
+        parent = parents.get(row.get("parent_uuid"))
+        needs = [RETENTION_FIELD, "Count"]
+        if retention in (ENHANCED, CREATED) or parent is None:
+            needs.extend(TREE_PROPOSED_NEEDS)
+        for column in needs:
+            if is_blank(row.get(column)):
+                gaps.setdefault(column, []).append(row_label(row, REF_FIELD))
+        if retention != ENHANCED or parent is None:
+            continue
+        before = condition_rank(parent.get("Baseline Condition"))
+        after = condition_rank(row.get("Proposed Condition"))
+        if before is not None and after is not None and after <= before:
+            not_better.append(row_label(row, REF_FIELD))
+        proposed_size = row.get("Proposed Tree Size")
+        if (not is_blank(proposed_size)
+                and proposed_size != parent.get("Baseline Tree Size")):
+            resized.append(row_label(row, REF_FIELD))
+    report_gaps(pi_table, gaps, report)
+    if not_better:
+        report.warn(
+            f"{pi_table}: {len(not_better)} Enhanced tree(s) do not move to a "
+            f"better condition ({summarise_refs(not_better)}). Enhancing a "
+            "tree means improving its condition, and the metric shows "
+            "'Error - No enhancement' or 'Error - Can not reduce condition' "
+            "on these rows and gives them no units. Record the tree as "
+            "Retained, or choose a better condition.")
+    if resized:
+        report.warn(
+            f"{pi_table}: {len(resized)} Enhanced tree(s) have a proposed "
+            f"size class that is not their baseline one "
+            f"({summarise_refs(resized)}). The metric does not record the "
+            "growth of a kept tree (User Guide, page 64), so they are written "
+            "at their baseline size.")
+    if trees["baseline"] and not trees["pi"]:
+        report.warn(
+            f"{pi_table} is empty, so every tree in {baseline_table} is "
+            "written as lost. If that layer has not been drawn yet, ignore "
+            "its post-intervention units and net change for now.")
+
+
 def report_accounting(base_table, accounting, report):
     """What the baseline sheet counts as lost, and anything that cannot be."""
     wholly, partly = accounting["wholly lost"], accounting["partly lost"]
@@ -630,6 +847,9 @@ def consolidate_lines(lines):
     pressing Consolidate Data in the import tool, which cannot see the flag
     at all because the legacy CSVs have no column for it.
 
+    COMMENTS DO NOT KEEP LINES APART. Lines that differ only in their
+    comments merge, and the merged line holds each distinct comment.
+
     ENHANCED LINES ARE NEVER MERGED. The enhancement sheet is positional
     against the baseline sheet: its Nth row belongs to the Nth baseline row
     with an enhanced size. Merging two enhanced parcels that share their
@@ -645,15 +865,27 @@ def consolidate_lines(lines):
             continue
         key = tuple(sorted(
             (k, v) for k, v in line.items()
-            if k not in SIZE_FIELDS and k not in ("ref", "number", ENHANCEMENT_KEY)))
+            if k not in SIZE_FIELDS
+            and k not in ("ref", "number", "comment", ENHANCEMENT_KEY)))
         if key in merged:
             for field in SIZE_FIELDS:
                 if field in line:
                     merged[key][field] = merged[key].get(field, 0) + line[field]
             merged[key]["ref"] = f"{merged[key]['ref']} +"
             merged[key]["number"] = merged[key]["ref"]
+            # A comment does not stop two lines merging, and is not lost
+            # when they do: each distinct comment is kept, in order.
+            merged[key]["_comments"].extend(
+                c for c in [line.get("comment")]
+                if c and c not in merged[key]["_comments"])
         else:
             merged[key] = dict(line)
+            merged[key]["_comments"] = (
+                [line["comment"]] if line.get("comment") else [])
+    for line in merged.values():
+        comments = line.pop("_comments")
+        if comments:
+            line["comment"] = " | ".join(comments)
     # enhanced lines keep their original position relative to each other
     return list(merged.values()) + kept
 
@@ -798,7 +1030,14 @@ def write_workbook(template, out_path, edits):
 # ---------------------------------------------------------------------------
 
 
-def cells_for(row_number, columns, line, scale):
+def cell_text(value):
+    """Text a cell can hold: no character XML refuses, within Excel's limit."""
+    text = XML_ILLEGAL.sub("", str(value))
+    return text[:EXCEL_CELL_LIMIT], len(text) > EXCEL_CELL_LIMIT
+
+
+def cells_for(row_number, columns, line, scale, cut=None):
+    """The cells of one line. `cut` collects the refs of shortened comments."""
     out = {}
     for field, column in columns.items():
         if field not in line:
@@ -808,6 +1047,10 @@ def cells_for(row_number, columns, line, scale):
             continue
         if field in SIZE_FIELDS:
             value = round(float(value) * scale, 6)
+        elif field == "comment":
+            value, shortened = cell_text(value)
+            if shortened and cut is not None:
+                cut.append(str(line.get("ref")))
         out[f"{column}{row_number}"] = value
     return out
 
@@ -841,6 +1084,22 @@ def plan_parts(staged, consolidate, report):
         report.count(f"{kind} baseline", len(baseline))
         report.count(f"{kind} creation", len(creation))
         report.count(f"{kind} enhancement", len(enhancements_for(baseline)))
+
+    # Trees share the area habitat sheets, after the area habitats. The
+    # enhancement sheet takes the enhanced lines in the order the baseline
+    # sheet holds them, so appending keeps the two in step.
+    trees = staged.get("trees")
+    if trees and (trees["baseline"] or trees["pi"]):
+        rule, tolerance = ACCOUNTING["areas"]
+        baseline, creation, accounting = build_lines(
+            trees_as_areas(trees), "Area", "Habitat Type", consolidate, rule,
+            tolerance)
+        area_baseline, area_creation = lines["areas"]
+        lines["areas"] = (area_baseline + baseline, area_creation + creation)
+        report_accounting(TREE_TABLES[0], accounting, report)
+        report.count("trees baseline", len(baseline))
+        report.count("trees creation", len(creation))
+        report.count("trees enhancement", len(enhancements_for(baseline)))
 
     parts = 1
     for kind, (baseline, creation) in lines.items():
@@ -909,8 +1168,16 @@ def build_edits(runs, index, report):
                     "written.")
                 module_lines = module_lines[:capacity]
             target = edits.setdefault(sheet, {})
+            cut = []
             for offset, line in enumerate(module_lines):
-                target.update(cells_for(first + offset, columns, line, scale))
+                target.update(cells_for(first + offset, columns, line, scale,
+                                        cut))
+            if cut:
+                report.warn(
+                    f"{sheet}: {len(cut)} comment(s) are longer than the "
+                    f"{EXCEL_CELL_LIMIT} characters an Excel cell holds, so "
+                    f"they were cut short ({summarise_refs(cut)}). The whole "
+                    "comment is still in the GeoPackage.")
     return edits
 
 
@@ -985,6 +1252,7 @@ def convert(input_path, template_path, out_path, consolidate=False,
     step(0.05, "Working out what goes where...")
     check_post_intervention(staged, report)
     check_needed_values(staged, report)
+    check_trees(staged.get("trees"), report)
     parts = plan_parts(staged, consolidate, report)
     if not any(any(edits.values()) for edits in parts):
         report.warn("Nothing was written: the GeoPackage holds no habitats.")
@@ -1050,10 +1318,10 @@ def print_report(report):
         for line in report.warnings:
             print(f"  ! {line}")
     print(
-        "\nNot written: individual trees (the metric derives their size from a "
-        "\nband lookup), the off-site tabs, and the Irreplaceable Habitats "
+        "\nNot written: the off-site tabs and the Irreplaceable Habitats "
         "\nsheet. The irreplaceable flag itself IS written, on the on-site "
-        "\nbaseline habitat sheet."
+        "\nbaseline habitat sheet. Individual trees are written on the area "
+        "\nhabitat sheets, at the tree helper's area for their size class."
     )
 
 

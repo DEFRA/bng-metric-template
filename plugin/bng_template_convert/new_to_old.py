@@ -19,6 +19,7 @@ See README.md for the full walkthrough and the list of known losses.
 import argparse
 import csv
 import os
+import re
 import sqlite3
 import struct
 import sys
@@ -461,7 +462,8 @@ def map_area_pi(row, site, carry_lineage):
         },
         site,
         "Comment",
-        merged_comment(None, parent_note(row) if carry_lineage else None),
+        merged_comment(row.get("Comment"),
+                       parent_note(row) if carry_lineage else None),
     )
 
 
@@ -543,7 +545,8 @@ def map_hedgerow_pi(row, site, carry_lineage):
         },
         site,
         "Comments",
-        merged_comment(None, child_note(row) if carry_lineage else None),
+        merged_comment(row.get("Comment"),
+                       child_note(row) if carry_lineage else None),
     )
 
 
@@ -634,7 +637,8 @@ def map_watercourse_pi(row, site, carry_lineage):
         },
         site,
         "Comments",
-        merged_comment(None, child_note(row) if carry_lineage else None),
+        merged_comment(row.get("Comment"),
+                       child_note(row) if carry_lineage else None),
     )
 
 
@@ -717,7 +721,8 @@ def map_tree_pi(row, site, carry_lineage):
         },
         site,
         "Comment",
-        merged_comment(None, child_note(row) if carry_lineage else None),
+        merged_comment(row.get("Comment"),
+                       child_note(row) if carry_lineage else None),
     )
 
 
@@ -1104,6 +1109,7 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
 
     _report_losses(staged, report)
     _report_splits(staged, report)
+    _report_enhanced_trees(staged, report)
     check_needed_values(staged, report, LEGACY_GAP_CONSEQUENCE)
     # Area habitats account for every square metre of the red line, so on a
     # finished site nothing falls short and this is empty. On a site part-way
@@ -1184,6 +1190,7 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
             for parent, size in area_losses
         ]
         _write_csvs(out_dir, csv_rows, report, consolidate, split_irreplaceable)
+        _report_baseline_comments(staged, report)
     return report
 
 
@@ -1209,6 +1216,61 @@ def _report_area_losses(losses, want_gpkg, want_csv, report):
         )
 
 
+def has_user_comment(values):
+    """True when a legacy row's comment holds more than the conversion's notes.
+
+    The conversion writes a note on each loss row and, with lineage carried,
+    a breadcrumb. Neither is the surveyor's words, so neither counts as a
+    comment that can be lost.
+    """
+    comment = values.get("Comment") or values.get("Comments")
+    if not isinstance(comment, str) or not comment.strip():
+        return False
+    if "written by the conversion" in comment:
+        return False
+    text = re.sub(r"\[(?:parent|pi)=[^\]]*\]", "", comment)
+    return bool(text.strip())
+
+
+def _report_baseline_comments(staged, report):
+    """Baseline comments have no place in the import tool CSVs.
+
+    The CSVs hold one row per post-intervention feature, carrying its own
+    comment. A baseline feature's comment is in the legacy baseline
+    GeoPackage only.
+    """
+    counts = {
+        STAGED_TABLES[key]["label"]: sum(
+            1 for row in staged.get(key, {}).get("baseline", [])
+            if isinstance(row.get("Comment"), str) and row["Comment"].strip())
+        for key in ("areas", "hedgerows", "watercourses")
+    }
+    counts = {label: count for label, count in counts.items() if count}
+    if not counts:
+        return
+    detail = "; ".join(f"{label}: {count}" for label, count in counts.items())
+    report.note(
+        f"{sum(counts.values())} baseline comment(s) are not in the import "
+        "tool CSVs, which hold one row for each post-intervention feature "
+        f"with that feature's own comment ({detail}). They are in the "
+        "baseline GeoPackage if you asked for one.")
+
+
+def _report_enhanced_trees(staged, report):
+    """The Natural England tree list has no Enhanced."""
+    refs = [str(row.get(REF_FIELD) or f"fid {row.get('fid')}")
+            for row in staged.get("trees", {}).get("pi", [])
+            if row.get("Retention Category") == "Enhanced"]
+    if not refs:
+        return
+    report.warn(
+        f"{len(refs)} individual tree(s) are Enhanced ({summarise_list(refs)}). "
+        "The Statutory Metric allows a tree's condition to be enhanced, but "
+        "the Natural England template's tree list offers only Retained and "
+        "Lost, so the legacy QGIS template shows these values in brackets. "
+        "They are written as Enhanced, with the proposed condition.")
+
+
 def _write_csvs(out_dir, pi_rows, report, consolidate=False,
                 split_irreplaceable=True):
     """The three CSVs the Excel GIS import tool reads, one per module."""
@@ -1226,8 +1288,17 @@ def _write_csvs(out_dir, pi_rows, report, consolidate=False,
         before = len(rows)
         flagged_groups = 0
         if consolidate:
+            commented = sum(1 for _geometry, values in rows
+                            if has_user_comment(values))
             rows, flagged_groups = consolidate_csv_rows(
                 table, rows, split_irreplaceable)
+            if commented:
+                report.warn(
+                    f"{filename}: {commented} comment(s) were replaced by "
+                    "the consolidation note, because a merged row holds "
+                    "several features. They are in the post-intervention "
+                    "GeoPackage if you asked for one, or convert without "
+                    "consolidating to keep them in the CSV.")
             report.count(f"{filename}", len(rows))
             report.note(
                 f"{filename}: {before} row(s) consolidated to {len(rows)}"

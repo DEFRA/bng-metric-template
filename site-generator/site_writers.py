@@ -298,15 +298,21 @@ def write_trees(conn, site):
         feature_uuid = uid(site['seed'], f'tree/{ref}')
         blob = gw.point_blob(point)
         base_rows.append((blob, ref, size, tree_type, setting, condition,
-                          significance, 1, None, feature_uuid))
+                          significance, 1,
+                          lin.baseline_tree_note(choose.roll(seed, 1909)),
+                          feature_uuid))
         if scheme['clears_trees'] and zone_of[cell] == plan.CORE:
             counts['lost'] += 1
             continue
-        counts['retained'] += 1
+        retention, proposed_condition, note = lin.tree_outcome(
+            condition, choose.roll(seed, 1911))
+        advance, delay = sc.timing_for(retention, choose.key(seed, 1913))
+        counts[retention.lower()] += 1
         pi_rows.append((
             blob, ref, ref, size, tree_type, setting, condition, significance,
-            'Retained', size, tree_type, setting, condition, significance,
-            'Existing', None, None, ON_SITE, 1, feature_uuid, gw.point_wkt(point)))
+            retention, size, tree_type, setting, proposed_condition,
+            significance, 'Existing', advance, delay, ON_SITE, 1, note,
+            feature_uuid, gw.point_wkt(point)))
 
     planted = []
     low, high = scheme['street_trees']
@@ -333,7 +339,7 @@ def write_trees(conn, site):
             'Native', 'Urban tree' if urban else 'Rural tree',
             choose.pick(lin.PLANTED_TREE_CONDITIONS, seed, 2009),
             lin.tree_significance(choose.key(seed, 2011)), 'Newly Planted',
-            advance, delay, ON_SITE, 1, None, None))
+            advance, delay, ON_SITE, 1, None, None, None))
 
     insert_many(conn, TREE_BASELINE, TREE_BASE_COLS, base_rows)
     insert_many(conn, TREE_PI, TREE_PI_COLS, pi_rows)

@@ -30,6 +30,7 @@ PARENT_REF = "Parent Ref"
 BASELINE_ONLY = ("feature_uuid",)
 POST_ONLY = (PARENT_REF, "parent_uuid", "parent_geom")
 GONE = ("parent_checksum", "Parcel Ref", "Tree Ref")
+COMMENT = "Comment"
 
 
 def habitat_tables(stage):
@@ -86,6 +87,17 @@ class TemplateSchemaTest(unittest.TestCase):
                     self.assertIn(column, self.columns[table])
                 for column in BASELINE_ONLY:
                     self.assertNotIn(column, self.columns[table])
+
+    def test_every_habitat_table_has_a_comment_before_its_hidden_columns(self):
+        """A free-text note on both stages, after the columns a user fills."""
+        for stage in STAGES:
+            hidden = BASELINE_ONLY if stage == "Baseline" else POST_ONLY[1:]
+            for table in habitat_tables(stage):
+                with self.subTest(table=table):
+                    names = self.columns[table]
+                    self.assertEqual(1, names.count(COMMENT))
+                    self.assertEqual(names.index(hidden[0]) - 1,
+                                     names.index(COMMENT))
 
     def test_retired_columns_are_gone(self):
         for table, names in self.columns.items():

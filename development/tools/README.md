@@ -8,6 +8,7 @@ needed to use the template or the plugin.
 | `qgz_actions.py` | Reads and writes the button code in a `.qgz` without a change to any other byte. The other tools use it |
 | `rename_actions.py` | Removes the list numbers from the button names and puts the buttons in the order a user needs. Safe to run again |
 | `patch_actions.py` | Makes text edits to the button code. Each edit is an exact piece of old text and its replacement, made in every button with that name. Safe to run again |
+| `add_field.py` | Adds a column to layers of the template. It puts the column after a named one in each empty GeoPackage table, and copies each setting of the same field from another layer: the widget, alias, policies, default, constraints and table column. Safe to run again |
 | `drop_field.py` | Removes the configuration of a field from the layers of a project: the widget, alias, policies, default, constraints, table column and form settings. Use it after a column is dropped from the GeoPackage. Safe to run again |
 | `run_actions_headless.py` | Runs a button outside QGIS against a real site, so that its logic can be tested |
 | `reset_stale_dropdowns.py` | Gives each filtered drop-down a rule that clears its value when an earlier choice makes the value invalid. Without the rule, QGIS keeps the old value in brackets. On a post-intervention layer the rule also fills Retention Category and the Proposed values of a pasted feature. Safe to run again |
@@ -56,6 +57,7 @@ Run these from the root of this repo:
 python3 development/tools/rename_actions.py "templates/bng-service/BNG Service Habitat Mapping.qgz"
 python3 development/tools/reset_stale_dropdowns.py "templates/bng-service/BNG Service Habitat Mapping.qgz"
 python3 development/tools/patch_actions.py "templates/bng-service/BNG Service Habitat Mapping.qgz" edits.py
+python3 development/tools/add_field.py "templates/bng-service/BNG Service Habitat Mapping.qgz" "<field>" --gpkg "templates/bng-service/Layers/BNG Service Layers.gpkg" --layer "<layer>" --like "<layer with the field>" --after "<field before it>"
 python3 development/tools/drop_field.py "templates/bng-service/BNG Service Habitat Mapping.qgz" "<field>"
 python3 development/tools/set_paste_defaults.py "templates/bng-service/BNG Service Habitat Mapping.qgz"
 python3 development/tools/order_dropdowns.py "templates/bng-service/BNG Service Habitat Mapping.qgz"

@@ -129,7 +129,7 @@ INCOMING_GAP_CONSEQUENCE = (
 # ---------------------------------------------------------------------------
 
 BASELINE_TAIL = [("Comment", "TEXT"), ("feature_uuid", "TEXT")]
-PI_TAIL = [("parent_uuid", "TEXT"), ("parent_geom", "TEXT")]
+PI_TAIL = [("Comment", "TEXT"), ("parent_uuid", "TEXT"), ("parent_geom", "TEXT")]
 AREA_BASELINE_HEAD = [
     ("Habitat Ref", "TEXT"),
     ("Baseline Broad Habitat Type", "TEXT"),
@@ -442,6 +442,7 @@ def site_details(legacy):
 
 BREADCRUMB_PARENT = re.compile(r"\[parent=([^\];]+)\]")
 BREADCRUMB_PI = re.compile(r"\[pi=([^\];]+)\]")
+BREADCRUMBS = re.compile(r" ?\[(?:parent|pi)=[^\];]+\]")
 
 
 def read_breadcrumbs(rows):
@@ -463,6 +464,21 @@ def read_breadcrumbs(rows):
             row["_pi_ref"] = own.group(1).strip()
             found += 1
     return found
+
+
+def user_comment(row):
+    """The surveyor's own comment on a legacy row, without the breadcrumbs.
+
+    Legacy spells the column "Comment" on habitats and trees and "Comments"
+    on hedgerows and rivers. The breadcrumbs are lineage, which the template
+    keeps in its own columns, so they are taken out of the text.
+    """
+    comment = row.get("Comment") or row.get("Comments")
+    if not isinstance(comment, str):
+        return comment
+    # The conversion out joins a breadcrumb to the comment with one space.
+    text = BREADCRUMBS.sub("", comment).strip()
+    return text or None
 
 
 def drop_lost_rows(rows, ref_key, label, report, index=None):
@@ -793,6 +809,7 @@ def build_area_pi(rows, index, report):
             ),
             "Spatial risk category": row.get("Spatial risk category"),
             "Area": area,
+            "Comment": user_comment(row),
         }
         stamp_parent(values, row.get("_parent_ref"), index, unmatched,
                      own_ref=row.get("Parcel Ref"))
@@ -847,6 +864,7 @@ def build_linear_pi(rows, index, spec, report, label, is_watercourse=False):
             ),
             "Spatial risk category": row.get("Spatial risk category"),
             "Length": length,
+            "Comment": user_comment(row),
         }
         for target, source in spec.items():
             values[target] = row.get(source)
@@ -895,6 +913,7 @@ def build_tree_pi(rows, index, report):
             ),
             "Spatial risk category": row.get("Spatial risk category"),
             "Count": int(count) if count is not None else None,
+            "Comment": user_comment(row),
         }
         stamp_parent(values, row.get("_parent_ref"), index, unmatched,
                      own_ref=row.get("Tree Ref"))
@@ -1283,7 +1302,9 @@ def convert(baseline_path, pi_path, out_dir, into_path, force, dry_run,
     if into_path:
         conn, table_names = open_template_gpkg(into_path, force)
         target = into_path
-        _report_missing_columns(missing_columns(conn, table_names), report)
+        missing = missing_columns(conn, table_names)
+        _report_missing_columns(missing, report)
+        _report_dropped_comments(tables, missing, report)
         _report_extra_columns(extra_columns(conn, table_names), report)
     else:
         if out_file:
@@ -1558,6 +1579,26 @@ def _report_missing_columns(missing, report):
         f"those values were not written ({detail}). Fill a copy of the current "
         "BNG Service template to keep them."
     )
+
+
+def _report_dropped_comments(tables, missing, report):
+    """Say how many comments a template with no Comment column loses.
+
+    A template from before post-intervention layers had a Comment column
+    takes the rows but not their comments, which are the one thing in the
+    conversion a surveyor wrote in their own words.
+    """
+    lost = {layer: sum(1 for _geometry, values in tables.get(layer, [])
+                       if values.get("Comment"))
+            for layer, columns in missing.items() if "Comment" in columns}
+    lost = {layer: count for layer, count in lost.items() if count}
+    if not lost:
+        return
+    detail = "; ".join(f"{layer}: {count}" for layer, count in lost.items())
+    report.warn(
+        f"{sum(lost.values())} comment(s) were not written, because the "
+        f"target template has no Comment column on that layer ({detail}). "
+        "Fill a copy of the current BNG Service template to keep them.")
 
 
 def _report_extra_columns(extra, report):

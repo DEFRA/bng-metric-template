@@ -177,11 +177,17 @@ class ConvertToLegacyAlgorithm(QgsProcessingAlgorithm):
             "habitats in particular have no legacy layer at all, so their "
             "biodiversity units will be missing from the legacy calculation."
             "</p>"
-            "<p><i>Record lineage in comments</i> writes each feature's parent "
-            "reference into the legacy Comment column. The older service "
-            "ignores it, but it lets the companion tool restore the links "
-            "exactly if you ever convert back. Leave it ticked unless you need "
-            "the comment column untouched.</p>"
+            "<p><b>Comments are carried.</b> Each feature's Comment goes to "
+            "the comment column of its legacy file, baseline or "
+            "post-intervention. <i>Record lineage in comments</i> adds each "
+            "feature's parent reference after it, in brackets. The older "
+            "service ignores it, but it lets the companion tool restore the "
+            "links exactly if you ever convert back, and that tool takes it "
+            "out of the comment again. Leave it ticked unless you need the "
+            "comment column untouched.</p>"
+            "<p><b>Enhanced trees</b> are written as Enhanced. The legacy "
+            "template's tree list does not offer it, so it shows the value in "
+            "brackets.</p>"
             "<p><b>What to produce.</b> Two different destinations want two "
             "different things:</p>"
             "<ul>"
@@ -196,7 +202,12 @@ class ConvertToLegacyAlgorithm(QgsProcessingAlgorithm):
             "</ul>"
             "<p><b>Individual trees are not in the CSVs.</b> The import tool "
             "cannot read tree points at all, so trees have to be typed into the "
-            "metric by hand. They are still in the GeoPackages.</p>"
+            "metric by hand. They are still in the GeoPackages. Export to the "
+            "Statutory Metric fills them in for you.</p>"
+            "<p><b>The CSVs hold each post-intervention feature's own "
+            "comment.</b> Baseline comments are in the baseline GeoPackage "
+            "only. Merging rows replaces the comments of the merged rows with "
+            "a note, and the log says how many.</p>"
         )
 
     def initAlgorithm(self, config=None):
@@ -512,10 +523,16 @@ class ExportToMetricAlgorithm(QgsProcessingAlgorithm):
             "<p><b>What it fills:</b> the on-site tabs for area habitats, "
             "hedgerows and watercourses (A, B and C). Each parcel lands on the "
             "baseline tab with its size split into retained or enhanced, and "
-            "the creation and enhancement tabs are filled to match.</p>"
-            "<p><b>What it does not fill:</b> individual trees, whose size the "
-            "metric derives from a band lookup; the off-site tabs (D, E and F), "
-            "which have a different layout; and the separate <i>Irreplaceable "
+            "the creation and enhancement tabs are filled to match. Comments "
+            "go into the User comments column of each tab.</p>"
+            "<p><b>Individual trees</b> go on the area habitat tabs, after "
+            "the area habitats, as the metric holds them: broad habitat "
+            "<i>Individual trees</i>, at the tree helper's area for their size "
+            "class times their count. An Enhanced tree keeps its baseline size "
+            "and moves to a better condition. The log names one that does "
+            "not.</p>"
+            "<p><b>What it does not fill:</b> the off-site tabs (D, E and F), "
+            "which have a different layout, and the separate <i>Irreplaceable "
             "Habitats</i> sheet. Enter those by hand.</p>"
             "<p><b>Irreplaceable habitat is half filled, and this is the half "
             "that matters most.</b> The Yes or No flag against every on-site "
@@ -624,9 +641,9 @@ class ExportToMetricAlgorithm(QgsProcessingAlgorithm):
             feedback.pushInfo(
                 "    - Open the workbook in Excel and let it recalculate.")
         feedback.pushInfo(
-            "    - Add individual trees, the Irreplaceable Habitats sheet and "
-            "any off-site parcels by hand. The irreplaceable flag on the "
-            "on-site baseline habitat rows is already filled in.")
+            "    - Add the Irreplaceable Habitats sheet and any off-site "
+            "parcels by hand. The irreplaceable flag on the on-site baseline "
+            "habitat rows is already filled in.")
         return {self.OUTPUT_FILE: written[0]}
 
     def createInstance(self):
