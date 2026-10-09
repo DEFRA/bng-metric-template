@@ -32,6 +32,56 @@ def csv_rows(template, relative):
         return list(csv.DictReader(handle))
 
 
+TREES = "Individual trees"
+TREE_CONDITIONS = ["Good", "Fairly Good", "Moderate", "Fairly Poor", "Poor"]
+ENHANCED = "Enhanced"
+
+
+class EnhancedTreeListsTest(unittest.TestCase):
+    """An existing tree can be enhanced, by improving its condition only.
+
+    The Statutory Metric counts a tree as enhanced when its condition
+    improves (User Guide, page 34), and does not record the growth of a kept
+    tree (page 64), so its size, type and setting stay the baseline ones.
+    """
+
+    def options(self, name):
+        found = defaultdict(list)
+        for row in csv_rows("bng-service", f"{TREES}/{name}"):
+            found[row["ID"]].append(row["New"])
+        return found
+
+    def test_only_an_existing_tree_can_be_enhanced(self):
+        rows = csv_rows("bng-service", f"{TREES}/Individual tree Retention.csv")
+        self.assertIn({"Category": "Existing", "Retention": ENHANCED}, rows)
+        self.assertNotIn({"Category": "Newly Planted", "Retention": ENHANCED},
+                         rows)
+
+    def test_an_enhanced_tree_can_only_move_to_a_better_condition(self):
+        options = self.options("Individual tree Condition - options.csv")
+        for rank, condition in enumerate(TREE_CONDITIONS):
+            with self.subTest(baseline=condition):
+                self.assertEqual(TREE_CONDITIONS[:rank],
+                                 options.get(f"{condition}{ENHANCED}", []))
+
+    def test_an_enhanced_tree_keeps_its_size_type_and_setting(self):
+        for name, values in (
+                ("Individual tree Size - options.csv",
+                 ("Small", "Medium", "Large", "Very large")),
+                ("Individual tree Type - options.csv",
+                 ("Native", "Non-native")),
+                ("Individual tree Rural or Urban - options.csv",
+                 ("Rural tree", "Urban tree"))):
+            options = self.options(name)
+            for value in values:
+                with self.subTest(list=name, baseline=value):
+                    self.assertEqual([value], options[f"{value}{ENHANCED}"])
+
+    def test_the_legacy_tree_list_has_no_enhanced(self):
+        rows = csv_rows("legacy-ne", f"{TREES}/Individual tree Retention.csv")
+        self.assertNotIn(ENHANCED, {row["Retention"] for row in rows})
+
+
 class ListFilesTest(unittest.TestCase):
 
     def test_every_list_the_converter_reads_exists_in_its_template(self):

@@ -65,6 +65,32 @@ TREE_CONDITIONS = list(zip(CONDITION_SCALE, (0.16, 0.27, 0.34, 0.16, 0.07)))
 # A planted tree is priced as an area habitat, so it needs a real condition:
 # the metric cannot value one recorded as not applicable.
 PLANTED_TREE_CONDITIONS = list(zip(CONDITION_SCALE, (0.34, 0.42, 0.24)))
+# Of the trees kept that are not already Good, this share is enhanced: the
+# metric counts a tree as enhanced when its condition improves, and keeps its
+# size class (User Guide, pages 34 and 64).
+ENHANCED_TREE_SHARE = 0.3
+TREE_ENHANCEMENT_NOTE = 'Crown works and mulching to raise the condition'
+VETERAN_FEATURES_NOTE = 'Veteran features: rot holes and deadwood'
+VETERAN_FEATURES_SHARE = 0.1
+
+
+def enhanced_tree_condition(condition):
+    """One step up the condition scale, or None for a tree already Good."""
+    index = CONDITION_SCALE.index(condition)
+    return CONDITION_SCALE[index - 1] if index > 0 else None
+
+
+def tree_outcome(condition, roll):
+    """(retention, proposed condition, comment) for a tree that is kept."""
+    better = enhanced_tree_condition(condition)
+    if better and roll < ENHANCED_TREE_SHARE:
+        return 'Enhanced', better, TREE_ENHANCEMENT_NOTE
+    return 'Retained', condition, None
+
+
+def baseline_tree_note(roll):
+    """A surveyor's note on some baseline trees, so comments get exercised."""
+    return VETERAN_FEATURES_NOTE if roll < VETERAN_FEATURES_SHARE else None
 
 
 def significance(seed):

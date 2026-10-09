@@ -35,6 +35,15 @@ so that the code and the formats it targets have the same version history.
   `Length` is in metres in both.
 - **Vertical area habitats.** Only the BNG Service template has them, so
   conversion to legacy cannot carry them.
+- **Comments.** The BNG Service template has a `Comment` on every habitat
+  layer, baseline and post-intervention. Legacy has one comment column on
+  each layer of each file, `Comment` on habitats and trees and `Comments` on
+  hedgerows and rivers. Each stage's comments go to the file of that stage,
+  with the lineage references after them, and come back without them.
+- **Enhanced trees.** The BNG Service tree list offers `Enhanced` for an
+  existing tree, to a better condition only, as the Statutory Metric allows.
+  The legacy list offers only `Retained` and `Lost`, so conversion to legacy
+  writes `Enhanced` as it is, and the legacy template shows it in brackets.
 
 ## Using a template
 

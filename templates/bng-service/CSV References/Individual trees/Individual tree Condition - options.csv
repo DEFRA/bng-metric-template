@@ -14,3 +14,13 @@ Fairly GoodCreated,N/A,N/A,6
 ModerateCreated,N/A,N/A,6
 Fairly PoorCreated,N/A,N/A,6
 PoorCreated,N/A,N/A,6
+Fairly GoodEnhanced,Good,Good,1
+ModerateEnhanced,Good,Good,1
+ModerateEnhanced,Fairly Good,Fairly Good,2
+Fairly PoorEnhanced,Good,Good,1
+Fairly PoorEnhanced,Fairly Good,Fairly Good,2
+Fairly PoorEnhanced,Moderate,Moderate,3
+PoorEnhanced,Good,Good,1
+PoorEnhanced,Fairly Good,Fairly Good,2
+PoorEnhanced,Moderate,Moderate,3
+PoorEnhanced,Fairly Poor,Fairly Poor,4

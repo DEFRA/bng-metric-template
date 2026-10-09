@@ -98,7 +98,18 @@ def prepare_input(site_dir, folder):
                            support.line(WATERCOURSE_LINE), WATERCOURSE_PI)
     support.insert_feature(gpkg, "Vertical Area Habitats Baseline",
                            support.line(VERTICAL_LINE), VERTICAL_ROW)
+    support.comment_every_row(gpkg)
+    support.enhance_a_tree(gpkg)
     return gpkg, enhanced[REF], planted[REF]
+
+
+# Template table -> its legacy layer and that layer's comment column.
+LEGACY_COMMENT = {
+    "Area Habitats": ("Habitats", "Comment"),
+    "Hedgerows": ("Hedgerows", "Comments"),
+    "Watercourses": ("Rivers", "Comments"),
+    "Individual Trees": ("Urban Trees", "Comment"),
+}
 
 
 class NewToOldTest(support.TempDirTestCase):
@@ -251,6 +262,55 @@ class NewToOldTest(support.TempDirTestCase):
         for row in parented:
             with self.subTest(ref=row["Parcel Ref"]):
                 self.assertRegex(row["Comment"], r"\[parent=[^\]]+\]")
+
+    def test_every_comment_reaches_its_legacy_file(self):
+        """Each stage's comments go to that stage's legacy file."""
+        for kind, (layer, column) in LEGACY_COMMENT.items():
+            for stage, gpkg in (("Baseline", self.baseline),
+                                ("Post-Intervention", self.pi)):
+                table = f"{kind} {stage}"
+                written = [row[column] or "" for row in self.legacy(gpkg, layer)]
+                for row in self.service(table):
+                    expected = support.comment_for(table, row["fid"])
+                    with self.subTest(table=table, ref=row[REF]):
+                        self.assertTrue(
+                            any(text.startswith(expected) for text in written))
+
+    def test_lineage_follows_the_comment(self):
+        """The breadcrumb comes after the surveyor's words, not in place of them."""
+        rows = [row for row in self.legacy(self.pi, "Habitats")
+                if "[parent=" in (row["Comment"] or "")]
+        self.assertTrue(rows)
+        for row in rows:
+            with self.subTest(ref=row["Parcel Ref"]):
+                self.assertRegex(row["Comment"],
+                                 r"(?s)^Note on .+ \[parent=[^\]]+\]$")
+
+    def test_enhanced_tree_is_written_with_a_warning(self):
+        enhanced = [row for row in self.service(TREE_PI)
+                    if row[RETENTION] == "Enhanced"]
+        self.assertTrue(enhanced)
+        legacy = support.by_ref(self.legacy(self.pi, "Urban Trees"),
+                                "Tree Ref")
+        for row in enhanced:
+            with self.subTest(ref=row[REF]):
+                written = legacy[row["Parent Ref"]]
+                self.assertEqual("Enhanced", written[RETENTION])
+                self.assertEqual(row["Proposed Condition"],
+                                 written["Proposed Condition"])
+        self.assertEqual(1, len(self.warnings_mentioning("are Enhanced")))
+
+    def test_baseline_comments_are_said_to_be_missing_from_the_csvs(self):
+        self.assertTrue(any("baseline comment(s) are not in the import tool"
+                            in note for note in self.report.lines))
+
+    def test_consolidating_the_csvs_warns_that_comments_are_replaced(self):
+        report = new_to_old.convert(
+            self.input, self.tmp / "consolidated", carry_lineage=False,
+            dry_run=False, formats=("csv",), consolidate=True)
+        replaced = [w for w in report.warnings
+                    if "replaced by the consolidation note" in w]
+        self.assertTrue(any(w.startswith("Habitats.csv") for w in replaced))
 
     def test_warns_that_vertical_area_habitats_are_not_carried(self):
         self.assertEqual(

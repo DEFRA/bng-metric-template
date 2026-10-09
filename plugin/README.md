@@ -89,9 +89,25 @@ metric shows *Confirm irreplaceable habitat status*. A flag that disagrees
 with the habitat type gives *Irreplaceable habitat* or *Cannot be
 Irreplaceable*. Watercourses and hedgerows have no flag in the template.
 
+**Individual trees go on the area habitat sheets,** after the area habitats,
+as the metric holds them: broad habitat *Individual trees*, habitat type
+*Urban tree* or *Rural tree*. The size is the tree helper's area for the size
+class, times `Count` (User Guide, Table 15: Small 0.0041 ha, Medium 0.0163,
+Large 0.0366, Very large 0.0765). An Enhanced tree keeps its baseline size
+class, because the metric does not record the growth of a kept tree. Its
+enhancement goes on the enhancement sheet. The log names an Enhanced tree whose
+proposed condition is not better than its baseline condition: the metric gives
+that row *Error - No enhancement* and no units.
+
+**Comments go into the *User comments* column of each sheet.** A baseline row
+has its baseline feature's comment. A Retained part adds its own comment after
+it, as `Post-intervention: ...`. An Enhanced part's comment goes on its
+enhancement row, and a Created part's on its creation row. Merging rows keeps
+every distinct comment. A comment longer than an Excel cell holds is cut short,
+and the log says so.
+
 **You must fill these parts of the metric by hand:**
 
-- individual trees, which the metric sizes from a band lookup
 - the off-site tabs
 - the **Irreplaceable Habitats** sheet. The template does not record the
   habitat name or the bespoke compensation agreement.
@@ -134,8 +150,19 @@ legacy column, so it is lost.
 watercourse or tree cut from a parent takes the parent's reference, because
 legacy matches it to the baseline by reference.
 
+**Comments are carried to both legacy files.** Each baseline and
+post-intervention feature's `Comment` goes to the comment column of the same
+stage. Legacy calls it `Comment` on habitats and trees and `Comments` on
+hedgerows and rivers.
+
 **Record lineage in comments** writes the parent reference of each feature to
-the legacy Comment column. The reverse tool uses it to restore the links.
+the legacy comment column, after the feature's own comment. The reverse tool
+uses it to restore the links, and takes it out of the comment again.
+
+**An Enhanced tree is written as `Enhanced`.** The Statutory Metric allows a
+tree's condition to be enhanced, but the legacy template's tree list offers
+only `Retained` and `Lost`, so the legacy template shows the value in
+brackets. The log names the trees.
 
 **Some drop-down values get the Natural England list number.** The BNG Service
 template stores a condition as `Fairly Poor`. The legacy template stores it as
@@ -158,7 +185,13 @@ conditions and retention categories have no number, because the import tool
 reads the words alone. Riparian encroachment keeps its number in the CSVs.
 
 **The CSVs hold no individual trees**, because the import tool cannot read
-them. Type trees into the metric by hand.
+them. Type trees into the metric by hand, or use *Export to the Statutory
+Metric*, which writes them.
+
+**The CSVs hold each post-intervention feature's own comment.** Baseline
+comments are in the legacy baseline GeoPackage only, and the log says how many.
+*Merge rows* replaces the comments of merged rows with a note of how many
+parcels the row holds, and the log says how many comments that replaced.
 
 **A part-finished site can be converted.** The older service refuses a
 post-intervention file that does not cover the red line boundary, and the log

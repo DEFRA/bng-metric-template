@@ -32,6 +32,8 @@ the image pinned by digest.
 | `TheProject` | The project opens, every layer is valid, and the data layers are empty |
 | `FilledColumns` | New rows get Low significance and N/A spatial risk; distinctiveness follows the habitat type; a single allowed condition or Irreplaceable Habitat answer fills itself in |
 | `RetainedSignificance` | A Retained row stays Low, whether set to High or cleared; a Created row can be High |
+| `Comments` | Every habitat layer, on both stages, saves a comment and lets the form edit it |
+| `EnhancedTrees` | An existing tree can be Enhanced to a better condition; the same condition, another size or a newly planted tree is refused; the only better condition fills itself in |
 | `AdvanceOrDelay` | A table cell cannot leave both timing values above 0, on area habitats, hedgerows and trees |
 | `TheForm` | Picking one timing value greys out the other; Retained greys out proposed significance; distinctiveness and baseline significance are locked |
 | `EveryRowNeedsAShape` | A row with no shape breaks the hard constraint, so a mistaken paste is refused |

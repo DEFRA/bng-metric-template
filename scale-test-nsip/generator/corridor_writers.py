@@ -429,7 +429,7 @@ TREE_PI_COLS = [
     'Proposed Condition', 'Proposed Strategic Significance', 'Category',
     'Habitat Created/Enhanced in advance/years',
     'Delay in starting habitat creation/enhancement in years',
-    'Spatial risk category', 'Count', 'parent_uuid', 'parent_geom']
+    'Spatial risk category', 'Count', 'Comment', 'parent_uuid', 'parent_geom']
 
 
 def write_trees(conn, mesh):
@@ -451,17 +451,25 @@ def write_trees(conn, mesh):
         blob = gw.point_blob(point)
         wkt = gw.point_wkt(point)
         base_rows.append((blob, ref, size, tree_type, setting, condition,
-                          significance, count, None, feature_uuid))
+                          significance, count,
+                          lin.baseline_tree_note(_hash01(seed, 1917)),
+                          feature_uuid))
 
         zone = sc.zone_of(mesh, min(int(station), mesh.stations - 1),
                           min(int(lane), mesh.lanes - 1))
         if zone in (sc.CORE, sc.EARTHWORKS) or _hash01(seed, 1931) < 0.12:
             counts['lost'] += 1
             continue
+        retention, proposed_condition, note = lin.tree_outcome(
+            condition, _hash01(seed, 1937))
+        advance, delay = sc.timing_for(retention, seed)
+        counts['enhanced'] = counts.get('enhanced', 0) + (
+            retention == 'Enhanced')
         pi_rows.append((
             blob, ref, ref, size, tree_type, setting, condition, significance,
-            'Retained', size, tree_type, setting, condition, significance,
-            'Existing', None, None, ON_SITE, count, feature_uuid, wkt))
+            retention, size, tree_type, setting, proposed_condition,
+            significance, 'Existing', advance, delay, ON_SITE, count, note,
+            feature_uuid, wkt))
 
     for extra in range(round(mesh.stations
                              * CREATED_TREE_ATTEMPTS_PER_STATION)):
@@ -490,7 +498,7 @@ def write_trees(conn, mesh):
             'Urban tree' if zone == sc.MITIGATION and
             _hash01(seed, 2027) < 0.12 else 'Rural tree', proposed_condition,
             lin.tree_significance(seed), 'Newly Planted', advance, delay, ON_SITE,
-            1, None, None))
+            1, None, None, None))
 
     insert_many(conn, TREE_BASELINE, TREE_BASE_COLS, base_rows)
     insert_many(conn, TREE_PI, TREE_PI_COLS, pi_rows)
