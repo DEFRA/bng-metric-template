@@ -254,6 +254,11 @@ class CommentsAndTreesTest(support.TempDirTestCase):
         add_watercourse(cls.gpkg)
         support.comment_every_row(cls.gpkg)
         cls.tree = support.enhance_a_tree(cls.gpkg)
+        cls.irreplaceable_tree = next(
+            row["Habitat Ref"] for row in support.read_rows(cls.gpkg, TREE_PI)
+            if row["Retention Category"] == "Retained")
+        support.update(cls.gpkg, TREE_PI, {"Irreplaceable Habitat": "Yes"},
+                       "Habitat Ref", cls.irreplaceable_tree)
         cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
         cls.out = cls.tmp / "commented.xlsx"
         cls.report = to_metric.convert(cls.gpkg, cls.blank, cls.out)
@@ -357,6 +362,16 @@ class CommentsAndTreesTest(support.TempDirTestCase):
             support.TOOLS_DIR / "check_metric_lookups.py", self.out)
         self.assertEqual(0, result.returncode, support.describe(result))
 
+    def test_a_tree_carries_its_irreplaceable_flag(self):
+        xml, columns = self.sheet("trees", "baseline")
+        flags = cells_by_row(xml, columns["irreplaceable"])
+        for number, ref in cells_by_row(xml, columns["ref"]).items():
+            if ref == self.irreplaceable_tree:
+                self.assertEqual("Yes", flags[number])
+                break
+        else:
+            self.fail(f"{self.irreplaceable_tree} is not on the sheet")
+
     def test_consolidating_keeps_every_comment(self):
         out = self.tmp / "consolidated.xlsx"
         to_metric.convert(self.gpkg, self.blank, out, consolidate=True)
@@ -383,6 +398,8 @@ class TreeWarningsTest(support.TempDirTestCase):
         cls.tree = support.enhance_a_tree(cls.gpkg)
         part = next(row for row in support.read_rows(cls.gpkg, TREE_PI)
                     if row["Habitat Ref"] == cls.tree)
+        support.update(cls.gpkg, TREE_PI, {"Irreplaceable Habitat": "Yes"},
+                       "fid", part["fid"])
         support.update(cls.gpkg, TREE_PI,
                        {"Proposed Condition": part["Baseline Condition"],
                         "Proposed Tree Size": "Very large",
@@ -402,6 +419,11 @@ class TreeWarningsTest(support.TempDirTestCase):
 
     def test_an_enhanced_tree_that_grows_is_named(self):
         found = self.warnings_mentioning("proposed size class")
+        self.assertEqual(1, len(found))
+        self.assertIn(self.tree, found[0])
+
+    def test_an_irreplaceable_enhanced_tree_is_named(self):
+        found = self.warnings_mentioning("Enhanced tree(s) are irreplaceable")
         self.assertEqual(1, len(found))
         self.assertIn(self.tree, found[0])
 

@@ -100,6 +100,7 @@ def prepare_input(site_dir, folder):
                            support.line(VERTICAL_LINE), VERTICAL_ROW)
     support.comment_every_row(gpkg)
     support.enhance_a_tree(gpkg)
+    support.make_a_tree_irreplaceable(gpkg)
     return gpkg, enhanced[REF], planted[REF]
 
 
@@ -299,6 +300,10 @@ class NewToOldTest(support.TempDirTestCase):
                 self.assertEqual(row["Proposed Condition"],
                                  written["Proposed Condition"])
         self.assertEqual(1, len(self.warnings_mentioning("are Enhanced")))
+
+    def test_irreplaceable_trees_are_named_as_not_carried(self):
+        found = self.warnings_mentioning("individual tree(s) are irreplaceable")
+        self.assertEqual(1, len(found))
 
     def test_baseline_comments_are_said_to_be_missing_from_the_csvs(self):
         self.assertTrue(any("baseline comment(s) are not in the import tool"

@@ -719,12 +719,16 @@ Draw each tree as a **point**. A point cannot be split.
 1. Click **Add Point Feature**.
 2. Click once at the tree.
 3. Type the number of trees in **`Count`**, usually `1`.
+4. Set **Irreplaceable Habitat** to `Yes` for an ancient or veteran tree, and
+   `No` for any other. It starts blank on a surveyed tree, so that you decide.
+   A planted tree is always `No`.
 
 - **A tree that stays:** `Retained`.
 - **A tree whose condition you will improve:** `Enhanced`. Set **Proposed
   Condition** to the condition it will reach. The list offers only conditions
   better than the baseline one, and fills in the only one when there is one.
-  A tree already in `Good` condition cannot be enhanced. The size, type and
+  A tree already in `Good` condition cannot be enhanced, and neither can an
+  irreplaceable tree: the Statutory Metric refuses both. The size, type and
   rural or urban setting stay the baseline ones, because the Statutory Metric
   does not record the growth of a kept tree. Use the Comment to say what you
   will do, for example crown works or mulching.

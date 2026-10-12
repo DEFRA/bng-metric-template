@@ -298,6 +298,25 @@ class ProjectXmlTest(unittest.TestCase):
                 self.assertEqual(APPLY_ON_UPDATE, on_update)
 
 
+    def test_trees_offer_yes_no_or_blank_for_irreplaceable(self):
+        for stage in (BASELINE, POST):
+            layer = self.layer(TREE, stage)
+            with self.subTest(stage=stage):
+                self.assertEqual(VALUE_MAP, layer.widget_type(IRREPLACEABLE))
+                self.assertEqual(
+                    [NULL_VALUE, "Yes", "No"],
+                    value_map_values(layer.widgets[IRREPLACEABLE]))
+        self.assertEqual(("", "0"),
+                         self.layer(TREE, BASELINE).default(IRREPLACEABLE))
+
+    def test_a_newly_planted_tree_is_not_irreplaceable(self):
+        expression, on_update = self.layer(TREE, POST).default(IRREPLACEABLE)
+        self.assertTrue(expression.startswith('if(coalesce("Category", '))
+        self.assertTrue(expression.endswith(
+            "= 'Newly Planted', 'No', \"Irreplaceable Habitat\")"))
+        self.assertEqual(APPLY_ON_UPDATE, on_update)
+
+
 class MaintenanceToolCheckTest(support.TempDirTestCase):
     """Each tool reports "no change needed" on a template that is in step."""
 

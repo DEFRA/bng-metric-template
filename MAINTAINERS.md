@@ -71,7 +71,8 @@ The converter gives a warning for each of these:
 - **Vertical area habitats are not carried.** Legacy has no layer for them,
   so a legacy calculation leaves out their units.
 - **Irreplaceable habitat flags are dropped.** Legacy has no column for them,
-  so the converter lists them in `Irreplaceable habitats.csv`.
+  so the converter lists area habitats in `Irreplaceable habitats.csv` and
+  names irreplaceable trees in a warning.
 - **Lineage keys are dropped**, unless lineage is recorded in comments. The
   plugin records it by default. The command line needs `--carry-lineage`.
 - **Split features are flagged.** When a baseline hedgerow, watercourse or

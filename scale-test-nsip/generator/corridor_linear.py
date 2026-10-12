@@ -80,17 +80,26 @@ def enhanced_tree_condition(condition):
     return CONDITION_SCALE[index - 1] if index > 0 else None
 
 
-def tree_outcome(condition, roll):
-    """(retention, proposed condition, comment) for a tree that is kept."""
+def tree_outcome(condition, roll, irreplaceable='No'):
+    """(retention, proposed condition, comment) for a tree that is kept.
+
+    An irreplaceable tree is never enhanced: the metric refuses it.
+    """
     better = enhanced_tree_condition(condition)
-    if better and roll < ENHANCED_TREE_SHARE:
+    if better and roll < ENHANCED_TREE_SHARE and irreplaceable != 'Yes':
         return 'Enhanced', better, TREE_ENHANCEMENT_NOTE
     return 'Retained', condition, None
 
 
-def baseline_tree_note(roll):
-    """A surveyor's note on some baseline trees, so comments get exercised."""
-    return VETERAN_FEATURES_NOTE if roll < VETERAN_FEATURES_SHARE else None
+def baseline_tree(roll):
+    """(comment, irreplaceable) for a baseline tree.
+
+    A tree with veteran features is irreplaceable habitat, and its surveyor
+    says why in the comment.
+    """
+    if roll < VETERAN_FEATURES_SHARE:
+        return VETERAN_FEATURES_NOTE, 'Yes'
+    return None, 'No'
 
 
 def significance(seed):

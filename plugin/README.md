@@ -87,7 +87,9 @@ shows *Check Data*.
 habitat row,** from the `Irreplaceable Habitat` column. Without the flag the
 metric shows *Confirm irreplaceable habitat status*. A flag that disagrees
 with the habitat type gives *Irreplaceable habitat* or *Cannot be
-Irreplaceable*. Watercourses and hedgerows have no flag in the template.
+Irreplaceable*. Individual trees carry their own flag, for ancient and
+veteran trees. Watercourses and hedgerows have no flag in the template. The log
+names an Enhanced tree that is irreplaceable: the metric does not allow it.
 
 **Individual trees go on the area habitat sheets,** after the area habitats,
 as the metric holds them: broad habitat *Individual trees*, habitat type
@@ -144,7 +146,7 @@ three CSV files that the Excel GIS import tool reads.
 
 **Read the warnings.** Vertical area habitats have no legacy layer, so their
 units are missing from a legacy calculation. The irreplaceable flag has no
-legacy column, so it is lost.
+legacy column, so it is lost, for area habitats and individual trees alike.
 
 **`Habitat Ref` becomes `Parcel Ref`,** or `Tree Ref` for trees. A hedgerow,
 watercourse or tree cut from a parent takes the parent's reference, because

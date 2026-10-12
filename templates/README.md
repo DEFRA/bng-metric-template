@@ -44,6 +44,10 @@ so that the code and the formats it targets have the same version history.
   existing tree, to a better condition only, as the Statutory Metric allows.
   The legacy list offers only `Retained` and `Lost`, so conversion to legacy
   writes `Enhanced` as it is, and the legacy template shows it in brackets.
+- **Irreplaceable habitat.** The BNG Service template records it on area
+  habitats, vertical area habitats and individual trees. Legacy has no
+  column for it, so conversion to legacy cannot carry it, and conversion back
+  leaves it blank where either answer is possible.
 
 ## Using a template
 

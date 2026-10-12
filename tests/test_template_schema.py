@@ -99,6 +99,16 @@ class TemplateSchemaTest(unittest.TestCase):
                     self.assertEqual(names.index(hidden[0]) - 1,
                                      names.index(COMMENT))
 
+    def test_trees_record_irreplaceable_habitat_on_both_stages(self):
+        """Ancient and veteran trees are irreplaceable habitat."""
+        for stage in STAGES:
+            table = f"Individual Trees {stage}"
+            with self.subTest(table=table):
+                names = self.columns[table]
+                self.assertEqual(
+                    names.index("Baseline Strategic Significance") + 1,
+                    names.index("Irreplaceable Habitat"))
+
     def test_retired_columns_are_gone(self):
         for table, names in self.columns.items():
             for column in GONE:

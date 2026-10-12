@@ -409,6 +409,31 @@ class EnhancedTrees(TemplateCase):
         self.assertTrue(is_null(row[RETENTION]))
 
 
+IRREPLACEABLE = "Irreplaceable Habitat"
+
+
+class IrreplaceableTrees(TemplateCase):
+    """Ancient and veteran trees are irreplaceable; a planted tree is not."""
+
+    def test_an_existing_tree_is_left_for_the_surveyor(self):
+        for name in ("Individual Trees Baseline", TREE_PI):
+            with self.subTest(layer=name):
+                layer = self.layer(name)
+                fid = self.add(layer, TREE_POINT, **EXISTING_TREE)
+                self.assertTrue(is_null(self.get(layer, fid)[IRREPLACEABLE]))
+                self.assertEqual(self.set(layer, fid, IRREPLACEABLE,
+                                          "Yes")[IRREPLACEABLE], "Yes")
+
+    def test_a_newly_planted_tree_is_not_irreplaceable(self):
+        layer = self.layer(TREE_PI)
+        fid = self.add(layer, TREE_POINT, **{REF: "TN-1",
+                                             "Category": "Newly Planted",
+                                             RETENTION: "Created"})
+        self.assertEqual(self.get(layer, fid)[IRREPLACEABLE], "No")
+        self.assertEqual(self.set(layer, fid, IRREPLACEABLE,
+                                  "Yes")[IRREPLACEABLE], "No")
+
+
 class CopyBaselineButton(TemplateCase):
     """The Copy baseline to post-intervention button, run headless."""
 
@@ -440,7 +465,8 @@ class CopyBaselineButton(TemplateCase):
             REF: "T-1", "Baseline Tree Size": "Medium",
             "Baseline Tree Type": "Native",
             "Baseline Rural or Urban Tree": "Rural tree",
-            "Baseline Condition": "Poor", "Count": 1})
+            "Baseline Condition": "Poor", "Count": 1,
+            "Irreplaceable Habitat": "No"})
         self.assertTrue(base.commitChanges())
 
         self.run_button("Copy baseline", TREE_PI)
@@ -448,6 +474,7 @@ class CopyBaselineButton(TemplateCase):
         pi = self.layer(TREE_PI)
         (row,) = pi.getFeatures()
         self.assertEqual(row[RETENTION], "Retained")
+        self.assertEqual(row["Irreplaceable Habitat"], "No")
         self.assertTrue(is_null(row[COMMENT]))
         pi.startEditing()
         self.set(pi, row.id(), RETENTION, "Enhanced")

@@ -91,6 +91,7 @@ try:
         NOT_APPLICABLE,
         PROPOSED_SIGNIFICANCE,
         SIGNIFICANCE_LOW,
+        TREE_NEWLY_PLANTED,
         fill_template_values,
         has_baseline_part,
         service_significance,
@@ -105,6 +106,7 @@ except ImportError:  # pragma: no cover - running as a plain script
         NOT_APPLICABLE,
         PROPOSED_SIGNIFICANCE,
         SIGNIFICANCE_LOW,
+        TREE_NEWLY_PLANTED,
         fill_template_values,
         has_baseline_part,
         service_significance,
@@ -284,6 +286,7 @@ STAGED_LAYERS = {
             ("Baseline Rural or Urban Tree", "TEXT"),
             ("Baseline Condition", "TEXT"),
             ("Baseline Strategic Significance", "TEXT"),
+            ("Irreplaceable Habitat", "TEXT"),
             ("Count", "MEDIUMINT"),
         ]
         + BASELINE_TAIL,
@@ -299,6 +302,7 @@ STAGED_LAYERS = {
             ("Baseline Rural or Urban Tree", "TEXT"),
             ("Baseline Condition", "TEXT"),
             ("Baseline Strategic Significance", "TEXT"),
+            ("Irreplaceable Habitat", "TEXT"),
             ("Retention Category", "TEXT"),
             ("Proposed Tree Size", "TEXT"),
             ("Proposed Tree Type", "TEXT"),
@@ -319,6 +323,8 @@ STAGED_LAYERS = {
 # word "Habitats", which is also a substring of "Vertical Area Habitats *".
 AREA_HABITAT_LAYERS = ("Area Habitats Baseline",
                        "Area Habitats Post-Intervention")
+TREE_LAYERS = ("Individual Trees Baseline",
+               "Individual Trees Post-Intervention")
 
 
 LEGACY_REDLINE = "Red Line Boundary"
@@ -726,6 +732,9 @@ def build_tree_baseline(rows, report):
                     "Baseline Strategic Significance": row.get(
                         "Baseline Strategic Significance"
                     ),
+                    # No legacy column. A surveyed tree can be either, so
+                    # it is left for the surveyor (see _report_manual_steps).
+                    "Irreplaceable Habitat": None,
                     "Count": int(count) if count is not None else None,
                     "Comment": row.get("Comment"),
                     "feature_uuid": feature_uuid,
@@ -905,6 +914,10 @@ def build_tree_pi(rows, index, report):
                 "Proposed Strategic Significance"
             ),
             "Category": row.get("Category") or TREE_CATEGORY_EXISTING,
+            # A newly planted tree is never irreplaceable, as the template
+            # fills it. An existing one is left for the surveyor.
+            "Irreplaceable Habitat": (
+                "No" if row.get("Category") == TREE_NEWLY_PLANTED else None),
             "Habitat Created/Enhanced in advance/years": row.get(
                 "Habitat Created/Enhanced in advance/years"
             ),
@@ -1626,20 +1639,22 @@ def _strip_list_numbers(legacy, report, label):
 
 
 def _report_manual_steps(tables, report):
-    blank = [
-        values.get(REF_FIELD)
-        for table, rows in tables.items()
-        if table in AREA_HABITAT_LAYERS
-        for _, values in rows
-        if values.get("Irreplaceable Habitat") is None
-    ]
-    if blank:
-        report.warn(
-            f"Irreplaceable Habitat is blank on {len(blank)} area habitat row(s) "
-            f"({summarise_refs(blank)}). The legacy template has "
-            "no such column, and their habitat can be either. Choose Yes or "
-            "No before uploading."
-        )
+    for label, layers in (("area habitat", AREA_HABITAT_LAYERS),
+                          ("individual tree", TREE_LAYERS)):
+        blank = [
+            values.get(REF_FIELD)
+            for table, rows in tables.items()
+            if table in layers
+            for _, values in rows
+            if values.get("Irreplaceable Habitat") is None
+        ]
+        if blank:
+            report.warn(
+                f"Irreplaceable Habitat is blank on {len(blank)} {label} "
+                f"row(s) ({summarise_refs(blank)}). The legacy template has "
+                "no such column, and they can be either. Choose Yes or No "
+                "before uploading."
+            )
     report.warn(
         "Vertical area habitats (green walls, intertidal hard structures) are "
         "empty: the legacy template cannot record them. Add any that exist."

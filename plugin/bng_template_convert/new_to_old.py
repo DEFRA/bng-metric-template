@@ -1110,6 +1110,7 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
     _report_losses(staged, report)
     _report_splits(staged, report)
     _report_enhanced_trees(staged, report)
+    _report_irreplaceable_trees(staged, report)
     check_needed_values(staged, report, LEGACY_GAP_CONSEQUENCE)
     # Area habitats account for every square metre of the red line, so on a
     # finished site nothing falls short and this is empty. On a site part-way
@@ -1254,6 +1255,21 @@ def _report_baseline_comments(staged, report):
         "tool CSVs, which hold one row for each post-intervention feature "
         f"with that feature's own comment ({detail}). They are in the "
         "baseline GeoPackage if you asked for one.")
+
+
+def _report_irreplaceable_trees(staged, report):
+    """Legacy has no irreplaceable column, for trees as for area habitats."""
+    refs = [str(row.get(REF_FIELD) or f"fid {row.get('fid')}")
+            for row in staged.get("trees", {}).get("baseline", [])
+            if row.get("Irreplaceable Habitat") == "Yes"]
+    if not refs:
+        return
+    report.warn(
+        f"{len(refs)} individual tree(s) are irreplaceable "
+        f"({summarise_list(refs)}). The legacy template has no column for "
+        "it, so the flag is not in the legacy files. The older service and "
+        "the metric treat them as ordinary trees unless the flag is entered "
+        "by hand.")
 
 
 def _report_enhanced_trees(staged, report):

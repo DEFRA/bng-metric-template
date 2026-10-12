@@ -210,6 +210,18 @@ def enhance_a_tree(gpkg):
     raise AssertionError("the site has no retained tree to enhance")
 
 
+def make_a_tree_irreplaceable(gpkg):
+    """Mark one kept baseline tree, and its post-intervention row, as
+    irreplaceable. Returns the post-intervention row's ref."""
+    table = "Individual Trees Post-Intervention"
+    row = next(r for r in read_rows(gpkg, table)
+               if r["Retention Category"] in ("Retained", "Enhanced"))
+    update(gpkg, table, {"Irreplaceable Habitat": "Yes"}, "fid", row["fid"])
+    update(gpkg, "Individual Trees Baseline", {"Irreplaceable Habitat": "Yes"},
+           "feature_uuid", row["parent_uuid"])
+    return row["Habitat Ref"]
+
+
 def line(points):
     return gpkg_write.line_blob(points)
 

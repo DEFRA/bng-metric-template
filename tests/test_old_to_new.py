@@ -221,6 +221,19 @@ class OldToNewTest(support.TempDirTestCase):
             with self.subTest(ref=row[REF]):
                 self.assertEqual(answer, row["Irreplaceable Habitat"])
 
+    def test_a_planted_tree_is_not_irreplaceable_and_an_existing_one_is_left(self):
+        rows = self.rows("Individual Trees Post-Intervention")
+        self.assertTrue(rows)
+        for row in rows:
+            expected = "No" if row["Category"] == "Newly Planted" else None
+            with self.subTest(ref=row[REF]):
+                self.assertEqual(expected, row["Irreplaceable Habitat"])
+        for row in self.rows("Individual Trees Baseline"):
+            with self.subTest(ref=row[REF]):
+                self.assertIsNone(row["Irreplaceable Habitat"])
+        self.assertEqual(1, len(self.warnings_mentioning(
+            "Irreplaceable Habitat is blank", "individual tree")))
+
     def test_list_numbers_are_taken_off(self):
         for table in BASELINE_TABLES + PI_TABLES:
             for row in self.rows(table):

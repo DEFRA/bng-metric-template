@@ -275,7 +275,7 @@ TREE_ADVANCE = "Habitat Created/Enhanced in advance/years"
 TREE_DELAY = "Delay in starting habitat creation/enhancement in years"
 TREE_BASELINE_NEEDS = ("Baseline Tree Size", "Baseline Rural or Urban Tree",
                        "Baseline Condition", "Baseline Strategic Significance",
-                       "Count")
+                       "Irreplaceable Habitat", "Count")
 TREE_PROPOSED_NEEDS = ("Proposed Tree Size", "Proposed Rural or Urban Tree",
                        "Proposed Condition", "Proposed Strategic Significance")
 # The metric's condition scale for trees, worst first. An enhancement has to
@@ -410,10 +410,9 @@ def tree_as_area_baseline(row):
         "Baseline Condition": row.get("Baseline Condition"),
         "Baseline Strategic Significance": row.get(
             "Baseline Strategic Significance"),
-        # The template has no irreplaceable flag for trees. The metric
-        # refuses to enhance an irreplaceable tree, so No is also the only
-        # answer under which an enhanced tree can score.
-        "Irreplaceable Habitat": "No",
+        # Ancient and veteran trees are irreplaceable habitat. The metric
+        # gives no units for their loss and refuses to enhance them.
+        "Irreplaceable Habitat": row.get("Irreplaceable Habitat"),
         "Area": tree_area(row.get("Baseline Tree Size"), row.get("Count")),
         COMMENT_FIELD: row.get(COMMENT_FIELD),
     }
@@ -429,7 +428,7 @@ def tree_as_area_part(row, parent):
         REF_FIELD: row.get(REF_FIELD),
         "parent_uuid": row.get("parent_uuid"),
         RETENTION_FIELD: row.get(RETENTION_FIELD),
-        "Irreplaceable Habitat": "No",
+        "Irreplaceable Habitat": row.get("Irreplaceable Habitat"),
         "Proposed Broad Habitat Type": TREES_BROAD,
         "Proposed Habitat Type": row.get("Proposed Rural or Urban Tree"),
         "Proposed Condition": row.get("Proposed Condition"),
@@ -734,8 +733,8 @@ def check_trees(trees, report):
     """What the metric needs from the tree layers, and what it refuses.
 
     The gaps are reported as for the other layers. An Enhanced tree has to
-    move to a better condition, and keeps its baseline size class, so the
-    report names a tree that does neither.
+    move to a better condition, keeps its baseline size class and cannot be
+    irreplaceable, so the report names a tree that breaks any of those.
     """
     if not trees:
         return
@@ -750,18 +749,22 @@ def check_trees(trees, report):
     parents = {row.get("feature_uuid"): row for row in trees["baseline"]
                if row.get("feature_uuid")}
     gaps = OrderedDict()
-    not_better, resized = [], []
+    not_better, resized, irreplaceable = [], [], []
     for row in trees["pi"]:
         retention = retention_of(row)
         parent = parents.get(row.get("parent_uuid"))
         needs = [RETENTION_FIELD, "Count"]
         if retention in (ENHANCED, CREATED) or parent is None:
             needs.extend(TREE_PROPOSED_NEEDS)
+        if parent is not None and retention in (RETAINED, ENHANCED):
+            needs.extend(KEPT_AREA_NEEDS)
         for column in needs:
             if is_blank(row.get(column)):
                 gaps.setdefault(column, []).append(row_label(row, REF_FIELD))
         if retention != ENHANCED or parent is None:
             continue
+        if is_irreplaceable(row) or is_irreplaceable(parent):
+            irreplaceable.append(row_label(row, REF_FIELD))
         before = condition_rank(parent.get("Baseline Condition"))
         after = condition_rank(row.get("Proposed Condition"))
         if before is not None and after is not None and after <= before:
@@ -779,6 +782,13 @@ def check_trees(trees, report):
             "'Error - No enhancement' or 'Error - Can not reduce condition' "
             "on these rows and gives them no units. Record the tree as "
             "Retained, or choose a better condition.")
+    if irreplaceable:
+        report.warn(
+            f"{pi_table}: {len(irreplaceable)} Enhanced tree(s) are "
+            f"irreplaceable ({summarise_refs(irreplaceable)}). The metric "
+            "does not allow an irreplaceable tree to be enhanced: it shows "
+            "'Error - you cannot enhance irreplaceable individual trees' and "
+            "gives the row no units. Record the tree as Retained.")
     if resized:
         report.warn(
             f"{pi_table}: {len(resized)} Enhanced tree(s) have a proposed "

@@ -98,7 +98,8 @@ along the edge of the development.
 **Trees stand near a hedgerow or inside a parcel.** A tree inside the
 development is lost. About a third of the kept trees that are not already in
 Good condition are enhanced, one condition better, with a comment that says
-how. Some baseline trees carry a comment about their veteran features. New
+how. Some baseline trees have veteran features: they are irreplaceable, carry a
+comment that says so, and are never enhanced. New
 trees are planted in the development and in the green margin.
 
 **The values the template fills itself are written as it fills them.** Each
