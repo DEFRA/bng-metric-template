@@ -91,6 +91,7 @@ try:
         NOT_APPLICABLE,
         PROPOSED_SIGNIFICANCE,
         SIGNIFICANCE_LOW,
+        TREE_NEWLY_PLANTED,
         fill_template_values,
         has_baseline_part,
         service_significance,
@@ -105,6 +106,7 @@ except ImportError:  # pragma: no cover - running as a plain script
         NOT_APPLICABLE,
         PROPOSED_SIGNIFICANCE,
         SIGNIFICANCE_LOW,
+        TREE_NEWLY_PLANTED,
         fill_template_values,
         has_baseline_part,
         service_significance,
@@ -129,7 +131,7 @@ INCOMING_GAP_CONSEQUENCE = (
 # ---------------------------------------------------------------------------
 
 BASELINE_TAIL = [("Comment", "TEXT"), ("feature_uuid", "TEXT")]
-PI_TAIL = [("parent_uuid", "TEXT"), ("parent_geom", "TEXT")]
+PI_TAIL = [("Comment", "TEXT"), ("parent_uuid", "TEXT"), ("parent_geom", "TEXT")]
 AREA_BASELINE_HEAD = [
     ("Habitat Ref", "TEXT"),
     ("Baseline Broad Habitat Type", "TEXT"),
@@ -284,6 +286,7 @@ STAGED_LAYERS = {
             ("Baseline Rural or Urban Tree", "TEXT"),
             ("Baseline Condition", "TEXT"),
             ("Baseline Strategic Significance", "TEXT"),
+            ("Irreplaceable Habitat", "TEXT"),
             ("Count", "MEDIUMINT"),
         ]
         + BASELINE_TAIL,
@@ -299,6 +302,7 @@ STAGED_LAYERS = {
             ("Baseline Rural or Urban Tree", "TEXT"),
             ("Baseline Condition", "TEXT"),
             ("Baseline Strategic Significance", "TEXT"),
+            ("Irreplaceable Habitat", "TEXT"),
             ("Retention Category", "TEXT"),
             ("Proposed Tree Size", "TEXT"),
             ("Proposed Tree Type", "TEXT"),
@@ -319,6 +323,8 @@ STAGED_LAYERS = {
 # word "Habitats", which is also a substring of "Vertical Area Habitats *".
 AREA_HABITAT_LAYERS = ("Area Habitats Baseline",
                        "Area Habitats Post-Intervention")
+TREE_LAYERS = ("Individual Trees Baseline",
+               "Individual Trees Post-Intervention")
 
 
 LEGACY_REDLINE = "Red Line Boundary"
@@ -442,6 +448,7 @@ def site_details(legacy):
 
 BREADCRUMB_PARENT = re.compile(r"\[parent=([^\];]+)\]")
 BREADCRUMB_PI = re.compile(r"\[pi=([^\];]+)\]")
+BREADCRUMBS = re.compile(r" ?\[(?:parent|pi)=[^\];]+\]")
 
 
 def read_breadcrumbs(rows):
@@ -463,6 +470,21 @@ def read_breadcrumbs(rows):
             row["_pi_ref"] = own.group(1).strip()
             found += 1
     return found
+
+
+def user_comment(row):
+    """The surveyor's own comment on a legacy row, without the breadcrumbs.
+
+    Legacy spells the column "Comment" on habitats and trees and "Comments"
+    on hedgerows and rivers. The breadcrumbs are lineage, which the template
+    keeps in its own columns, so they are taken out of the text.
+    """
+    comment = row.get("Comment") or row.get("Comments")
+    if not isinstance(comment, str):
+        return comment
+    # The conversion out joins a breadcrumb to the comment with one space.
+    text = BREADCRUMBS.sub("", comment).strip()
+    return text or None
 
 
 def drop_lost_rows(rows, ref_key, label, report, index=None):
@@ -639,7 +661,7 @@ def build_area_baseline(rows, report):
                     # allows only one answer.
                     "Irreplaceable Habitat": None,
                     "Area": area,
-                    "Comment": row.get("Comment"),
+                    "Comment": user_comment(row),
                     "feature_uuid": feature_uuid,
                 },
             )
@@ -676,7 +698,7 @@ def build_linear_baseline(rows, spec, report, label):
                 "Baseline Strategic Significance"
             ),
             "Length": length,
-            "Comment": row.get("Comments") or row.get("Comment"),
+            "Comment": user_comment(row),
             "feature_uuid": feature_uuid,
         }
         for target, source in spec.items():
@@ -710,8 +732,11 @@ def build_tree_baseline(rows, report):
                     "Baseline Strategic Significance": row.get(
                         "Baseline Strategic Significance"
                     ),
+                    # No legacy column. A surveyed tree can be either, so
+                    # it is left for the surveyor (see _report_manual_steps).
+                    "Irreplaceable Habitat": None,
                     "Count": int(count) if count is not None else None,
-                    "Comment": row.get("Comment"),
+                    "Comment": user_comment(row),
                     "feature_uuid": feature_uuid,
                 },
             )
@@ -793,6 +818,7 @@ def build_area_pi(rows, index, report):
             ),
             "Spatial risk category": row.get("Spatial risk category"),
             "Area": area,
+            "Comment": user_comment(row),
         }
         stamp_parent(values, row.get("_parent_ref"), index, unmatched,
                      own_ref=row.get("Parcel Ref"))
@@ -847,6 +873,7 @@ def build_linear_pi(rows, index, spec, report, label, is_watercourse=False):
             ),
             "Spatial risk category": row.get("Spatial risk category"),
             "Length": length,
+            "Comment": user_comment(row),
         }
         for target, source in spec.items():
             values[target] = row.get(source)
@@ -887,6 +914,10 @@ def build_tree_pi(rows, index, report):
                 "Proposed Strategic Significance"
             ),
             "Category": row.get("Category") or TREE_CATEGORY_EXISTING,
+            # A newly planted tree is never irreplaceable, as the template
+            # fills it. An existing one is left for the surveyor.
+            "Irreplaceable Habitat": (
+                "No" if row.get("Category") == TREE_NEWLY_PLANTED else None),
             "Habitat Created/Enhanced in advance/years": row.get(
                 "Habitat Created/Enhanced in advance/years"
             ),
@@ -895,6 +926,7 @@ def build_tree_pi(rows, index, report):
             ),
             "Spatial risk category": row.get("Spatial risk category"),
             "Count": int(count) if count is not None else None,
+            "Comment": user_comment(row),
         }
         stamp_parent(values, row.get("_parent_ref"), index, unmatched,
                      own_ref=row.get("Tree Ref"))
@@ -1283,7 +1315,9 @@ def convert(baseline_path, pi_path, out_dir, into_path, force, dry_run,
     if into_path:
         conn, table_names = open_template_gpkg(into_path, force)
         target = into_path
-        _report_missing_columns(missing_columns(conn, table_names), report)
+        missing = missing_columns(conn, table_names)
+        _report_missing_columns(missing, report)
+        _report_dropped_comments(tables, missing, report)
         _report_extra_columns(extra_columns(conn, table_names), report)
     else:
         if out_file:
@@ -1560,6 +1594,26 @@ def _report_missing_columns(missing, report):
     )
 
 
+def _report_dropped_comments(tables, missing, report):
+    """Say how many comments a template with no Comment column loses.
+
+    A template from before post-intervention layers had a Comment column
+    takes the rows but not their comments, which are the one thing in the
+    conversion a surveyor wrote in their own words.
+    """
+    lost = {layer: sum(1 for _geometry, values in tables.get(layer, [])
+                       if values.get("Comment"))
+            for layer, columns in missing.items() if "Comment" in columns}
+    lost = {layer: count for layer, count in lost.items() if count}
+    if not lost:
+        return
+    detail = "; ".join(f"{layer}: {count}" for layer, count in lost.items())
+    report.warn(
+        f"{sum(lost.values())} comment(s) were not written, because the "
+        f"target template has no Comment column on that layer ({detail}). "
+        "Fill a copy of the current BNG Service template to keep them.")
+
+
 def _report_extra_columns(extra, report):
     """Name the columns of the target template that nothing here fills."""
     if not extra:
@@ -1585,20 +1639,22 @@ def _strip_list_numbers(legacy, report, label):
 
 
 def _report_manual_steps(tables, report):
-    blank = [
-        values.get(REF_FIELD)
-        for table, rows in tables.items()
-        if table in AREA_HABITAT_LAYERS
-        for _, values in rows
-        if values.get("Irreplaceable Habitat") is None
-    ]
-    if blank:
-        report.warn(
-            f"Irreplaceable Habitat is blank on {len(blank)} area habitat row(s) "
-            f"({summarise_refs(blank)}). The legacy template has "
-            "no such column, and their habitat can be either. Choose Yes or "
-            "No before uploading."
-        )
+    for label, layers in (("area habitat", AREA_HABITAT_LAYERS),
+                          ("individual tree", TREE_LAYERS)):
+        blank = [
+            values.get(REF_FIELD)
+            for table, rows in tables.items()
+            if table in layers
+            for _, values in rows
+            if values.get("Irreplaceable Habitat") is None
+        ]
+        if blank:
+            report.warn(
+                f"Irreplaceable Habitat is blank on {len(blank)} {label} "
+                f"row(s) ({summarise_refs(blank)}). The legacy template has "
+                "no such column, and they can be either. Choose Yes or No "
+                "before uploading."
+            )
     report.warn(
         "Vertical area habitats (green walls, intertidal hard structures) are "
         "empty: the legacy template cannot record them. Add any that exist."

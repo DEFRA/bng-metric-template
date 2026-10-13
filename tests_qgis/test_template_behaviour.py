@@ -317,6 +317,149 @@ class PasteLineage(TemplateCase):
         self.assertTrue(is_null(row["parent_uuid"]))
 
 
+HABITAT_LAYERS = {
+    AREA_BASE: SQUARE, AREA_PI: SQUARE,
+    "Vertical Area Habitats Baseline": HEDGE_LINE,
+    "Vertical Area Habitats Post-Intervention": HEDGE_LINE,
+    HEDGE_BASE: HEDGE_LINE, HEDGE_PI: HEDGE_LINE,
+    "Watercourses Baseline": HEDGE_LINE,
+    "Watercourses Post-Intervention": HEDGE_LINE,
+    "Individual Trees Baseline": TREE_POINT, TREE_PI: TREE_POINT,
+}
+COMMENT = "Comment"
+NOTE = "Hedgehog highway through the fence\nsecond line"
+
+
+class Comments(TemplateCase):
+    """Every habitat layer takes a free-text comment, on either stage."""
+
+    def test_a_comment_is_saved_on_every_habitat_layer(self):
+        for name, wkt in HABITAT_LAYERS.items():
+            with self.subTest(layer=name):
+                layer = self.layer(name)
+                self.add(layer, wkt, **{REF: "C-1", COMMENT: NOTE})
+                self.assertTrue(layer.commitChanges(), layer.commitErrors())
+                saved = [f[COMMENT] for f in layer.getFeatures()]
+                self.assertEqual(saved, [NOTE])
+
+    def test_the_comment_starts_blank_and_can_be_edited_in_the_form(self):
+        for name, wkt in HABITAT_LAYERS.items():
+            with self.subTest(layer=name):
+                layer = self.layer(name)
+                fid = self.add(layer, wkt, **{REF: "C-1"})
+                self.assertTrue(is_null(self.get(layer, fid)[COMMENT]))
+                form = QgsAttributeForm(layer, layer.getFeature(fid),
+                                        QgsAttributeEditorContext())
+                self.addCleanup(form.deleteLater)
+                widgets = {w.field().name(): w for w in
+                           form.findChildren(QgsEditorWidgetWrapper)}
+                widget = widgets[COMMENT].widget()
+                self.assertTrue(widget.isEnabled())
+                self.assertFalse(getattr(widget, "isReadOnly",
+                                         lambda: False)())
+
+
+EXISTING_TREE = {
+    REF: "T-1", "Category": "Existing", "Baseline Tree Size": "Medium",
+    "Baseline Tree Type": "Native", "Baseline Rural or Urban Tree": "Rural tree",
+    "Baseline Condition": "Moderate",
+}
+PROPOSED_CONDITION = "Proposed Condition"
+
+
+class EnhancedTrees(TemplateCase):
+    """An existing tree can be enhanced, by improving its condition only."""
+
+    def tree(self, **values):
+        layer = self.layer(TREE_PI)
+        fid = self.add(layer, TREE_POINT, **{**EXISTING_TREE, **values})
+        return layer, fid
+
+    def test_an_existing_tree_can_be_enhanced_to_a_better_condition(self):
+        layer, fid = self.tree()
+        self.assertEqual(self.set(layer, fid, RETENTION, "Enhanced")[RETENTION],
+                         "Enhanced")
+        row = self.set(layer, fid, PROPOSED_CONDITION, "Good")
+        self.assertEqual(row[PROPOSED_CONDITION], "Good")
+        self.assertEqual(row[RETENTION], "Enhanced")
+
+    def test_the_same_condition_is_not_an_enhancement(self):
+        layer, fid = self.tree()
+        self.set(layer, fid, RETENTION, "Enhanced")
+        row = self.set(layer, fid, PROPOSED_CONDITION, "Moderate")
+        self.assertTrue(is_null(row[PROPOSED_CONDITION]))
+
+    def test_the_only_better_condition_fills_itself_in(self):
+        layer, fid = self.tree(**{"Baseline Condition": "Fairly Good"})
+        row = self.set(layer, fid, RETENTION, "Enhanced")
+        self.assertEqual(row[PROPOSED_CONDITION], "Good")
+
+    def test_an_enhanced_tree_keeps_its_size(self):
+        layer, fid = self.tree()
+        self.set(layer, fid, RETENTION, "Enhanced")
+        self.assertEqual(self.set(layer, fid, "Proposed Tree Size",
+                                  "Medium")["Proposed Tree Size"], "Medium")
+        row = self.set(layer, fid, "Proposed Tree Size", "Large")
+        self.assertTrue(is_null(row["Proposed Tree Size"]))
+
+    def test_a_newly_planted_tree_cannot_be_enhanced(self):
+        layer, fid = self.tree(**{"Category": "Newly Planted",
+                                  "Baseline Condition": "N/A"})
+        row = self.set(layer, fid, RETENTION, "Enhanced")
+        self.assertTrue(is_null(row[RETENTION]))
+
+    def test_a_tree_in_good_condition_cannot_be_enhanced(self):
+        # There is no better condition, so Enhanced would leave the
+        # Proposed Condition list empty.
+        layer, fid = self.tree(**{"Baseline Condition": "Good"})
+        row = self.set(layer, fid, RETENTION, "Enhanced")
+        self.assertTrue(is_null(row[RETENTION]))
+        self.assertEqual(self.set(layer, fid, RETENTION,
+                                  "Retained")[RETENTION], "Retained")
+
+    def test_an_irreplaceable_tree_cannot_be_enhanced(self):
+        # The Statutory Metric refuses an enhanced irreplaceable tree.
+        layer, fid = self.tree()
+        self.assertEqual(self.set(layer, fid, "Irreplaceable Habitat",
+                                  "Yes")["Irreplaceable Habitat"], "Yes")
+        row = self.set(layer, fid, RETENTION, "Enhanced")
+        self.assertTrue(is_null(row[RETENTION]))
+        self.assertEqual(self.set(layer, fid, RETENTION,
+                                  "Retained")[RETENTION], "Retained")
+
+    def test_marking_an_enhanced_tree_irreplaceable_clears_enhanced(self):
+        layer, fid = self.tree()
+        self.set(layer, fid, RETENTION, "Enhanced")
+        row = self.set(layer, fid, "Irreplaceable Habitat", "Yes")
+        self.assertEqual(row["Irreplaceable Habitat"], "Yes")
+        self.assertTrue(is_null(row[RETENTION]))
+
+
+IRREPLACEABLE = "Irreplaceable Habitat"
+
+
+class IrreplaceableTrees(TemplateCase):
+    """Ancient and veteran trees are irreplaceable; a planted tree is not."""
+
+    def test_an_existing_tree_is_left_for_the_surveyor(self):
+        for name in ("Individual Trees Baseline", TREE_PI):
+            with self.subTest(layer=name):
+                layer = self.layer(name)
+                fid = self.add(layer, TREE_POINT, **EXISTING_TREE)
+                self.assertTrue(is_null(self.get(layer, fid)[IRREPLACEABLE]))
+                self.assertEqual(self.set(layer, fid, IRREPLACEABLE,
+                                          "Yes")[IRREPLACEABLE], "Yes")
+
+    def test_a_newly_planted_tree_is_not_irreplaceable(self):
+        layer = self.layer(TREE_PI)
+        fid = self.add(layer, TREE_POINT, **{REF: "TN-1",
+                                             "Category": "Newly Planted",
+                                             RETENTION: "Created"})
+        self.assertEqual(self.get(layer, fid)[IRREPLACEABLE], "No")
+        self.assertEqual(self.set(layer, fid, IRREPLACEABLE,
+                                  "Yes")[IRREPLACEABLE], "No")
+
+
 class CopyBaselineButton(TemplateCase):
     """The Copy baseline to post-intervention button, run headless."""
 
@@ -341,6 +484,33 @@ class CopyBaselineButton(TemplateCase):
         finally:
             (QtWidgets.QProgressDialog, QtWidgets.QMessageBox,
              qgis.utils.iface) = originals
+
+    def test_a_copied_tree_can_be_enhanced(self):
+        base = self.layer("Individual Trees Baseline")
+        self.add(base, TREE_POINT, **{
+            REF: "T-1", "Baseline Tree Size": "Medium",
+            "Baseline Tree Type": "Native",
+            "Baseline Rural or Urban Tree": "Rural tree",
+            "Baseline Condition": "Poor", "Count": 1,
+            "Irreplaceable Habitat": "No"})
+        self.assertTrue(base.commitChanges())
+
+        self.run_button("Copy baseline", TREE_PI)
+
+        pi = self.layer(TREE_PI)
+        (row,) = pi.getFeatures()
+        self.assertEqual(row[RETENTION], "Retained")
+        self.assertEqual(row["Irreplaceable Habitat"], "No")
+        self.assertTrue(is_null(row[COMMENT]))
+        pi.startEditing()
+        self.set(pi, row.id(), RETENTION, "Enhanced")
+        self.set(pi, row.id(), "Proposed Condition", "Moderate")
+        self.set(pi, row.id(), COMMENT, NOTE)
+        self.assertTrue(pi.commitChanges(), pi.commitErrors())
+        (row,) = pi.getFeatures()
+        self.assertEqual((row[RETENTION], row["Proposed Condition"],
+                          row["Proposed Tree Size"], row[COMMENT]),
+                         ("Enhanced", "Moderate", "Medium", NOTE))
 
     def test_copy_links_every_baseline_hedge(self):
         base = self.layer(HEDGE_BASE)

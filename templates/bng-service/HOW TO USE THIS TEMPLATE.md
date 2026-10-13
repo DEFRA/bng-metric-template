@@ -220,7 +220,7 @@ The red line is the site boundary. All habitats must be inside it.
 | Base Map | The map you drew over, for example aerial photography |
 
 **These site details are on the red line boundary only.** The habitat forms
-have only a **Comment** field for each parcel.
+have only a **Comment** field for each feature.
 
 The boundary shows as a red outline with no fill, so the habitats inside it
 stay visible.
@@ -257,6 +257,14 @@ gaps and no overlaps.**
 | Irreplaceable Habitat | QGIS fills it in when the habitat allows one answer only: `No` for most habitats, `Yes` for Blanket bog, Coastal sand dunes and Limestone pavement. Otherwise select `Yes` or `No`. |
 | Area (ha) | Do not enter. QGIS fills it in and locks it. |
 | Comment | Optional notes about this parcel |
+
+**Every habitat layer has a Comment, baseline and post-intervention.** Use it
+for your own notes, in your own words. A note on the baseline is about the
+habitat as surveyed, and a note on the post-intervention row is about the
+proposal. The copy button leaves the post-intervention Comment blank. A paste
+copies the baseline Comment across, as it copies every column with the same
+name, so change or clear it. Both comments go into the Statutory Metric's
+*User comments* column when you export to it.
 
 **Each list shows only the values that your earlier choices allow.** If you
 change the habitat type, a condition that the new type does not allow is
@@ -669,6 +677,13 @@ Draw a hedgerow as a **line**. QGIS fills in `Length (m)` and locks it.
 - **A hedge is shorter but its condition is the same:** keep it `Retained`.
   Shorten the copied line with the **Vertex Tool**, or split it to the
   shorter length. A new line drawn in its place has no link to the baseline.
+- **A hedge whose condition gets worse:** a retained hedge cannot get worse,
+  so the Statutory Metric records the old hedge as lost and a new one as
+  created in its place. Keep the copied row and set **Retention Category** to
+  `Created`, then set the worse **Proposed Condition**. If the new hedge is
+  shorter, shorten the line. Its `Parent Ref` stays, so the two records stay
+  linked, but nothing is carried forward: the whole baseline hedge counts as
+  lost.
 - **A new hedge:** draw a new line on the Post-Intervention layer (see *New
   habitats*).
 
@@ -711,8 +726,21 @@ Draw each tree as a **point**. A point cannot be split.
 1. Click **Add Point Feature**.
 2. Click once at the tree.
 3. Type the number of trees in **`Count`**, usually `1`.
+4. Set **Irreplaceable Habitat** to `Yes` for an ancient or veteran tree, and
+   `No` for any other. It starts blank on a surveyed tree, so that you decide.
+   A planted tree is always `No`.
 
 - **A tree that stays:** `Retained`.
+- **A tree whose condition you will improve:** `Enhanced`. Set **Proposed
+  Condition** to the condition it will reach. The list offers only conditions
+  better than the baseline one, and fills in the only one when there is one.
+  A tree already in `Good` condition cannot be enhanced, and neither can an
+  irreplaceable tree: the Statutory Metric refuses both, so the list does not
+  offer `Enhanced` for either. Marking an `Enhanced` tree as irreplaceable
+  clears its **Retention Category**, so choose it again. The size, type and
+  rural or urban setting stay the baseline ones, because the Statutory Metric
+  does not record the growth of a kept tree. Use the Comment to say what you
+  will do, for example crown works or mulching.
 - **A planted tree:** add a point, set **Retention Category** to `Created`, and
   fill in only the Proposed fields. **Parent Ref** stays blank. The
   **Category** field fills in as `Newly Planted` by itself. A point exactly on

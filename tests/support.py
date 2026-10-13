@@ -161,6 +161,67 @@ def insert_feature(gpkg, table, geometry, values):
         conn.close()
 
 
+HABITAT_TABLES = tuple(
+    f"{kind} {stage}"
+    for kind in ("Area Habitats", "Vertical Area Habitats", "Hedgerows",
+                 "Watercourses", "Individual Trees")
+    for stage in ("Baseline", "Post-Intervention"))
+TREE_CONDITION_SCALE = ("Poor", "Fairly Poor", "Moderate", "Fairly Good",
+                        "Good")
+
+
+def comment_for(table, ref):
+    """A comment naming its row, over two lines, as a surveyor might write."""
+    return f"Note on {ref} in {table}\nsecond line & <more>"
+
+
+def comment_every_row(gpkg, tables=HABITAT_TABLES):
+    """Give every row of the tables its own comment. Returns how many."""
+    written = 0
+    for table in tables:
+        for row in read_rows(gpkg, table):
+            update(gpkg, table, {"Comment": comment_for(table, row["fid"])},
+                   "fid", row["fid"])
+            written += 1
+    return written
+
+
+def enhance_a_tree(gpkg):
+    """Make one Retained tree Enhanced, one condition better. Returns its ref.
+
+    The site generator enhances some trees already. This makes sure there is
+    one whatever the seed.
+    """
+    table = "Individual Trees Post-Intervention"
+    rows = read_rows(gpkg, table)
+    for row in rows:
+        if row["Retention Category"] == "Enhanced":
+            return row["Habitat Ref"]
+    for row in rows:
+        condition = row["Baseline Condition"]
+        if (row["Retention Category"] == "Retained"
+                and condition in TREE_CONDITION_SCALE[:-1]):
+            better = TREE_CONDITION_SCALE[
+                TREE_CONDITION_SCALE.index(condition) + 1]
+            update(gpkg, table, {"Retention Category": "Enhanced",
+                                 "Proposed Condition": better},
+                   "fid", row["fid"])
+            return row["Habitat Ref"]
+    raise AssertionError("the site has no retained tree to enhance")
+
+
+def make_a_tree_irreplaceable(gpkg):
+    """Mark one kept baseline tree, and its post-intervention row, as
+    irreplaceable. Returns the post-intervention row's ref."""
+    table = "Individual Trees Post-Intervention"
+    row = next(r for r in read_rows(gpkg, table)
+               if r["Retention Category"] in ("Retained", "Enhanced"))
+    update(gpkg, table, {"Irreplaceable Habitat": "Yes"}, "fid", row["fid"])
+    update(gpkg, "Individual Trees Baseline", {"Irreplaceable Habitat": "Yes"},
+           "feature_uuid", row["parent_uuid"])
+    return row["Habitat Ref"]
+
+
 def line(points):
     return gpkg_write.line_blob(points)
 

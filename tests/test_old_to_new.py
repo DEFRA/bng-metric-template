@@ -221,6 +221,19 @@ class OldToNewTest(support.TempDirTestCase):
             with self.subTest(ref=row[REF]):
                 self.assertEqual(answer, row["Irreplaceable Habitat"])
 
+    def test_a_planted_tree_is_not_irreplaceable_and_an_existing_one_is_left(self):
+        rows = self.rows("Individual Trees Post-Intervention")
+        self.assertTrue(rows)
+        for row in rows:
+            expected = "No" if row["Category"] == "Newly Planted" else None
+            with self.subTest(ref=row[REF]):
+                self.assertEqual(expected, row["Irreplaceable Habitat"])
+        for row in self.rows("Individual Trees Baseline"):
+            with self.subTest(ref=row[REF]):
+                self.assertIsNone(row["Irreplaceable Habitat"])
+        self.assertEqual(1, len(self.warnings_mentioning(
+            "Irreplaceable Habitat is blank", "individual tree")))
+
     def test_list_numbers_are_taken_off(self):
         for table in BASELINE_TABLES + PI_TABLES:
             for row in self.rows(table):
@@ -282,10 +295,48 @@ class RoundTripTest(support.TempDirTestCase):
     def setUpClass(cls):
         super().setUpClass()
         site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
-        cls.source = support.site_gpkg(site)
+        cls.source = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                     "source.gpkg")
+        support.comment_every_row(cls.source)
+        cls.enhanced_tree = support.enhance_a_tree(cls.source)
         baseline, pi = legacy_pair(cls.source, cls.tmp / "legacy")
         cls.target = template_copy(cls.tmp / "back")
         fill(baseline, pi, cls.target)
+
+    def test_comments_survive_without_the_lineage_breadcrumbs(self):
+        for table in ROUND_TRIP_TABLES:
+            before, after = self.both(table)
+            for ref, row in before.items():
+                with self.subTest(table=table, ref=ref):
+                    self.assertEqual(row["Comment"], after[ref]["Comment"])
+
+    def test_an_older_template_without_comments_is_warned_about(self):
+        """A template from before post-intervention layers had a Comment."""
+        older = template_copy(self.tmp / "older")
+        conn = support.open_for_writing(older)
+        try:
+            for table in PI_TABLES + ("Vertical Area Habitats "
+                                      "Post-Intervention",):
+                conn.execute(f'ALTER TABLE "{table}" DROP COLUMN "Comment"')
+            conn.commit()
+        finally:
+            conn.close()
+        baseline, pi = legacy_pair(self.source, self.tmp / "legacy-older")
+        report = fill(baseline, pi, older)
+        dropped = [w for w in report.warnings
+                   if "comment(s) were not written" in w]
+        self.assertEqual(1, len(dropped))
+        for table in PI_TABLES:
+            if not support.read_rows(self.source, table):
+                continue
+            with self.subTest(table=table):
+                self.assertIn(table, dropped[0])
+
+    def test_an_enhanced_tree_survives(self):
+        before, after = self.both("Individual Trees Post-Intervention")
+        self.assertEqual("Enhanced", after[self.enhanced_tree][RETENTION])
+        self.assertEqual(before[self.enhanced_tree]["Proposed Condition"],
+                         after[self.enhanced_tree]["Proposed Condition"])
 
     def both(self, table):
         return (support.by_ref(support.read_rows(self.source, table), REF),
@@ -319,6 +370,27 @@ class RoundTripTest(support.TempDirTestCase):
             with self.subTest(ref=ref):
                 self.assertAlmostEqual(row["Length"], after[ref]["Length"],
                                        delta=LENGTH_TOLERANCE_M)
+
+
+class BaselineCommentTest(unittest.TestCase):
+    """A breadcrumb typed or pasted onto a legacy baseline row is lineage,
+    not the surveyor's comment, so it is taken out there too."""
+
+    def test_each_baseline_builder_strips_the_breadcrumbs(self):
+        report = old_to_new.Report()
+        note = "Grazed by sheep [parent=H-1] [pi=H-1]"
+        built = {
+            "areas": old_to_new.build_area_baseline(
+                [{"Parcel Ref": "A-1", "Comment": note}], report),
+            "hedgerows": old_to_new.build_linear_baseline(
+                [{"Parcel Ref": "H-1", "Comments": note}], {}, report,
+                "Hedgerows"),
+            "trees": old_to_new.build_tree_baseline(
+                [{"Tree Ref": "T-1", "Comment": note}], report),
+        }
+        for kind, (rows, _index) in built.items():
+            with self.subTest(kind=kind):
+                self.assertEqual("Grazed by sheep", rows[0][1]["Comment"])
 
 
 if __name__ == "__main__":

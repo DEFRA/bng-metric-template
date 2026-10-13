@@ -39,6 +39,7 @@ BASELINE_SIGNIFICANCE = "Baseline Strategic Significance"
 PROPOSED_SIGNIFICANCE = "Proposed Strategic Significance"
 SPATIAL_RISK = "Spatial risk category"
 IRREPLACEABLE = "Irreplaceable Habitat"
+COMMENT = "Comment"
 BASELINE_TYPE = {
     AREA: "Baseline Habitat Type",
     VERTICAL: "Baseline Habitat Type",
@@ -98,6 +99,12 @@ class Layer:
         self.constraint_expressions = {
             c.get("field"): c.get("exp")
             for c in element.iterfind("constraintExpressions/constraint")}
+        self.columns = {
+            c.get("name"): c
+            for c in element.iterfind("attributetableconfig/columns/column")
+            if c.get("name")}
+        self.alias_indexes = [int(a.get("index"))
+                              for a in element.iterfind("aliases/alias")]
         self.data_defined_editable = {}
         for field in element.iterfind("dataDefinedFieldProperties/field"):
             for option in field.iter("Option"):
@@ -169,6 +176,18 @@ class ProjectXmlTest(unittest.TestCase):
                 with self.subTest(layer=name, field=field):
                     self.assertEqual("true",
                                      widget_options(widget).get("AllowNull"))
+
+    def test_every_habitat_layer_has_an_editable_comment(self):
+        """A free-text field, shown in the table, with nothing filled in."""
+        for kind, stage, layer in self.each_stage():
+            with self.subTest(layer=f"{kind} {stage}"):
+                self.assertIn(COMMENT, layer.widgets)
+                self.assertIn(layer.widget_type(COMMENT), ("", "TextEdit"))
+                self.assertNotEqual(LOCKED, layer.editable.get(COMMENT))
+                self.assertEqual(("", "0"), layer.default(COMMENT))
+                self.assertEqual("0", layer.columns[COMMENT].get("hidden"))
+                self.assertEqual(sorted(layer.alias_indexes),
+                                 layer.alias_indexes)
 
     def test_distinctiveness_is_locked_and_looked_up(self):
         for kind, stage, layer in self.each_stage(kinds=WITH_DISTINCTIVENESS):
@@ -277,6 +296,25 @@ class ProjectXmlTest(unittest.TestCase):
                 self.assertIn(list_id, expression)
                 self.assertIn("array_length", expression)
                 self.assertEqual(APPLY_ON_UPDATE, on_update)
+
+
+    def test_trees_offer_yes_no_or_blank_for_irreplaceable(self):
+        for stage in (BASELINE, POST):
+            layer = self.layer(TREE, stage)
+            with self.subTest(stage=stage):
+                self.assertEqual(VALUE_MAP, layer.widget_type(IRREPLACEABLE))
+                self.assertEqual(
+                    [NULL_VALUE, "Yes", "No"],
+                    value_map_values(layer.widgets[IRREPLACEABLE]))
+        self.assertEqual(("", "0"),
+                         self.layer(TREE, BASELINE).default(IRREPLACEABLE))
+
+    def test_a_newly_planted_tree_is_not_irreplaceable(self):
+        expression, on_update = self.layer(TREE, POST).default(IRREPLACEABLE)
+        self.assertTrue(expression.startswith('if(coalesce("Category", '))
+        self.assertTrue(expression.endswith(
+            "= 'Newly Planted', 'No', \"Irreplaceable Habitat\")"))
+        self.assertEqual(APPLY_ON_UPDATE, on_update)
 
 
 class MaintenanceToolCheckTest(support.TempDirTestCase):

@@ -119,6 +119,23 @@ class NsipGeneratorTest(support.TempDirTestCase):
                       result.stdout)
         self.assertIn(repr(BAD_VALUE), result.stdout)
 
+    def test_dropdown_check_refuses_an_enhanced_tree_the_list_hides(self):
+        # The Retention Category list hides Enhanced for a tree already in
+        # Good condition: the check reads the whole filter, AND NOT and all.
+        site = self.tmp / "good-tree-enhanced"
+        shutil.copytree(self.site, site)
+        gpkg = site / support.SERVICE_GPKG_IN_SITE
+        table = "Individual Trees Post-Intervention"
+        tree = next(row for row in support.read_rows(gpkg, table)
+                    if row["Category"] == "Existing")
+        support.update(gpkg, table, {"Baseline Condition": "Good",
+                                     "Retention Category": "Enhanced",
+                                     "Proposed Condition": None},
+                       "fid", tree["fid"])
+        result = support.run_python(support.DROPDOWN_CHECK, site)
+        self.assertEqual(1, result.returncode, support.describe(result))
+        self.assertIn(f"{table} / Retention Category", result.stdout)
+
     # BUG: --fraction accepts any value above 0, but below about 0.04 the
     # run dies with an IndexError traceback. corridor_linear.build_watercourses
     # (scale-test-nsip/generator/corridor_linear.py:224-229) always draws the

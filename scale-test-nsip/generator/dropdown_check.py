@@ -22,8 +22,9 @@ wrong wherever the template would have filled a value.
     python3 dropdown_check.py <site folder>     # exits 1 on any invalid value
 
 Standard library only. The filter language is the small subset the template
-uses: a column compared with a string, current_value(), concat() and
-coalesce(). Anything else stops the check rather than being guessed at.
+uses: comparisons with `=` between list columns, strings, current_value(),
+concat() and coalesce(), joined by AND, OR and NOT. Anything else stops the
+check rather than being guessed at.
 """
 
 import csv
@@ -41,62 +42,136 @@ TOKEN = re.compile(r"\s*(?:(\"[^\"]*\")|('(?:[^']|'')*')|([A-Za-z_]+)|(.))")
 
 
 class Filter:
-    """A parsed filter: the reference column, and the expression it equals."""
+    """A parsed filter, evaluated against a list row and the feature's row.
+
+    Comparisons are `=` between a list column ("Name"), a string and the
+    functions current_value(), concat() and coalesce(), joined by AND, OR
+    and NOT, with brackets. A comparison with a blank side is NULL, as in
+    QGIS, and NULL keeps a list row out.
+    """
 
     def __init__(self, text):
         self.text = text
         self.tokens = [t for t in TOKEN.findall(text.strip())]
         self.pos = 0
-        column = self._take()[0]
-        if not column or self._take()[3] != "=":
-            raise ValueError(f"unsupported filter: {text!r}")
-        self.column = column.strip('"')
-        self.expr = self._expr()
+        self.tree = self._or()
         if self.pos != len(self.tokens):
-            raise ValueError(f"unsupported filter: {text!r}")
+            self._fail()
+
+    def _fail(self):
+        raise ValueError(f"unsupported filter: {self.text!r}")
+
+    def _peek(self):
+        return self.tokens[self.pos] if self.pos < len(self.tokens) else None
 
     def _take(self):
+        if self.pos >= len(self.tokens):
+            self._fail()
         token = self.tokens[self.pos]
         self.pos += 1
         return token
 
-    def _expr(self):
-        _, string, name, _ = self._take()
+    def _keyword(self, word):
+        token = self._peek()
+        if token and token[2].upper() == word:
+            self.pos += 1
+            return True
+        return False
+
+    def _or(self):
+        terms = [self._and()]
+        while self._keyword("OR"):
+            terms.append(self._and())
+        return ("or", terms) if len(terms) > 1 else terms[0]
+
+    def _and(self):
+        terms = [self._not()]
+        while self._keyword("AND"):
+            terms.append(self._not())
+        return ("and", terms) if len(terms) > 1 else terms[0]
+
+    def _not(self):
+        if self._keyword("NOT"):
+            return ("not", self._not())
+        token = self._peek()
+        if token and token[3] == "(":
+            self.pos += 1
+            inner = self._or()
+            if self._take()[3] != ")":
+                self._fail()
+            return inner
+        left = self._operand()
+        if self._take()[3] != "=":
+            self._fail()
+        return ("eq", left, self._operand())
+
+    def _operand(self):
+        column, string, name, _ = self._take()
+        if column:
+            return ("column", column.strip('"'))
         if string:
             return ("str", string[1:-1].replace("''", "'"))
         if name not in ("current_value", "concat", "coalesce"):
             raise ValueError(f"unsupported function {name!r} in {self.text!r}")
         if self._take()[3] != "(":
-            raise ValueError(f"unsupported filter: {self.text!r}")
-        args = [self._expr()]
+            self._fail()
+        args = [self._operand()]
         while True:
             punct = self._take()[3]
             if punct == ")":
                 return (name, args)
             if punct != ",":
-                raise ValueError(f"unsupported filter: {self.text!r}")
-            args.append(self._expr())
+                self._fail()
+            args.append(self._operand())
 
     def fields(self, node=None):
-        node = node or self.expr
-        if node[0] == "str":
+        """The feature's columns the filter reads through current_value()."""
+        node = node or self.tree
+        kind = node[0]
+        if kind in ("str", "column"):
             return set()
-        if node[0] == "current_value":
+        if kind == "current_value":
             return {node[1][0][1]}
+        if kind == "not":
+            return self.fields(node[1])
+        if kind == "eq":
+            return self.fields(node[1]) | self.fields(node[2])
         return set().union(*(self.fields(a) for a in node[1]))
 
-    def value(self, row, node=None):
-        """Evaluate as QGIS does: concat() treats a blank as empty text."""
-        node = node or self.expr
+    def value(self, entry, row, node):
+        """Evaluate an operand as QGIS does: concat() treats a blank as
+        empty text."""
         kind, args = node
         if kind == "str":
             return args
+        if kind == "column":
+            return blank_to_none(entry.get(args))
         if kind == "current_value":
             return blank_to_none(row.get(args[0][1]))
-        values = [self.value(row, a) for a in args]
+        values = [self.value(entry, row, a) for a in args]
         if kind == "coalesce":
             return next((v for v in values if v is not None), None)
         return "".join(v or "" for v in values)
+
+    def truth(self, entry, row, node=None):
+        """True, False or None (NULL), with SQL's three-valued logic."""
+        node = node or self.tree
+        kind = node[0]
+        if kind == "eq":
+            left = self.value(entry, row, node[1])
+            right = self.value(entry, row, node[2])
+            return None if left is None or right is None else left == right
+        if kind == "not":
+            inner = self.truth(entry, row, node[1])
+            return None if inner is None else not inner
+        results = [self.truth(entry, row, term) for term in node[1]]
+        decisive = kind == "or"
+        if decisive in results:
+            return decisive
+        return None if None in results else not decisive
+
+    def matches(self, entry, row):
+        return self.truth(entry, row) is True
 
 
 def blank_to_none(value):
@@ -317,10 +392,17 @@ def allowed_by(rows, key, flt):
     if flt is None:
         every = {r[key] for r in rows}
         return lambda row: every
-    by_column = {}
-    for r in rows:
-        by_column.setdefault(r[flt.column], set()).add(r[key])
-    return lambda row: by_column.get(flt.value(row), set())
+    # The list a row is offered depends only on the columns the filter
+    # reads, so each combination of them is worked out once.
+    fields = sorted(flt.fields())
+    cache = {}
+
+    def allowed(row):
+        values = tuple(blank_to_none(row.get(f)) for f in fields)
+        if values not in cache:
+            cache[values] = {r[key] for r in rows if flt.matches(r, row)}
+        return cache[values]
+    return allowed
 
 
 def check_site(site):

@@ -71,13 +71,19 @@ The converter gives a warning for each of these:
 - **Vertical area habitats are not carried.** Legacy has no layer for them,
   so a legacy calculation leaves out their units.
 - **Irreplaceable habitat flags are dropped.** Legacy has no column for them,
-  so the converter lists them in `Irreplaceable habitats.csv`.
+  so the converter lists area habitats in `Irreplaceable habitats.csv` and
+  names irreplaceable trees in a warning.
 - **Lineage keys are dropped**, unless lineage is recorded in comments. The
   plugin records it by default. The command line needs `--carry-lineage`.
 - **Split features are flagged.** When a baseline hedgerow, watercourse or
   tree becomes several features, each converted row repeats the parent
   reference. Legacy expects one row for each reference, so its result can
   differ.
+- **Enhanced trees keep `Enhanced`.** The Natural England tree list offers
+  only `Retained` and `Lost`, so their template shows it in brackets.
+- **Baseline comments are not in the import tool CSVs,** which hold one row
+  for each post-intervention feature. Merging CSV rows replaces their
+  comments with a note.
 - **Loss rows copy the parent shape.** Legacy cannot record a removal by
   absence, so the conversion writes a loss row with the baseline shape. The
   length or count removed is exact. The stretch removed is not known.
@@ -159,6 +165,7 @@ generated: the first run of the generator copies the whole folder.
 | --- | --- |
 | Edit the code of a button | `patch_actions.py` |
 | Rename the buttons or change their order | `rename_actions.py` |
+| Add a column to the layers | `add_field.py`, with `--gpkg`. It adds the column to the empty tables and copies its settings from a layer that has it |
 | Remove a column from the layers | `drop_field.py`, after the column is dropped from `Layers/BNG Service Layers.gpkg` and no button reads it |
 | Change a filtered drop-down, or a field of a post-intervention layer | `reset_stale_dropdowns.py`, then `set_paste_defaults.py` |
 | Add an `Order` column to a reference list | `order_dropdowns.py` |
