@@ -181,6 +181,30 @@ def numeric(value):
     return None if math.isnan(number) else number
 
 
+# Up to plugin 1.6.0 the BNG Service template had a Count on its individual
+# trees, so one point could stand for several trees. It now records one tree
+# per point. A file made with the older template, or a legacy file, can still
+# hold a Count above 1, and reading it as one tree would drop the other
+# trees' units without a word.
+TREE_COUNT_COLUMN = "Count"
+
+
+def trees_counted_above_one(rows, ref_field):
+    """The refs of tree rows whose Count says the point is several trees."""
+    return [row.get(ref_field) for row in rows
+            if (numeric(row.get(TREE_COUNT_COLUMN)) or 1) > 1]
+
+
+def tree_count_warning(where, refs):
+    """What to tell the user about points written as one tree each."""
+    return (
+        f"{where}: {len(refs)} tree point(s) have a Count above 1 "
+        f"({summarise_refs(refs)}). Each point is now one tree, so each was "
+        "written as a single tree and the other trees' units are missing. "
+        "Add a point for each of the other trees."
+    )
+
+
 # The new template records area habitat areas in HECTARES (the unit the
 # Statutory Metric works in, and what the QGIS project's area setting produces).
 # The legacy template's Area column is whole SQUARE METRES. Every conversion

@@ -81,6 +81,8 @@ try:
     from .gpkg_common import (
         SQ_METRES_PER_HECTARE,
         numeric,
+        tree_count_warning,
+        trees_counted_above_one,
         part_path,
         parts_needed,
         plain_label,
@@ -93,6 +95,8 @@ except ImportError:  # pragma: no cover - running as a plain script
     from gpkg_common import (
         SQ_METRES_PER_HECTARE,
         numeric,
+        tree_count_warning,
+        trees_counted_above_one,
         part_path,
         parts_needed,
         plain_label,
@@ -741,6 +745,10 @@ def check_trees(trees, report):
             if is_blank(row.get(column)):
                 gaps.setdefault(column, []).append(row_label(row, REF_FIELD))
     report_gaps(baseline_table, gaps, report)
+    for table, rows in zip(TREE_TABLES, (trees["baseline"], trees["pi"])):
+        many = trees_counted_above_one(rows, REF_FIELD)
+        if many:
+            report.warn(tree_count_warning(table, many))
 
     parents = {row.get("feature_uuid"): row for row in trees["baseline"]
                if row.get("feature_uuid")}

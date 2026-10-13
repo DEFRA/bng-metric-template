@@ -45,6 +45,8 @@ try:
         feature_table_names,
         line_blob_length_m,
         numeric,
+        tree_count_warning,
+        trees_counted_above_one,
         plain_label,
         polygon_blob_area_sqm,
         quote_ident,
@@ -68,6 +70,8 @@ except ImportError:  # pragma: no cover - running as a plain script
         feature_table_names,
         line_blob_length_m,
         numeric,
+        tree_count_warning,
+        trees_counted_above_one,
         plain_label,
         polygon_blob_area_sqm,
         quote_ident,
@@ -940,15 +944,9 @@ def _report_tree_counts(rows, stage, report):
     cannot be carried over, and the extra trees would otherwise be lost
     without a word.
     """
-    many = [str(row.get("Tree Ref")) for row in rows
-            if (numeric(row.get("Count")) or 1) > 1]
+    many = trees_counted_above_one(rows, "Tree Ref")
     if many:
-        report.warn(
-            f"Trees: {len(many)} {stage} point(s) have a Count above 1 "
-            f"({summarise_refs(many)}). The BNG Service template records one "
-            "tree per point, so each was written as a single tree. Add a "
-            "point for each of the other trees, or their units are missing."
-        )
+        report.warn(tree_count_warning(f"Urban Trees ({stage})", many))
 
 
 def build_meander_rows(rows, index, report):

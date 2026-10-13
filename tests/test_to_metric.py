@@ -530,6 +530,29 @@ class DegradedHedgerowTest(support.TempDirTestCase):
         self.assertRegex(lost[0], r"[1-9]\d* feature\(s\) carry nothing")
 
 
+class OlderTemplateTreeCountTest(support.TempDirTestCase):
+    """A file from the template before 1.7.0, whose trees have a Count."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.gpkg = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                   "counted.gpkg")
+        cls.refs = support.add_tree_counts(cls.gpkg)
+        cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
+        cls.report = to_metric.convert(cls.gpkg, cls.blank,
+                                       cls.tmp / "counted.xlsx")
+
+    def test_each_table_names_its_point_of_several_trees(self):
+        for table, ref in self.refs.items():
+            with self.subTest(table=table):
+                found = [w for w in self.report.warnings
+                         if w.startswith(f"{table}:") and "Count above 1" in w]
+                self.assertEqual(1, len(found))
+                self.assertIn(ref, found[0])
+
+
 class OldTableNamesTest(support.TempDirTestCase):
     """A file from before the "Area Habitats" / "Individual Trees" rename."""
 

@@ -355,6 +355,25 @@ class NewToOldTest(support.TempDirTestCase):
                          report.counts["Habitats (baseline)"])
 
 
+class OlderTemplateTreeCountTest(support.TempDirTestCase):
+    """A file from the template before 1.7.0, whose trees have a Count."""
+
+    def test_each_table_names_its_point_of_several_trees(self):
+        site = support.generate_site(self.tmp / "site", *SITE_ARGS)
+        gpkg = support.copy_to(support.site_gpkg(site), self.tmp,
+                               "counted.gpkg")
+        refs = support.add_tree_counts(gpkg)
+        report = new_to_old.convert(gpkg, self.tmp / "legacy",
+                                    carry_lineage=True, dry_run=False,
+                                    formats=("gpkg",))
+        for table, ref in refs.items():
+            with self.subTest(table=table):
+                found = [w for w in report.warnings
+                         if w.startswith(f"{table}:") and "Count above 1" in w]
+                self.assertEqual(1, len(found))
+                self.assertIn(ref, found[0])
+
+
 class OldTableNamesTest(support.TempDirTestCase):
     """Files from before the "Area Habitats" / "Individual Trees" rename."""
 

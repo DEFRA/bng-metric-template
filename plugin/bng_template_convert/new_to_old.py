@@ -35,6 +35,8 @@ try:
         feature_table_names,
         hectares_to_sq_metres,
         numeric,
+        tree_count_warning,
+        trees_counted_above_one,
         plain_label,
         polygon_blob_area_sqm,
         promote_polygon_blob_to_multipolygon,
@@ -59,6 +61,8 @@ except ImportError:  # pragma: no cover - running as a plain script
         feature_table_names,
         hectares_to_sq_metres,
         numeric,
+        tree_count_warning,
+        trees_counted_above_one,
         plain_label,
         polygon_blob_area_sqm,
         promote_polygon_blob_to_multipolygon,
@@ -1510,6 +1514,11 @@ def _write_watercourses(baseline_conn, pi_conn, tables, site, carry_lineage, rep
 
 
 def _write_trees(baseline_conn, pi_conn, tables, site, carry_lineage, report):
+    for stage, table in (("baseline", "Individual Trees Baseline"),
+                         ("pi", "Individual Trees Post-Intervention")):
+        many = trees_counted_above_one(tables[stage], REF_FIELD)
+        if many:
+            report.warn(tree_count_warning(table, many))
     baseline_rows = [
         (row.get("_geom"), map_tree_baseline(row, site)) for row in tables["baseline"]
     ]
