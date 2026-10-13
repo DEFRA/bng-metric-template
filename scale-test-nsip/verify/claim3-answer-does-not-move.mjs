@@ -111,15 +111,15 @@ function readStaged() {
         "Length" AS lengthM FROM "Watercourses Post-Intervention"`),
     treesBaseline: q(`SELECT "Baseline Tree Size" AS size,
         "Baseline Rural or Urban Tree" AS setting,
-        "Baseline Condition" AS condition, "Count" AS count
+        "Baseline Condition" AS condition
         FROM "Individual Trees Baseline"`),
     treesPi: q(`SELECT "Retention Category" AS retention,
         "Proposed Tree Size" AS size,
         "Proposed Rural or Urban Tree" AS setting,
         "Proposed Condition" AS condition,
         "Habitat Created/Enhanced in advance/years" AS advance,
-        "Delay in starting habitat creation/enhancement in years" AS delay,
-        "Count" AS count FROM "Individual Trees Post-Intervention"`),
+        "Delay in starting habitat creation/enhancement in years" AS delay
+        FROM "Individual Trees Post-Intervention"`),
   }
 }
 
@@ -229,6 +229,8 @@ const lengthKm = (row) => num(row.lengthM) / METRES_PER_KM
 const baseLengthKm = (row) => num(row.baseLengthM) / METRES_PER_KM
 
 // A tree is an area habitat of a notional size the metric looks up by band.
+// The staged file has one tree per point and no count; a legacy row has a
+// Count, which the conversion writes as 1.
 const treeHa = (row) =>
   engine.getIndividualTreeAreaHectares(text(row.size)) * (num(row.count) || 1)
 const treeKey = (row) => `Individual trees - ${text(row.setting)}`

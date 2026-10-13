@@ -63,8 +63,10 @@ def main():
         ('watercourse types', 'SELECT "Baseline River Type", COUNT(*), '
                               'ROUND(SUM("Length")/1000, 2) FROM "Watercourses Baseline" '
                               'GROUP BY 1 ORDER BY 3 DESC'),
-        ('tree sizes', 'SELECT "Baseline Tree Size", COUNT(*), SUM("Count") '
-                       'FROM "Individual Trees Baseline" GROUP BY 1 ORDER BY 2 DESC'),
+        ('tree sizes (trees, irreplaceable)',
+         'SELECT "Baseline Tree Size", COUNT(*), '
+         'SUM(coalesce("Irreplaceable Habitat", \'\') = \'Yes\') '
+         'FROM "Individual Trees Baseline" GROUP BY 1 ORDER BY 2 DESC'),
     ]:
         print(f'  {label}')
         for name, count, measure in conn.execute(sql):

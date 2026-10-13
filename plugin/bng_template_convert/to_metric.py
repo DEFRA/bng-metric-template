@@ -53,8 +53,8 @@ HOW IT MAPS
 INDIVIDUAL TREES
     The metric holds trees on the area habitat sheets, as the broad habitat
     "Individual trees" with the habitat type "Urban tree" or "Rural tree". A
-    tree's area is not measured: it is the tree count times the area of its
-    size class, from the tree helper (User Guide, Table 15). A tree can be
+    tree's area is not measured: it is the area of its size class, from the
+    tree helper (User Guide, Table 15). Each point is one tree. A tree can be
     retained, enhanced, created or lost like any area habitat. Enhancing a
     tree improves its condition only. Its size class, and so its area, stays
     the baseline one, because the metric does not record natural growth
@@ -275,7 +275,7 @@ TREE_ADVANCE = "Habitat Created/Enhanced in advance/years"
 TREE_DELAY = "Delay in starting habitat creation/enhancement in years"
 TREE_BASELINE_NEEDS = ("Baseline Tree Size", "Baseline Rural or Urban Tree",
                        "Baseline Condition", "Baseline Strategic Significance",
-                       "Irreplaceable Habitat", "Count")
+                       "Irreplaceable Habitat")
 TREE_PROPOSED_NEEDS = ("Proposed Tree Size", "Proposed Rural or Urban Tree",
                        "Proposed Condition", "Proposed Strategic Significance")
 # The metric's condition scale for trees, worst first. An enhancement has to
@@ -391,13 +391,9 @@ def joined_comment(baseline_comment, part_comment):
 # ---------------------------------------------------------------------------
 
 
-def tree_area(size, count):
-    """Hectares for `count` trees of a size class, or None if either is unknown."""
-    per_tree = TREE_AREA_HA.get(plain_label(size) if size else None)
-    trees = numeric(count)
-    if per_tree is None or trees is None:
-        return None
-    return per_tree * trees
+def tree_area(size):
+    """Hectares for one tree of a size class, or None if it is unknown."""
+    return TREE_AREA_HA.get(plain_label(size) if size else None)
 
 
 def tree_as_area_baseline(row):
@@ -413,7 +409,7 @@ def tree_as_area_baseline(row):
         # Ancient and veteran trees are irreplaceable habitat. The metric
         # gives no units for their loss and refuses to enhance them.
         "Irreplaceable Habitat": row.get("Irreplaceable Habitat"),
-        "Area": tree_area(row.get("Baseline Tree Size"), row.get("Count")),
+        "Area": tree_area(row.get("Baseline Tree Size")),
         COMMENT_FIELD: row.get(COMMENT_FIELD),
     }
 
@@ -436,7 +432,7 @@ def tree_as_area_part(row, parent):
             "Proposed Strategic Significance"),
         "Habitat created in advance/years": row.get(TREE_ADVANCE),
         "Delay in starting habitat creation/years": row.get(TREE_DELAY),
-        "Area": tree_area(size, row.get("Count")),
+        "Area": tree_area(size),
         COMMENT_FIELD: row.get(COMMENT_FIELD),
     }
 
@@ -753,7 +749,7 @@ def check_trees(trees, report):
     for row in trees["pi"]:
         retention = retention_of(row)
         parent = parents.get(row.get("parent_uuid"))
-        needs = [RETENTION_FIELD, "Count"]
+        needs = [RETENTION_FIELD]
         if retention in (ENHANCED, CREATED) or parent is None:
             needs.extend(TREE_PROPOSED_NEEDS)
         if parent is not None and retention in (RETAINED, ENHANCED):

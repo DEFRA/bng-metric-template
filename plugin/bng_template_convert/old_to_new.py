@@ -287,7 +287,6 @@ STAGED_LAYERS = {
             ("Baseline Condition", "TEXT"),
             ("Baseline Strategic Significance", "TEXT"),
             ("Irreplaceable Habitat", "TEXT"),
-            ("Count", "MEDIUMINT"),
         ]
         + BASELINE_TAIL,
     },
@@ -313,7 +312,6 @@ STAGED_LAYERS = {
             ("Habitat Created/Enhanced in advance/years", "TEXT"),
             ("Delay in starting habitat creation/enhancement in years", "TEXT"),
             ("Spatial risk category", "TEXT"),
-            ("Count", "MEDIUMINT"),
         ]
         + PI_TAIL,
     },
@@ -713,11 +711,11 @@ def build_tree_baseline(rows, report):
     _report_duplicate_baseline_refs(
         _duplicate_refs(rows, "Tree Ref"), "Urban Trees", report
     )
+    _report_tree_counts(rows, "baseline", report)
     for row in rows:
         blob = row.get("_geom")
         feature_uuid = new_uuid()
-        count = numeric(row.get("Count"))
-        index.add(row.get("Tree Ref"), feature_uuid, blob_wkt(blob), count)
+        index.add(row.get("Tree Ref"), feature_uuid, blob_wkt(blob), None)
         out.append(
             (
                 blob,
@@ -735,7 +733,6 @@ def build_tree_baseline(rows, report):
                     # No legacy column. A surveyed tree can be either, so
                     # it is left for the surveyor (see _report_manual_steps).
                     "Irreplaceable Habitat": None,
-                    "Count": int(count) if count is not None else None,
                     "Comment": user_comment(row),
                     "feature_uuid": feature_uuid,
                 },
@@ -894,8 +891,8 @@ def build_tree_pi(rows, index, report):
     """Post-intervention trees; legacy 'Lost' rows are dropped as above."""
     out = []
     unmatched = []
+    _report_tree_counts(rows, "post-intervention", report)
     for row in rows:
-        count = numeric(row.get("Count"))
         values = {
             REF_FIELD: row.get("_pi_ref"),
             "Baseline Tree Size": row.get("Baseline Tree Size"),
@@ -925,7 +922,6 @@ def build_tree_pi(rows, index, report):
                 "Delay in starting habitat creation/enhancement in years"
             ),
             "Spatial risk category": row.get("Spatial risk category"),
-            "Count": int(count) if count is not None else None,
             "Comment": user_comment(row),
         }
         stamp_parent(values, row.get("_parent_ref"), index, unmatched,
@@ -934,6 +930,25 @@ def build_tree_pi(rows, index, report):
 
     _report_unmatched(unmatched, "Trees", report)
     return out
+
+
+def _report_tree_counts(rows, stage, report):
+    """Name the legacy points that stand for more than one tree.
+
+    The legacy template has a Count column, which its own form locks at 1.
+    The BNG Service template records one tree per point, so a higher count
+    cannot be carried over, and the extra trees would otherwise be lost
+    without a word.
+    """
+    many = [str(row.get("Tree Ref")) for row in rows
+            if (numeric(row.get("Count")) or 1) > 1]
+    if many:
+        report.warn(
+            f"Trees: {len(many)} {stage} point(s) have a Count above 1 "
+            f"({summarise_refs(many)}). The BNG Service template records one "
+            "tree per point, so each was written as a single tree. Add a "
+            "point for each of the other trees, or their units are missing."
+        )
 
 
 def build_meander_rows(rows, index, report):

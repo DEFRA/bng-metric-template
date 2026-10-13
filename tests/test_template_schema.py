@@ -29,7 +29,8 @@ REF = "Habitat Ref"
 PARENT_REF = "Parent Ref"
 BASELINE_ONLY = ("feature_uuid",)
 POST_ONLY = (PARENT_REF, "parent_uuid", "parent_geom")
-GONE = ("parent_checksum", "Parcel Ref", "Tree Ref")
+# Count went in 1.7.0: each tree point is one tree.
+GONE = ("parent_checksum", "Parcel Ref", "Tree Ref", "Count")
 COMMENT = "Comment"
 
 

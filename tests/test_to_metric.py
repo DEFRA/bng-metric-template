@@ -147,7 +147,7 @@ class ToMetricTest(support.TempDirTestCase):
         expected = sum(row["Area"] for row in support.read_rows(
             self.gpkg, "Area Habitats Baseline"))
         expected += sum(
-            to_metric.TREE_AREA_HA[row["Baseline Tree Size"]] * row["Count"]
+            to_metric.TREE_AREA_HA[row["Baseline Tree Size"]]
             for row in support.read_rows(self.gpkg, TREE_BASELINE))
         self.assertAlmostEqual(expected, sum(sizes), delta=AREA_TOLERANCE_HA)
 
@@ -338,7 +338,7 @@ class CommentsAndTreesTest(support.TempDirTestCase):
         enhanced = numbers_in_column(xml, columns["enhanced"], rows[0],
                                      rows[0])
         area = to_metric.TREE_AREA_HA[parent["Baseline Tree Size"]]
-        self.assertAlmostEqual(area * part["Count"], enhanced[0], places=6)
+        self.assertAlmostEqual(area, enhanced[0], places=6)
 
     def test_the_enhancement_rows_follow_the_enhanced_baseline_rows(self):
         """The nth enhancement row belongs to the nth enhanced baseline row."""

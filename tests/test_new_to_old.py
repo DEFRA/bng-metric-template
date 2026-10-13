@@ -241,6 +241,15 @@ class NewToOldTest(support.TempDirTestCase):
         self.assertTrue(baseline - kept)
         self.assertEqual(baseline - kept, lost)
 
+    def test_every_legacy_tree_row_is_one_tree(self):
+        for path in (self.baseline, self.pi):
+            rows = self.legacy(path, "Urban Trees")
+            self.assertTrue(rows)
+            for row in rows:
+                with self.subTest(file=path.name, ref=row["Tree Ref"]):
+                    self.assertEqual(new_to_old.LEGACY_TREE_COUNT,
+                                     row["Count"])
+
     # BUG: reference_lists._legacy_blank (reference_lists.py:476-495) and the
     # 1.5.0 changelog say a lost tree's Proposed Strategic Significance is
     # written as "N/A", the only value the Natural England list offers for a
