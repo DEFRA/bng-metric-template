@@ -8,6 +8,7 @@ import html
 import re
 import unittest
 import zipfile
+from collections import defaultdict
 
 from tests import support
 
@@ -431,6 +432,102 @@ class TreeWarningsTest(support.TempDirTestCase):
         xml = sheet_xml(self.out, AREA_ENHANCEMENT_SHEET)
         self.assertIn(inline("Badcharacter"), xml)
         self.assertNotIn("\x0b", xml)
+
+
+HEDGE_BASELINE = "Hedgerows Baseline"
+HEDGE_PI = "Hedgerows Post-Intervention"
+HEDGE_CREATION_SHEET = to_metric.LAYOUT["hedgerows"]["creation"][0]
+HEDGE_COLUMNS = {stage: to_metric.LAYOUT["hedgerows"][stage][3]
+                 for stage in ("baseline", "creation")}
+# Hedgerow lengths are written in kilometres, to 6 decimal places.
+LENGTH_TOLERANCE_KM = 1e-5
+
+
+class DegradedHedgerowTest(support.TempDirTestCase):
+    """The Metric team's scenario: a hedge that ends up in a worse condition.
+
+    A retained habitat cannot get worse, so the Metric records the hedge as
+    lost and a new hedge, the same length or shorter, created in its place
+    in the worse condition. In the template the surveyor copies the baseline
+    hedge, which links it to its parent, and sets it to Created. The link
+    stays, so the baseline and post-intervention records can still be
+    matched, but nothing is carried forward.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.gpkg = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                   "degraded.gpkg")
+        pi_rows = support.read_rows(cls.gpkg, HEDGE_PI)
+        children = defaultdict(list)
+        for row in pi_rows:
+            children[row["parent_uuid"]].append(row)
+        cls.parent = next(
+            row for row in support.read_rows(cls.gpkg, HEDGE_BASELINE)
+            if len(children[row["feature_uuid"]]) == 1
+            and children[row["feature_uuid"]][0]["Retention Category"]
+            in KEPT)
+        part = children[cls.parent["feature_uuid"]][0]
+        cls.length = cls.parent["Length"]
+        support.update(cls.gpkg, HEDGE_BASELINE,
+                       {"Baseline Condition": "Good"},
+                       "fid", cls.parent["fid"])
+        support.update(cls.gpkg, HEDGE_PI,
+                       {"Retention Category": "Created",
+                        "Proposed Hedge Type": cls.parent["Baseline Hedge Type"],
+                        "Proposed Condition": "Poor",
+                        "Length": cls.length},
+                       "fid", part["fid"])
+        cls.part = next(row for row in support.read_rows(cls.gpkg, HEDGE_PI)
+                        if row["fid"] == part["fid"])
+        cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
+        cls.out = cls.tmp / "degraded.xlsx"
+        cls.report = to_metric.convert(cls.gpkg, cls.blank, cls.out)
+
+    def rows_of(self, stage, ref):
+        xml = sheet_xml(self.out, (HEDGE_BASELINE_SHEET if stage == "baseline"
+                                   else HEDGE_CREATION_SHEET))
+        columns = HEDGE_COLUMNS[stage]
+        refs = cells_by_row(xml, columns["ref"])
+        return xml, columns, [row for row, text in refs.items()
+                              if text == ref]
+
+    def number(self, xml, column, row):
+        found = numbers_in_column(xml, column, row, row)
+        return found[0] if found else 0.0
+
+    def test_the_hedge_keeps_its_link_to_the_baseline(self):
+        self.assertEqual(self.parent["feature_uuid"], self.part["parent_uuid"])
+
+    def test_the_baseline_hedge_is_wholly_lost(self):
+        xml, columns, rows = self.rows_of("baseline",
+                                          self.parent["Habitat Ref"])
+        self.assertEqual(1, len(rows))
+        row = rows[0]
+        self.assertEqual("Good", cells_by_row(xml, columns["condition"])[row])
+        self.assertAlmostEqual(self.length / to_metric.METRES_PER_KM,
+                               self.number(xml, columns["size"], row),
+                               delta=LENGTH_TOLERANCE_KM)
+        self.assertEqual(0.0, self.number(xml, columns["retained"], row))
+        self.assertEqual(0.0, self.number(xml, columns["enhanced"], row))
+
+    def test_the_worse_hedge_is_created_in_its_place(self):
+        xml, columns, rows = self.rows_of("creation",
+                                          self.part["Habitat Ref"])
+        self.assertEqual(1, len(rows))
+        row = rows[0]
+        self.assertEqual("Poor", cells_by_row(xml, columns["condition"])[row])
+        self.assertAlmostEqual(self.length / to_metric.METRES_PER_KM,
+                               self.number(xml, columns["size"], row),
+                               delta=LENGTH_TOLERANCE_KM)
+
+    def test_the_report_counts_the_loss(self):
+        lost = [line for line in self.report.lines
+                if line.startswith(f"{HEDGE_BASELINE}:")]
+        self.assertEqual(1, len(lost))
+        self.assertRegex(lost[0], r"[1-9]\d* feature\(s\) carry nothing")
 
 
 class OldTableNamesTest(support.TempDirTestCase):

@@ -408,6 +408,32 @@ class EnhancedTrees(TemplateCase):
         row = self.set(layer, fid, RETENTION, "Enhanced")
         self.assertTrue(is_null(row[RETENTION]))
 
+    def test_a_tree_in_good_condition_cannot_be_enhanced(self):
+        # There is no better condition, so Enhanced would leave the
+        # Proposed Condition list empty.
+        layer, fid = self.tree(**{"Baseline Condition": "Good"})
+        row = self.set(layer, fid, RETENTION, "Enhanced")
+        self.assertTrue(is_null(row[RETENTION]))
+        self.assertEqual(self.set(layer, fid, RETENTION,
+                                  "Retained")[RETENTION], "Retained")
+
+    def test_an_irreplaceable_tree_cannot_be_enhanced(self):
+        # The Statutory Metric refuses an enhanced irreplaceable tree.
+        layer, fid = self.tree()
+        self.assertEqual(self.set(layer, fid, "Irreplaceable Habitat",
+                                  "Yes")["Irreplaceable Habitat"], "Yes")
+        row = self.set(layer, fid, RETENTION, "Enhanced")
+        self.assertTrue(is_null(row[RETENTION]))
+        self.assertEqual(self.set(layer, fid, RETENTION,
+                                  "Retained")[RETENTION], "Retained")
+
+    def test_marking_an_enhanced_tree_irreplaceable_clears_enhanced(self):
+        layer, fid = self.tree()
+        self.set(layer, fid, RETENTION, "Enhanced")
+        row = self.set(layer, fid, "Irreplaceable Habitat", "Yes")
+        self.assertEqual(row["Irreplaceable Habitat"], "Yes")
+        self.assertTrue(is_null(row[RETENTION]))
+
 
 IRREPLACEABLE = "Irreplaceable Habitat"
 

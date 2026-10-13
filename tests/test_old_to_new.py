@@ -372,5 +372,26 @@ class RoundTripTest(support.TempDirTestCase):
                                        delta=LENGTH_TOLERANCE_M)
 
 
+class BaselineCommentTest(unittest.TestCase):
+    """A breadcrumb typed or pasted onto a legacy baseline row is lineage,
+    not the surveyor's comment, so it is taken out there too."""
+
+    def test_each_baseline_builder_strips_the_breadcrumbs(self):
+        report = old_to_new.Report()
+        note = "Grazed by sheep [parent=H-1] [pi=H-1]"
+        built = {
+            "areas": old_to_new.build_area_baseline(
+                [{"Parcel Ref": "A-1", "Comment": note}], report),
+            "hedgerows": old_to_new.build_linear_baseline(
+                [{"Parcel Ref": "H-1", "Comments": note}], {}, report,
+                "Hedgerows"),
+            "trees": old_to_new.build_tree_baseline(
+                [{"Tree Ref": "T-1", "Comment": note}], report),
+        }
+        for kind, (rows, _index) in built.items():
+            with self.subTest(kind=kind):
+                self.assertEqual("Grazed by sheep", rows[0][1]["Comment"])
+
+
 if __name__ == "__main__":
     unittest.main()

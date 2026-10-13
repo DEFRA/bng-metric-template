@@ -677,6 +677,13 @@ Draw a hedgerow as a **line**. QGIS fills in `Length (m)` and locks it.
 - **A hedge is shorter but its condition is the same:** keep it `Retained`.
   Shorten the copied line with the **Vertex Tool**, or split it to the
   shorter length. A new line drawn in its place has no link to the baseline.
+- **A hedge whose condition gets worse:** a retained hedge cannot get worse,
+  so the Statutory Metric records the old hedge as lost and a new one as
+  created in its place. Keep the copied row and set **Retention Category** to
+  `Created`, then set the worse **Proposed Condition**. If the new hedge is
+  shorter, shorten the line. Its `Parent Ref` stays, so the two records stay
+  linked, but nothing is carried forward: the whole baseline hedge counts as
+  lost.
 - **A new hedge:** draw a new line on the Post-Intervention layer (see *New
   habitats*).
 
@@ -728,7 +735,9 @@ Draw each tree as a **point**. A point cannot be split.
   Condition** to the condition it will reach. The list offers only conditions
   better than the baseline one, and fills in the only one when there is one.
   A tree already in `Good` condition cannot be enhanced, and neither can an
-  irreplaceable tree: the Statutory Metric refuses both. The size, type and
+  irreplaceable tree: the Statutory Metric refuses both, so the list does not
+  offer `Enhanced` for either. Marking an `Enhanced` tree as irreplaceable
+  clears its **Retention Category**, so choose it again. The size, type and
   rural or urban setting stay the baseline ones, because the Statutory Metric
   does not record the growth of a kept tree. Use the Comment to say what you
   will do, for example crown works or mulching.

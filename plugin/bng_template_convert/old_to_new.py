@@ -661,7 +661,7 @@ def build_area_baseline(rows, report):
                     # allows only one answer.
                     "Irreplaceable Habitat": None,
                     "Area": area,
-                    "Comment": row.get("Comment"),
+                    "Comment": user_comment(row),
                     "feature_uuid": feature_uuid,
                 },
             )
@@ -698,7 +698,7 @@ def build_linear_baseline(rows, spec, report, label):
                 "Baseline Strategic Significance"
             ),
             "Length": length,
-            "Comment": row.get("Comments") or row.get("Comment"),
+            "Comment": user_comment(row),
             "feature_uuid": feature_uuid,
         }
         for target, source in spec.items():
@@ -736,7 +736,7 @@ def build_tree_baseline(rows, report):
                     # it is left for the surveyor (see _report_manual_steps).
                     "Irreplaceable Habitat": None,
                     "Count": int(count) if count is not None else None,
-                    "Comment": row.get("Comment"),
+                    "Comment": user_comment(row),
                     "feature_uuid": feature_uuid,
                 },
             )

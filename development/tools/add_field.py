@@ -15,7 +15,9 @@ Each --layer takes the --like and --after given after it, so one run can add
 the field to several layers. With --gpkg, the column is also added to each
 layer's table, in place after the --after column. The table must be empty:
 SQLite cannot insert a column in the middle of a table, so the table is
-dropped and created again, with its triggers. The template ships empty.
+dropped and created again, with its triggers, in one transaction. The
+template ships empty. The layer names are checked against the project
+before the GeoPackage is touched.
 
 The project XML is edited in place and every other byte is left alone, for
 the same reasons as qgz_actions.py. Running it twice changes nothing.
@@ -111,11 +113,18 @@ def add_to_layer(block, field, after, sources):
 
 
 def add_column(gpkg, table, field, after, sql_type):
-    """Insert the column after `after`, by creating the empty table again."""
-    conn = sqlite3.connect(gpkg)
+    """Insert the column after `after`, by creating the empty table again.
+
+    The drop, the new table and its triggers are one transaction, so a
+    failure at any step leaves the table as it was.
+    """
+    # Python's sqlite3 opens a transaction by itself only before a DML
+    # statement, so a DROP TABLE under `with conn:` would be saved at once.
+    # With no automatic transactions, BEGIN and ROLLBACK below are the
+    # only ones.
+    conn = sqlite3.connect(gpkg, isolation_level=None)
     try:
-        names = [row[1] for row in conn.execute(
-            f'PRAGMA table_info("{table}")')]
+        names = column_names(conn, table)
         if field in names:
             return False
         if after not in names:
@@ -133,15 +142,33 @@ def add_column(gpkg, table, field, after, sql_type):
         triggers = [sql for (sql,) in conn.execute(
             "SELECT sql FROM sqlite_master WHERE type='trigger' AND tbl_name=?",
             (table,))]
-        with conn:
+        expected = names[:names.index(after) + 1] + [field] + names[
+            names.index(after) + 1:]
+        conn.execute("BEGIN")
+        try:
             conn.execute(f'DROP TABLE "{table}"')
             conn.execute(create)
+            # The new column is found by text, not parsed, so a comma in
+            # the anchor column's own definition, such as a CHECK list,
+            # could put it elsewhere. Check where it went.
+            if column_names(conn, table) != expected:
+                raise SystemExit(
+                    f"{table}: could not place {field!r} after {after!r} "
+                    "in the table definition; nothing was changed")
             for sql in triggers:
                 conn.execute(sql)
+            conn.execute("COMMIT")
+        except BaseException:
+            conn.execute("ROLLBACK")
+            raise
         conn.execute("VACUUM")
         return True
     finally:
         conn.close()
+
+
+def column_names(conn, table):
+    return [row[1] for row in conn.execute(f'PRAGMA table_info("{table}")')]
 
 
 def parse_args(argv):
@@ -166,11 +193,6 @@ def main(argv):
     args = parse_args(argv)
     targets = dict(zip(args.layer, zip(args.like, args.after)))
 
-    if args.gpkg:
-        for layer, (_like, after) in targets.items():
-            if add_column(args.gpkg, layer, args.field, after, args.type):
-                print(f"{layer}: added column {args.field!r} after {after!r}")
-
     qgs, payload = read_project(args.project)
     xml = payload[qgs].decode("utf-8")
     blocks = {}
@@ -178,10 +200,17 @@ def main(argv):
         name = LAYER_NAME.search(match.group(0))
         if name:
             blocks[name.group(1)] = match.group(0)
+    # Check the names before anything is written, so a typo cannot leave
+    # the GeoPackage changed and the project not.
     missing = sorted({*targets, *args.like} - set(blocks))
     if missing:
         print(f"no such layer: {', '.join(missing)}", file=sys.stderr)
         return 1
+
+    if args.gpkg:
+        for layer, (_like, after) in targets.items():
+            if add_column(args.gpkg, layer, args.field, after, args.type):
+                print(f"{layer}: added column {args.field!r} after {after!r}")
 
     def replace(match):
         block = match.group(0)
