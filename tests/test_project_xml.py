@@ -170,6 +170,20 @@ class ProjectXmlTest(unittest.TestCase):
         self.assertTrue(proposed["FilterExpression"].endswith(
             "\"New\" IN ('Intertidal hard structures','Urban')"))
 
+    def test_area_layers_do_not_offer_a_vertical_only_broad_habitat(self):
+        """Intertidal hard structures are all counted by vertical area."""
+        for stage in (BASELINE, POST):
+            layer = self.layer(AREA, stage)
+            with self.subTest(stage=stage):
+                offered = value_map_values(
+                    layer.widgets["Baseline Broad Habitat Type"])
+                self.assertNotIn("Intertidal hard structures", offered)
+                self.assertIn("Urban", offered)
+        proposed = widget_options(self.layer(AREA, POST).widgets[
+            "Proposed Broad Habitat Type"])
+        self.assertTrue(proposed["FilterExpression"].endswith(
+            "NOT (\"New\" IN ('Intertidal hard structures'))"))
+
     def test_parent_checksum_is_gone_from_the_project(self):
         self.assertNotIn("parent_checksum", self.xml)
 

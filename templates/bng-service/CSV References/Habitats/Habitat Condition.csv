@@ -1,9 +1,6 @@
 UKHAB,Condition,Label,Order
 Allotments,Good,Good,1
 Aquifer fed naturally fluctuating water bodies,Good,Good,1
-Artificial features of hard structures,Good,Good,1
-Artificial hard structures,Good,Good,1
-Artificial hard structures with integrated greening of grey infrastructure (IGGI),Good,Good,1
 Artificial littoral biogenic reefs,Good,Good,1
 Artificial littoral coarse sediment,Good,Good,1
 Artificial littoral mixed sediments,Good,Good,1
@@ -106,9 +103,6 @@ Felled,Good,Good,1
 Replacement for felled woodland,Good,Good,1
 Allotments,Fairly Good,Fairly Good,2
 Aquifer fed naturally fluctuating water bodies,Fairly Good,Fairly Good,2
-Artificial features of hard structures,Fairly Good,Fairly Good,2
-Artificial hard structures,Fairly Good,Fairly Good,2
-Artificial hard structures with integrated greening of grey infrastructure (IGGI),Fairly Good,Fairly Good,2
 Artificial littoral biogenic reefs,Fairly Good,Fairly Good,2
 Artificial littoral coarse sediment,Fairly Good,Fairly Good,2
 Artificial littoral mixed sediments,Fairly Good,Fairly Good,2
@@ -209,9 +203,6 @@ Oceanic valley mire[1] (D2.1),Fairly Good,Fairly Good,2
 Wood-pasture and parkland,Fairly Good,Fairly Good,2
 Allotments,Moderate,Moderate,3
 Aquifer fed naturally fluctuating water bodies,Moderate,Moderate,3
-Artificial features of hard structures,Moderate,Moderate,3
-Artificial hard structures,Moderate,Moderate,3
-Artificial hard structures with integrated greening of grey infrastructure (IGGI),Moderate,Moderate,3
 Artificial littoral biogenic reefs,Moderate,Moderate,3
 Artificial littoral coarse sediment,Moderate,Moderate,3
 Artificial littoral mixed sediments,Moderate,Moderate,3
@@ -312,9 +303,6 @@ Oceanic valley mire[1] (D2.1),Moderate,Moderate,3
 Wood-pasture and parkland,Moderate,Moderate,3
 Allotments,Fairly Poor,Fairly Poor,4
 Aquifer fed naturally fluctuating water bodies,Fairly Poor,Fairly Poor,4
-Artificial features of hard structures,Fairly Poor,Fairly Poor,4
-Artificial hard structures,Fairly Poor,Fairly Poor,4
-Artificial hard structures with integrated greening of grey infrastructure (IGGI),Fairly Poor,Fairly Poor,4
 Artificial littoral biogenic reefs,Fairly Poor,Fairly Poor,4
 Artificial littoral coarse sediment,Fairly Poor,Fairly Poor,4
 Artificial littoral mixed sediments,Fairly Poor,Fairly Poor,4
@@ -415,9 +403,6 @@ Willow scrub,Fairly Poor,Fairly Poor,4
 Wood-pasture and parkland,Fairly Poor,Fairly Poor,4
 Allotments,Poor,Poor,5
 Aquifer fed naturally fluctuating water bodies,Poor,Poor,5
-Artificial features of hard structures,Poor,Poor,5
-Artificial hard structures,Poor,Poor,5
-Artificial hard structures with integrated greening of grey infrastructure (IGGI),Poor,Poor,5
 Artificial littoral biogenic reefs,Poor,Poor,5
 Artificial littoral coarse sediment,Poor,Poor,5
 Artificial littoral mixed sediments,Poor,Poor,5

@@ -169,7 +169,7 @@ generated: the first run of the generator copies the whole folder.
 | Remove a column from the layers | `drop_field.py`, after the column is dropped from `Layers/BNG Service Layers.gpkg` and no button reads it |
 | Change a filtered drop-down, or a field of a post-intervention layer | `reset_stale_dropdowns.py`, then `set_paste_defaults.py` |
 | Add an `Order` column to a reference list | `order_dropdowns.py` |
-| Change which habitats the Vertical Area Habitats layers offer | The lists in `CSV References/Vertical Area Habitats/`, then `limit_vertical_habitats.py`, then `reset_stale_dropdowns.py` |
+| Change which habitats the Vertical Area Habitats layers offer | The lists in `CSV References/Vertical Area Habitats/`, then `limit_vertical_habitats.py`, then `reset_stale_dropdowns.py`. Keep those habitats out of the area habitat lists in `CSV References/Habitats/` (Options, Distinctiveness and Condition); the tests check it |
 | Change a reference list of either template | `plugin/build_plugin.py`, then send the new zip to the users of the plugin |
 | Test a button against a site | `run_actions_headless.py`, with the Python that comes with QGIS |
 

@@ -296,6 +296,22 @@ class OldToNewTest(support.TempDirTestCase):
                          support.template_version(self.target)["version"])
         self.assertEqual([], self.warnings_mentioning("version"))
 
+    def test_an_intertidal_hard_structure_on_area_habitats_is_warned_about(self):
+        folder = self.tmp / "intertidal"
+        baseline = support.copy_to(self.baseline, folder)
+        pi = support.copy_to(self.pi, folder)
+        ref = support.read_rows(baseline, "Habitats")[3][PARCEL_REF]
+        support.update(baseline, "Habitats",
+                       {"Baseline Broad Habitat Type":
+                        "Intertidal hard structures",
+                        "Baseline Habitat Type": "Artificial hard structures"},
+                       PARCEL_REF, ref)
+        report = fill(baseline, pi, template_copy(folder))
+        warnings = [w for w in report.warnings
+                    if "Vertical Area Habitats layers" in w]
+        self.assertEqual(1, len(warnings))
+        self.assertIn(ref, warnings[0])
+
     def test_a_target_without_a_version_is_warned_about_and_left_alone(self):
         target = template_copy(self.tmp / "no-version")
         conn = support.open_for_writing(target)

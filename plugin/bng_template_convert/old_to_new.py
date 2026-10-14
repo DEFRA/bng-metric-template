@@ -98,6 +98,7 @@ try:
         PROPOSED_SIGNIFICANCE,
         SIGNIFICANCE_LOW,
         TREE_NEWLY_PLANTED,
+        VERTICAL_HABITATS,
         fill_template_values,
         has_baseline_part,
         service_significance,
@@ -113,6 +114,7 @@ except ImportError:  # pragma: no cover - running as a plain script
         PROPOSED_SIGNIFICANCE,
         SIGNIFICANCE_LOW,
         TREE_NEWLY_PLANTED,
+        VERTICAL_HABITATS,
         fill_template_values,
         has_baseline_part,
         service_significance,
@@ -1693,6 +1695,34 @@ def _report_manual_steps(tables, report):
         "Vertical area habitats (green walls, intertidal hard structures) are "
         "empty: the legacy template cannot record them. Add any that exist."
     )
+    _report_vertical_on_area(tables, report)
+
+
+def _report_vertical_on_area(tables, report):
+    """Name the area habitat rows that hold a vertical area habitat.
+
+    The legacy template records an intertidal hard structure as an area
+    habitat. The template records it on the Vertical Area Habitats layers,
+    by its vertical area, and the area habitat drop-downs do not offer it.
+    The row is written as it is, for the user to move.
+    """
+    found = [
+        values.get(REF_FIELD)
+        for table, rows in tables.items()
+        if table in AREA_HABITAT_LAYERS
+        for _, values in rows
+        if any(VERTICAL_HABITATS.values(values.get(column))
+               for column in ("Baseline Habitat Type", "Proposed Habitat Type"))
+    ]
+    if found:
+        report.warn(
+            f"{len(found)} area habitat row(s) hold a habitat that the "
+            f"template records on the Vertical Area Habitats layers "
+            f"({summarise_refs(found)}). The area habitat drop-downs do not "
+            "offer it. Draw it on Vertical Area Habitats, as a line with its "
+            "area in hectares, and give the area habitat row the habitat of "
+            "the ground it stands on."
+        )
 
 
 # ---------------------------------------------------------------------------

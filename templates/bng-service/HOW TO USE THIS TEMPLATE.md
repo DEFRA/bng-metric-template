@@ -670,6 +670,11 @@ five habitats that the Statutory Metric counts by their vertical area:
 | Intertidal hard structures | Artificial features of hard structures |
 | Intertidal hard structures | Artificial hard structures with integrated greening of grey infrastructure (IGGI) |
 
+**The Area Habitats layers do not offer these five,** and do not offer the
+Intertidal hard structures broad habitat. They are not part of the site area,
+which the area habitats cover. Map the ground under a structure on Area
+Habitats, for example as Developed land; sealed surface.
+
 A green roof is an area habitat. Draw it on the Area Habitats layers.
 
 1. Click **Add Line Feature**.

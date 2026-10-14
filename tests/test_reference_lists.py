@@ -88,6 +88,32 @@ class VerticalAreaHabitatListsTest(unittest.TestCase):
                           for name in VERTICAL_HABITATS}, dict(found))
 
 
+class AreaHabitatListsTest(unittest.TestCase):
+    """The area habitat lists leave out the habitats counted by vertical area.
+
+    They are not part of the site area, which the area habitats must cover
+    (User Guide, "Calculating area of green walls" and "Calculating area of
+    artificial hard structures and IGGI").
+    """
+
+    def test_no_area_list_offers_a_vertical_habitat(self):
+        for relative, column in (
+                ("Habitats/Habitat Options- pre.csv", "UKHAB"),
+                ("Habitats/Habitat Options- post.csv", "UKHAB"),
+                ("Habitats/Habitat Distinctiveness- pre.csv", "Habitat"),
+                ("Habitats/Habitat Distinctiveness- post.csv", "Habitat"),
+                ("Habitats/Habitat Condition.csv", "UKHAB")):
+            with self.subTest(list=relative):
+                found = {row[column] for row in csv_rows("bng-service",
+                                                         relative)}
+                self.assertFalse(found & set(VERTICAL_HABITATS))
+
+    def test_converter_reads_the_vertical_habitats(self):
+        for name, (broad, _d) in VERTICAL_HABITATS.items():
+            with self.subTest(habitat=name):
+                self.assertEqual([broad], rl.VERTICAL_HABITATS.values(name))
+
+
 class EnhancedTreeListsTest(unittest.TestCase):
     """An existing tree can be enhanced, by improving its condition only.
 
