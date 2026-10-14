@@ -218,6 +218,11 @@ GDAL shows it as the dataset metadata item `GPKG_METADATA_ITEM_1`.
 `read_template_version()` in `plugin/bng_template_convert/gpkg_common.py`
 reads it, and refuses a file that records it more than once.
 
+**Another tool can write a file in this format.** It must write this record,
+as well as the template's tables, columns and values. The service checks the
+whole file, not only the record: the record says which version the file
+claims to be, and the service checks the file against that version.
+
 **It is not a row of its own in `gpkg_extensions`.** GDAL, and so QGIS,
 warns about an extension that it does not know: on every open of the file
 when its scope is `read-write`, and on every edit when it is `write-only`.
