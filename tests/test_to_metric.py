@@ -147,7 +147,7 @@ class ToMetricTest(support.TempDirTestCase):
         expected = sum(row["Area"] for row in support.read_rows(
             self.gpkg, "Area Habitats Baseline"))
         expected += sum(
-            to_metric.TREE_AREA_HA[row["Baseline Tree Size"]] * row["Count"]
+            to_metric.TREE_AREA_HA[row["Baseline Tree Size"]]
             for row in support.read_rows(self.gpkg, TREE_BASELINE))
         self.assertAlmostEqual(expected, sum(sizes), delta=AREA_TOLERANCE_HA)
 
@@ -338,7 +338,7 @@ class CommentsAndTreesTest(support.TempDirTestCase):
         enhanced = numbers_in_column(xml, columns["enhanced"], rows[0],
                                      rows[0])
         area = to_metric.TREE_AREA_HA[parent["Baseline Tree Size"]]
-        self.assertAlmostEqual(area * part["Count"], enhanced[0], places=6)
+        self.assertAlmostEqual(area, enhanced[0], places=6)
 
     def test_the_enhancement_rows_follow_the_enhanced_baseline_rows(self):
         """The nth enhancement row belongs to the nth enhanced baseline row."""
@@ -528,6 +528,29 @@ class DegradedHedgerowTest(support.TempDirTestCase):
                 if line.startswith(f"{HEDGE_BASELINE}:")]
         self.assertEqual(1, len(lost))
         self.assertRegex(lost[0], r"[1-9]\d* feature\(s\) carry nothing")
+
+
+class OlderTemplateTreeCountTest(support.TempDirTestCase):
+    """A file from the template before 1.7.0, whose trees have a Count."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.gpkg = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                   "counted.gpkg")
+        cls.refs = support.add_tree_counts(cls.gpkg)
+        cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
+        cls.report = to_metric.convert(cls.gpkg, cls.blank,
+                                       cls.tmp / "counted.xlsx")
+
+    def test_each_table_names_its_point_of_several_trees(self):
+        for table, ref in self.refs.items():
+            with self.subTest(table=table):
+                found = [w for w in self.report.warnings
+                         if w.startswith(f"{table}:") and "Count above 1" in w]
+                self.assertEqual(1, len(found))
+                self.assertIn(ref, found[0])
 
 
 class OldTableNamesTest(support.TempDirTestCase):

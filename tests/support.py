@@ -231,6 +231,28 @@ def make_a_tree_irreplaceable(gpkg):
     return row["Habitat Ref"]
 
 
+def add_tree_counts(gpkg, count=3):
+    """Give the tree tables the Count of the template before 1.7.0, with
+    `count` on the first tree of each. Returns {table: that tree's ref}."""
+    refs = {}
+    conn = open_for_writing(gpkg)
+    try:
+        for table in ("Individual Trees Baseline",
+                      "Individual Trees Post-Intervention"):
+            quoted = gpkg_common.quote_ident(table)
+            conn.execute(f'ALTER TABLE {quoted} ADD COLUMN "Count" MEDIUMINT')
+            fid, ref = conn.execute(
+                f'SELECT fid, "Habitat Ref" FROM {quoted} ORDER BY fid'
+            ).fetchone()
+            conn.execute(f'UPDATE {quoted} SET "Count" = ? WHERE fid = ?',
+                         (count, fid))
+            refs[table] = ref
+        conn.commit()
+    finally:
+        conn.close()
+    return refs
+
+
 def line(points):
     return gpkg_write.line_blob(points)
 

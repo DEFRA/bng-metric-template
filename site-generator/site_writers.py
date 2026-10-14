@@ -299,7 +299,7 @@ def write_trees(conn, site):
         blob = gw.point_blob(point)
         note, irreplaceable = lin.baseline_tree(choose.roll(seed, 1909))
         base_rows.append((blob, ref, size, tree_type, setting, condition,
-                          significance, 1, note, feature_uuid, irreplaceable))
+                          significance, note, feature_uuid, irreplaceable))
         if scheme['clears_trees'] and zone_of[cell] == plan.CORE:
             counts['lost'] += 1
             continue
@@ -310,7 +310,7 @@ def write_trees(conn, site):
         pi_rows.append((
             blob, ref, ref, size, tree_type, setting, condition, significance,
             retention, size, tree_type, setting, proposed_condition,
-            significance, 'Existing', advance, delay, ON_SITE, 1, note,
+            significance, 'Existing', advance, delay, ON_SITE, note,
             feature_uuid, gw.point_wkt(point), irreplaceable))
 
     planted = []
@@ -338,7 +338,7 @@ def write_trees(conn, site):
             'Native', 'Urban tree' if urban else 'Rural tree',
             choose.pick(lin.PLANTED_TREE_CONDITIONS, seed, 2009),
             lin.tree_significance(choose.key(seed, 2011)), 'Newly Planted',
-            advance, delay, ON_SITE, 1, None, None, None, 'No'))
+            advance, delay, ON_SITE, None, None, None, 'No'))
 
     insert_many(conn, TREE_BASELINE, TREE_BASE_COLS, base_rows)
     insert_many(conn, TREE_PI, TREE_PI_COLS, pi_rows)

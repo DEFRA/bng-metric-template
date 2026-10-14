@@ -94,7 +94,7 @@ names an Enhanced tree that is irreplaceable: the metric does not allow it.
 **Individual trees go on the area habitat sheets,** after the area habitats,
 as the metric holds them: broad habitat *Individual trees*, habitat type
 *Urban tree* or *Rural tree*. The size is the tree helper's area for the size
-class, times `Count` (User Guide, Table 15: Small 0.0041 ha, Medium 0.0163,
+class, one tree per point (User Guide, Table 15: Small 0.0041 ha, Medium 0.0163,
 Large 0.0366, Very large 0.0765). An Enhanced tree keeps its baseline size
 class, because the metric does not record the growth of a kept tree. Its
 enhancement goes on the enhancement sheet. The log names an Enhanced tree whose

@@ -101,6 +101,8 @@ class Mutations:
             pi_habitats, lambda r: r[RETENTION] == "Retained")[PARCEL_REF]
         self.off_site = first(
             pi_habitats, lambda r: r[PARCEL_REF] != self.medium)[PARCEL_REF]
+        self.many_trees = support.read_rows(baseline, "Urban Trees")[0][
+            "Tree Ref"]
         self.apply(baseline, pi)
 
     def apply(self, baseline, pi):
@@ -122,6 +124,8 @@ class Mutations:
                        PARCEL_REF, self.retained_high)
         support.update(pi, "Habitats", {SPATIAL_RISK: OFF_SITE_RISK},
                        PARCEL_REF, self.off_site)
+        support.update(baseline, "Urban Trees", {"Count": 3},
+                       "Tree Ref", self.many_trees)
 
 
 class OldToNewTest(support.TempDirTestCase):
@@ -147,6 +151,14 @@ class OldToNewTest(support.TempDirTestCase):
     def warnings_mentioning(self, *texts):
         return [w for w in self.report.warnings
                 if all(text in w for text in texts)]
+
+    def test_a_point_of_several_trees_becomes_one_tree_with_a_warning(self):
+        rows = [row for row in self.rows("Individual Trees Baseline")
+                if row[REF] == self.changed.many_trees]
+        self.assertEqual(1, len(rows))
+        self.assertNotIn("Count", rows[0])
+        self.assertEqual(1, len(self.warnings_mentioning(
+            self.changed.many_trees, "Count above 1")))
 
     def test_every_baseline_row_is_low(self):
         for table in BASELINE_TABLES:

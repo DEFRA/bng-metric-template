@@ -109,7 +109,7 @@ as the button:
 - On trees, `Category` is `Existing`. On hedgerows and watercourses,
   `Baseline Length` is the length rounded to 3 decimal places.
 
-The `Baseline` values, `Irreplaceable Habitat`, `Count` and the typed `Area`
+The `Baseline` values, `Irreplaceable Habitat` and the typed `Area`
 of a vertical area habitat need no default. A paste matches columns by name,
 so it carries every column that the two layers share.
 

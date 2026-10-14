@@ -33,7 +33,7 @@ Post-Intervention layer, and all of them are in one GeoPackage:
 | **Vertical Area Habitats** | line | `Area (ha)` | hectares | you |
 | **Hedgerows** | line | `Length (m)` | metres | QGIS |
 | **Watercourses** | line | `Length (m)` | metres | QGIS |
-| **Individual Trees** | point | `Count` | trees | you |
+| **Individual Trees** | point | none | one tree per point | |
 
 Areas are in hectares, the unit of the Statutory Metric. The measure tool also
 gives hectares. One hectare is 10,000 m², so a parcel of 100 m by 100 m shows
@@ -44,8 +44,8 @@ Two types need an explanation:
 - **Vertical Area Habitats** are green walls and intertidal hard structures.
   You draw the line along the base of the structure. The area that counts is
   the vertical face, which QGIS cannot calculate from a line, so you type it.
-- **Individual Trees** are points and have no size to measure. `Count` is the
-  number of trees that one point represents.
+- **Individual Trees** are points and have no size to measure. Each point is
+  one tree. The Statutory Metric gives a tree an area from its size class.
 
 This guide uses **Area Habitats** as the example. The other four types use the
 same buttons and the same copy action. Part 9 gives the differences.
@@ -607,8 +607,7 @@ no baseline, so you draw it directly on the Post-Intervention layer.
 6. Check that **Parent Ref** is blank. It is locked. If it is filled, see
    *A new feature exactly on a baseline feature*, below.
 
-For a vertical area habitat, type the `Area (ha)`. For a tree, type the
-`Count`.
+For a vertical area habitat, type the `Area (ha)`.
 
 **The service accepts a `Created` row as it is.** It accepts one when the
 Baseline layer is empty, because a site with no hedges can gain new ones. A
@@ -746,9 +745,9 @@ features at the survey. Then you can keep or delete each part.
 Draw each tree as a **point**. A point cannot be split.
 
 1. Click **Add Point Feature**.
-2. Click once at the tree.
-3. Type the number of trees in **`Count`**, usually `1`.
-4. Set **Irreplaceable Habitat** to `Yes` for an ancient or veteran tree, and
+2. Click once at the tree. Add one point for each tree, even where trees
+   stand close together.
+3. Set **Irreplaceable Habitat** to `Yes` for an ancient or veteran tree, and
    `No` for any other. It starts blank on a surveyed tree, so that you decide.
    A planted tree is always `No`.
 
@@ -769,8 +768,6 @@ Draw each tree as a **point**. A point cannot be split.
   a baseline tree is the exception (see *A new feature exactly on a baseline
   feature*).
 - **A felled tree:** delete its copied row. The service lists it as removed.
-- **Some trees of a point are felled:** keep the row as `Retained` and reduce
-  its `Count`.
 - **A tree planted where a tree was felled:** add a separate `Created` point,
   a short distance from the felled tree or with snapping off. Its `Parent Ref`
   must stay blank. The Statutory Metric also treats the two as separate.
