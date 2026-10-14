@@ -22,8 +22,8 @@ wrong wherever the template would have filled a value.
     python3 dropdown_check.py <site folder>     # exits 1 on any invalid value
 
 Standard library only. The filter language is the small subset the template
-uses: comparisons with `=` between list columns, strings, current_value(),
-concat() and coalesce(), joined by AND, OR and NOT. Anything else stops the
+uses: comparisons with `=` or `IN (...)` between list columns, strings,
+current_value(), concat() and coalesce(), joined by AND, OR and NOT. Anything else stops the
 check rather than being guessed at.
 """
 
@@ -44,9 +44,9 @@ TOKEN = re.compile(r"\s*(?:(\"[^\"]*\")|('(?:[^']|'')*')|([A-Za-z_]+)|(.))")
 class Filter:
     """A parsed filter, evaluated against a list row and the feature's row.
 
-    Comparisons are `=` between a list column ("Name"), a string and the
-    functions current_value(), concat() and coalesce(), joined by AND, OR
-    and NOT, with brackets. A comparison with a blank side is NULL, as in
+    Comparisons are `=` or `IN (...)` between a list column ("Name"), a
+    string and the functions current_value(), concat() and coalesce(),
+    joined by AND, OR and NOT, with brackets. A comparison with a blank side is NULL, as in
     QGIS, and NULL keeps a list row out.
     """
 
@@ -101,9 +101,23 @@ class Filter:
                 self._fail()
             return inner
         left = self._operand()
+        if self._keyword("IN"):
+            return ("in", left, self._operand_list())
         if self._take()[3] != "=":
             self._fail()
         return ("eq", left, self._operand())
+
+    def _operand_list(self):
+        if self._take()[3] != "(":
+            self._fail()
+        items = [self._operand()]
+        while True:
+            punct = self._take()[3]
+            if punct == ")":
+                return items
+            if punct != ",":
+                self._fail()
+            items.append(self._operand())
 
     def _operand(self):
         column, string, name, _ = self._take()
@@ -136,6 +150,9 @@ class Filter:
             return self.fields(node[1])
         if kind == "eq":
             return self.fields(node[1]) | self.fields(node[2])
+        if kind == "in":
+            return self.fields(node[1]).union(
+                *(self.fields(item) for item in node[2]))
         return set().union(*(self.fields(a) for a in node[1]))
 
     def value(self, entry, row, node):
@@ -161,6 +178,14 @@ class Filter:
             left = self.value(entry, row, node[1])
             right = self.value(entry, row, node[2])
             return None if left is None or right is None else left == right
+        if kind == "in":
+            left = self.value(entry, row, node[1])
+            items = [self.value(entry, row, item) for item in node[2]]
+            if left is None:
+                return None
+            if left in items:
+                return True
+            return None if None in items else False
         if kind == "not":
             inner = self.truth(entry, row, node[1])
             return None if inner is None else not inner

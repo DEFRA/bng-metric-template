@@ -169,6 +169,7 @@ generated: the first run of the generator copies the whole folder.
 | Remove a column from the layers | `drop_field.py`, after the column is dropped from `Layers/BNG Service Layers.gpkg` and no button reads it |
 | Change a filtered drop-down, or a field of a post-intervention layer | `reset_stale_dropdowns.py`, then `set_paste_defaults.py` |
 | Add an `Order` column to a reference list | `order_dropdowns.py` |
+| Change which habitats the Vertical Area Habitats layers offer | The lists in `CSV References/Vertical Area Habitats/`, then `limit_vertical_habitats.py`, then `reset_stale_dropdowns.py` |
 | Change a reference list of either template | `plugin/build_plugin.py`, then send the new zip to the users of the plugin |
 | Test a button against a site | `run_actions_headless.py`, with the Python that comes with QGIS |
 
@@ -179,7 +180,7 @@ post-intervention layers. `set_paste_defaults.py` and
 The parent is the one baseline feature whose shape is exactly the shape of the
 pasted feature.
 
-After any change to the template, check that the six generated settings and
+After any change to the template, check that the seven generated settings and
 the template version record are in step. Each command gives "no change
 needed" on a template that is in step, and exits with 1 otherwise:
 
@@ -191,6 +192,7 @@ python3 development/tools/set_paste_defaults.py --check "$P"
 python3 development/tools/order_dropdowns.py --check "$P"
 python3 development/tools/allow_blank.py --check "$P"
 python3 development/tools/require_shape.py --check "$P"
+python3 development/tools/limit_vertical_habitats.py --check "$P"
 python3 development/tools/set_template_version.py --check "templates/bng-service/Layers/BNG Service Layers.gpkg"
 ```
 

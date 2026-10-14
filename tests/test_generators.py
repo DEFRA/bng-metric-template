@@ -119,6 +119,31 @@ class NsipGeneratorTest(support.TempDirTestCase):
                       result.stdout)
         self.assertIn(repr(BAD_VALUE), result.stdout)
 
+    def test_dropdown_check_names_a_non_vertical_habitat_on_a_vertical_layer(self):
+        site = self.tmp / "vertical-grassland"
+        shutil.copytree(self.site, site)
+        gpkg = site / support.SERVICE_GPKG_IN_SITE
+        wall = support.line([(455910.0, 285320.0), (455915.0, 285320.0)])
+        support.insert_feature(gpkg, "Vertical Area Habitats Baseline", wall, {
+            "Habitat Ref": "VA-B01",
+            "Baseline Broad Habitat Type": "Grassland",
+            "Baseline Habitat Type": "Modified grassland"})
+        support.insert_feature(gpkg, "Vertical Area Habitats Post-Intervention",
+                               wall, {
+            "Habitat Ref": "VA-P01",
+            "Baseline Broad Habitat Type": "Urban",
+            "Retention Category": "Created",
+            "Proposed Broad Habitat Type": "Grassland"})
+        result = support.run_python(support.DROPDOWN_CHECK, site)
+        self.assertEqual(1, result.returncode, support.describe(result))
+        for field in ("Vertical Area Habitats Baseline / "
+                      "Baseline Broad Habitat Type",
+                      "Vertical Area Habitats Baseline / Baseline Habitat Type",
+                      "Vertical Area Habitats Post-Intervention / "
+                      "Proposed Broad Habitat Type"):
+            with self.subTest(field=field):
+                self.assertIn(field, result.stdout)
+
     def test_dropdown_check_refuses_an_enhanced_tree_the_list_hides(self):
         # The Retention Category list hides Enhanced for a tree already in
         # Good condition: the check reads the whole filter, AND NOT and all.

@@ -37,6 +37,57 @@ TREE_CONDITIONS = ["Good", "Fairly Good", "Moderate", "Fairly Poor", "Poor"]
 ENHANCED = "Enhanced"
 
 
+VERTICAL = "Vertical Area Habitats"
+# The habitat types the Statutory Metric counts by their vertical area, with
+# their distinctiveness (User Guide, "Green roofs and green walls"; the
+# Intertidal hard structures broad habitat).
+VERTICAL_HABITATS = {
+    "Facade-bound green wall": ("Urban", "Low"),
+    "Ground based green wall": ("Urban", "Low"),
+    "Artificial hard structures": ("Intertidal hard structures", "Low"),
+    "Artificial features of hard structures": (
+        "Intertidal hard structures", "Low"),
+    "Artificial hard structures with integrated greening of grey "
+    "infrastructure (IGGI)": ("Intertidal hard structures", "Medium"),
+}
+HABITAT_CONDITIONS = ["Good", "Fairly Good", "Moderate", "Fairly Poor", "Poor"]
+
+
+class VerticalAreaHabitatListsTest(unittest.TestCase):
+    """The vertical layers offer only the habitats counted by vertical area."""
+
+    def test_habitat_options_are_the_vertical_habitats(self):
+        for stage in ("pre", "post"):
+            with self.subTest(stage=stage):
+                rows = csv_rows("bng-service",
+                                f"{VERTICAL}/Vertical Area Habitat Options- "
+                                f"{stage}.csv")
+                self.assertEqual(
+                    {name: broad for name, (broad, _d)
+                     in VERTICAL_HABITATS.items()},
+                    {row["UKHAB"]: row["ID"] for row in rows})
+                self.assertEqual(len(VERTICAL_HABITATS), len(rows))
+
+    def test_distinctiveness_is_the_metric_one(self):
+        for stage, column in (("pre", "Baseline Distinctivness"),
+                              ("post", "Proposed Distinctivness")):
+            with self.subTest(stage=stage):
+                rows = csv_rows("bng-service",
+                                f"{VERTICAL}/Vertical Area Habitat "
+                                f"Distinctiveness- {stage}.csv")
+                self.assertEqual(
+                    {name: d for name, (_b, d) in VERTICAL_HABITATS.items()},
+                    {row["Habitat"]: row[column] for row in rows})
+
+    def test_each_vertical_habitat_has_the_five_conditions(self):
+        found = defaultdict(list)
+        for row in csv_rows("bng-service",
+                            f"{VERTICAL}/Vertical Area Habitat Condition.csv"):
+            found[row["UKHAB"]].append(row["Condition"])
+        self.assertEqual({name: HABITAT_CONDITIONS
+                          for name in VERTICAL_HABITATS}, dict(found))
+
+
 class EnhancedTreeListsTest(unittest.TestCase):
     """An existing tree can be enhanced, by improving its condition only.
 

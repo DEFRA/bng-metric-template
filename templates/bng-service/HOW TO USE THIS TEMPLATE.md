@@ -659,7 +659,18 @@ is locked, and it stays when you move the feature.
 ### Vertical Area Habitats
 
 A vertical area habitat is a green wall or an intertidal hard structure. Draw
-it as a **line** along the base of the structure.
+it as a **line** along the base of the structure. These layers offer only the
+five habitats that the Statutory Metric counts by their vertical area:
+
+| Broad habitat | Habitat |
+| --- | --- |
+| Urban | Facade-bound green wall |
+| Urban | Ground based green wall |
+| Intertidal hard structures | Artificial hard structures |
+| Intertidal hard structures | Artificial features of hard structures |
+| Intertidal hard structures | Artificial hard structures with integrated greening of grey infrastructure (IGGI) |
+
+A green roof is an area habitat. Draw it on the Area Habitats layers.
 
 1. Click **Add Line Feature**.
 2. Left-click along the route, then right-click to finish.
