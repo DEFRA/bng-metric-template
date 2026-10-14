@@ -1692,8 +1692,10 @@ def _report_manual_steps(tables, report):
                 "before uploading."
             )
     report.warn(
-        "Vertical area habitats (green walls, intertidal hard structures) are "
-        "empty: the legacy template cannot record them. Add any that exist."
+        "Vertical Area Habitats are empty. The legacy template cannot record "
+        "a green wall, so add any that exist. It records an intertidal hard "
+        "structure as an area habitat: any such row is named in a separate "
+        "warning, to move to Vertical Area Habitats."
     )
     _report_vertical_on_area(tables, report)
 
@@ -1706,14 +1708,15 @@ def _report_vertical_on_area(tables, report):
     by its vertical area, and the area habitat drop-downs do not offer it.
     The row is written as it is, for the user to move.
     """
-    found = [
+    # A ref is in both tables when its row is carried forward. Name it once.
+    found = list(dict.fromkeys(
         values.get(REF_FIELD)
         for table, rows in tables.items()
         if table in AREA_HABITAT_LAYERS
         for _, values in rows
         if any(VERTICAL_HABITATS.values(values.get(column))
                for column in ("Baseline Habitat Type", "Proposed Habitat Type"))
-    ]
+    ))
     if found:
         report.warn(
             f"{len(found)} area habitat row(s) hold a habitat that the "

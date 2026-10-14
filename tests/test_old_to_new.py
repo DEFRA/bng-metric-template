@@ -300,17 +300,21 @@ class OldToNewTest(support.TempDirTestCase):
         folder = self.tmp / "intertidal"
         baseline = support.copy_to(self.baseline, folder)
         pi = support.copy_to(self.pi, folder)
-        ref = support.read_rows(baseline, "Habitats")[3][PARCEL_REF]
-        support.update(baseline, "Habitats",
-                       {"Baseline Broad Habitat Type":
-                        "Intertidal hard structures",
-                        "Baseline Habitat Type": "Artificial hard structures"},
-                       PARCEL_REF, ref)
+        carried = {row[PARCEL_REF] for row in support.read_rows(pi, "Habitats")}
+        ref = first(support.read_rows(baseline, "Habitats"),
+                    lambda r: r[PARCEL_REF] in carried)[PARCEL_REF]
+        structure = {"Baseline Broad Habitat Type": "Intertidal hard structures",
+                     "Baseline Habitat Type": "Artificial hard structures"}
+        support.update(baseline, "Habitats", structure, PARCEL_REF, ref)
+        support.update(pi, "Habitats", structure, PARCEL_REF, ref)
         report = fill(baseline, pi, template_copy(folder))
         warnings = [w for w in report.warnings
                     if "Vertical Area Habitats layers" in w]
         self.assertEqual(1, len(warnings))
         self.assertIn(ref, warnings[0])
+        # The ref is on both stages, and is named once.
+        self.assertTrue(warnings[0].startswith("1 area habitat row(s)"),
+                        warnings[0])
 
     def test_a_target_without_a_version_is_warned_about_and_left_alone(self):
         target = template_copy(self.tmp / "no-version")

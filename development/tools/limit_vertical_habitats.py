@@ -34,6 +34,8 @@ same reasons as qgz_actions.py. Running it twice changes nothing. With
 --check it writes nothing, lists what it would change, and exits 1 if
 anything would change.
 """
+import csv
+import html
 import os
 import re
 import sys
@@ -63,6 +65,10 @@ AREA_FILTER = (BROAD_FILTER + ' AND NOT ("New" IN ('
                + ",".join(f"'{name}'" for name in VERTICAL_ONLY_BROAD_HABITATS)
                + "))")
 
+# Every broad habitat the template knows, beside the project.
+BROAD_LIST = os.path.join("CSV References", "Habitats",
+                          "Habitat Proposed Broad Options.csv")
+
 MAPLAYER = re.compile(r"<maplayer\b.*?</maplayer>", re.S)
 LAYER_NAME = re.compile(r"<layername>([^<]*)</layername>")
 MAP_ENTRY = re.compile(r'[ \t]*<Option type="Map">\s*<Option name="[^"]*" '
@@ -78,20 +84,59 @@ def field_block(layer, field):
                      + r'"[^>]*>.*?</field>', layer, re.S)
 
 
-def limit_value_map(widget):
+def map_values(widget):
+    """The values of a Value Map's entries, as QGIS reads them."""
+    return {html.unescape(found.group("value"))
+            for found in MAP_ENTRY.finditer(widget)}
+
+
+def known_broad_habitats(project):
+    """The broad habitat names in the reference list beside the project."""
+    path = os.path.join(os.path.dirname(os.path.abspath(project)), BROAD_LIST)
+    with open(path, newline="", encoding="utf-8-sig") as handle:
+        return {row["New"] for row in csv.DictReader(handle)}
+
+
+def checked(widget, must_keep, must_drop, known=None):
+    """The widget, or stop when an entry to keep is gone, one to drop is
+    still there, or one is not a broad habitat the template knows. A name
+    stored in a way this tool does not expect would otherwise drop every
+    entry, or none, and be reported as a normal change.
+    """
+    values = map_values(widget)
+    lost = [name for name in must_keep if name not in values]
+    kept = [name for name in must_drop if name in values]
+    unknown = (sorted(values - known - {NULL_VALUE})
+               if known is not None else [])
+    if lost or kept or unknown:
+        problems = ([f"lost {', '.join(lost)}"] if lost else []) + (
+            [f"still offers {', '.join(kept)}"] if kept else []) + (
+            [f"offers unknown {', '.join(unknown)}"] if unknown else [])
+        raise SystemExit(f"{BASELINE_BROAD}: {'; '.join(problems)}. Check how "
+                         "the project stores the broad habitat names.")
+    return widget
+
+
+def limit_value_map(widget, known=None):
     """Drop every entry but the blank choice and the vertical broad habitats."""
-    keep = {NULL_VALUE} | {escape(name) for name in VERTICAL_BROAD_HABITATS}
-    return MAP_ENTRY.sub(
-        lambda found: found.group(0) if found.group("value") in keep else "",
+    keep = {NULL_VALUE} | set(VERTICAL_BROAD_HABITATS)
+    new = MAP_ENTRY.sub(
+        lambda found: (found.group(0)
+                       if html.unescape(found.group("value")) in keep
+                       else ""),
         widget)
+    return checked(new, VERTICAL_BROAD_HABITATS, (), known)
 
 
-def drop_vertical_only(widget):
+def drop_vertical_only(widget, known=None):
     """Drop the broad habitats whose every habitat is a vertical one."""
-    drop = {escape(name) for name in VERTICAL_ONLY_BROAD_HABITATS}
-    return MAP_ENTRY.sub(
-        lambda found: "" if found.group("value") in drop else found.group(0),
+    drop = set(VERTICAL_ONLY_BROAD_HABITATS)
+    new = MAP_ENTRY.sub(
+        lambda found: ("" if html.unescape(found.group("value")) in drop
+                       else found.group(0)),
         widget)
+    others = [name for name in VERTICAL_BROAD_HABITATS if name not in drop]
+    return checked(new, others, VERTICAL_ONLY_BROAD_HABITATS, known)
 
 
 def set_filter(wanted):
@@ -118,8 +163,12 @@ def rewrite_field(layer, field, change, changed, name):
     return layer[:found.start()] + new + layer[found.end():]
 
 
-def rewrite(xml):
-    """Return (xml, [(layer, field)]) with the broad drop-downs limited."""
+def rewrite(xml, known=None):
+    """Return (xml, [(layer, field)]) with the broad drop-downs limited.
+
+    `known` is every broad habitat name the template knows; an entry outside
+    it stops the tool.
+    """
     changed, seen = [], set()
 
     def layer(match):
@@ -130,9 +179,9 @@ def rewrite(xml):
         name = name.group(1)
         seen.add(name)
         vertical = name in VERTICAL_LAYERS
+        limit = limit_value_map if vertical else drop_vertical_only
         block = rewrite_field(
-            block, BASELINE_BROAD,
-            limit_value_map if vertical else drop_vertical_only,
+            block, BASELINE_BROAD, lambda widget: limit(widget, known),
             changed, name)
         if name.endswith("Post-Intervention"):
             block = rewrite_field(
@@ -156,7 +205,7 @@ def main(argv):
     path = paths[0]
     qgs, payload = read_project(path)
     xml = payload[qgs].decode("utf-8")
-    new_xml, changed = rewrite(xml)
+    new_xml, changed = rewrite(xml, known_broad_habitats(path))
     if not changed:
         print(f"no change needed: {path}")
         return 0
