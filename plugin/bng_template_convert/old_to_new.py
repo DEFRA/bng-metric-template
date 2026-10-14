@@ -54,6 +54,7 @@ try:
         read_feature_table,
         read_only_uri,
         read_srs_rows,
+        FORMAT_NAME,
         TEMPLATE_VERSION,
         read_template_version,
         register_spatial_functions,
@@ -82,6 +83,7 @@ except ImportError:  # pragma: no cover - running as a plain script
         read_feature_table,
         read_only_uri,
         read_srs_rows,
+        FORMAT_NAME,
         TEMPLATE_VERSION,
         read_template_version,
         register_spatial_functions,
@@ -1184,6 +1186,13 @@ def _report_template_version(conn, report):
             "The target template does not record its version, so the BNG "
             "service will not accept it. Convert into a fresh copy of the "
             f"current template (version {TEMPLATE_VERSION}) instead."
+        )
+    elif record["format"] != FORMAT_NAME:
+        report.warn(
+            f"The target records the format {record['format']!r}, not "
+            f"{FORMAT_NAME!r}, so the BNG service will not accept it. Convert "
+            "into a fresh copy of the current template (version "
+            f"{TEMPLATE_VERSION}) instead."
         )
     elif record["version"] != TEMPLATE_VERSION:
         report.warn(
