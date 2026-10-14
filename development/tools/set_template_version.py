@@ -33,8 +33,8 @@ def recorded(conn):
         return None, str(error)
     if record is None:
         return None, "no template version recorded"
-    if record["template"] != gpkg_common.TEMPLATE_NAME:
-        return None, f"records template {record['template']!r}"
+    if record["format"] != gpkg_common.FORMAT_NAME:
+        return None, f"records format {record['format']!r}"
     return record["version"], None
 
 

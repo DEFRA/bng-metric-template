@@ -287,7 +287,7 @@ class OldToNewTest(support.TempDirTestCase):
         self.assertEqual(set(old_to_new.STAGED_LAYERS),
                          support.feature_tables(written))
         self.assertEqual(
-            {"template": gpkg_common.TEMPLATE_NAME,
+            {"format": gpkg_common.FORMAT_NAME,
              "version": gpkg_common.TEMPLATE_VERSION},
             support.template_version(written))
 

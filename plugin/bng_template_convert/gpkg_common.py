@@ -609,7 +609,9 @@ def create_gpkg_system_tables(conn, srs_rows):
 # GPKG_METADATA_ITEM_1, and keeps it when the layers are edited.
 TEMPLATE_METADATA_URI = "tag:defra.gov.uk,2026:bng-metric/gpkg-format"
 TEMPLATE_METADATA_MIME_TYPE = "application/json"
-TEMPLATE_NAME = "bng-service"
+# The format the file follows. It names the format, not the QGIS template,
+# so that another tool can write a file in the same format.
+FORMAT_NAME = "bng-service"
 TEMPLATE_VERSION = "1.0"
 
 GPKG_METADATA_EXTENSION = "gpkg_metadata"
@@ -622,8 +624,8 @@ REFERENCE_SCOPE_GEOPACKAGE = "geopackage"
 
 
 def template_version_record(version=TEMPLATE_VERSION):
-    """The metadata text that names the template and its version."""
-    return json.dumps({"template": TEMPLATE_NAME, "version": version})
+    """The metadata text that names the format and its version."""
+    return json.dumps({"format": FORMAT_NAME, "version": version})
 
 
 def _create_metadata_tables(conn):
@@ -717,7 +719,7 @@ def write_template_version(conn, version=TEMPLATE_VERSION):
 
 
 def read_template_version(conn):
-    """The template's name and version, as a dict, or None if not recorded.
+    """The format's name and version, as a dict, or None if not recorded.
 
     Raises ValueError when the record is there but cannot be trusted: more
     than one record, or one that is not the JSON the template writes.
@@ -746,10 +748,10 @@ def read_template_version(conn):
             f"The template version record is not valid JSON: {error}"
         ) from error
     if (not isinstance(record, dict)
-            or not isinstance(record.get("template"), str)
+            or not isinstance(record.get("format"), str)
             or not isinstance(record.get("version"), str)):
         raise ValueError(
-            "The template version record must name a template and a version."
+            "The template version record must name a format and a version."
         )
     return record
 

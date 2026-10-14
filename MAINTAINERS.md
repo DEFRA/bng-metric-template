@@ -200,7 +200,7 @@ Then generate the example site again. Its run ends with `dropdown_check.py`.
 
 ## Template version
 
-**The template's GeoPackage records which template it is, and which
+**The template's GeoPackage records which format it follows, and which
 version.** The BNG service reads the record to know how to read a file, and
 refuses a file that has none, or a version it does not support. A surveyor's
 file keeps the version of the template copy it started from.
@@ -213,7 +213,7 @@ whole GeoPackage:
 | `md_scope` | `dataset` |
 | `md_standard_uri` | `tag:defra.gov.uk,2026:bng-metric/gpkg-format` |
 | `mime_type` | `application/json` |
-| `metadata` | `{"template": "bng-service", "version": "1.0"}` |
+| `metadata` | `{"format": "bng-service", "version": "1.0"}` |
 
 To read it, select the `metadata` of the row with that `md_standard_uri`.
 GDAL shows it as the dataset metadata item `GPKG_METADATA_ITEM_1`.

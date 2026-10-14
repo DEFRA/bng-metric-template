@@ -143,7 +143,7 @@ class TemplateVersionTest(unittest.TestCase):
 
     def test_template_records_the_current_version(self):
         self.assertEqual(
-            {"template": gpkg_common.TEMPLATE_NAME,
+            {"format": gpkg_common.FORMAT_NAME,
              "version": gpkg_common.TEMPLATE_VERSION},
             support.template_version(support.SERVICE_GPKG))
 
