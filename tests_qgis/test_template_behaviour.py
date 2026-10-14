@@ -491,7 +491,7 @@ class CopyBaselineButton(TemplateCase):
             REF: "T-1", "Baseline Tree Size": "Medium",
             "Baseline Tree Type": "Native",
             "Baseline Rural or Urban Tree": "Rural tree",
-            "Baseline Condition": "Poor", "Count": 1,
+            "Baseline Condition": "Poor",
             "Irreplaceable Habitat": "No"})
         self.assertTrue(base.commitChanges())
 

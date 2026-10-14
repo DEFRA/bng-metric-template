@@ -35,6 +35,8 @@ try:
         feature_table_names,
         hectares_to_sq_metres,
         numeric,
+        tree_count_warning,
+        trees_counted_above_one,
         plain_label,
         polygon_blob_area_sqm,
         promote_polygon_blob_to_multipolygon,
@@ -59,6 +61,8 @@ except ImportError:  # pragma: no cover - running as a plain script
         feature_table_names,
         hectares_to_sq_metres,
         numeric,
+        tree_count_warning,
+        trees_counted_above_one,
         plain_label,
         polygon_blob_area_sqm,
         promote_polygon_blob_to_multipolygon,
@@ -90,7 +94,10 @@ except ImportError:  # pragma: no cover - running as a plain script
 # area tolerance.
 LENGTH_TOLERANCE_M = 0.5
 AREA_TOLERANCE_HA = 0.5 / SQ_METRES_PER_HECTARE
-COUNT_TOLERANCE = 0
+
+# The BNG Service template records one tree per point. Legacy keeps a Count
+# column, which its own form locks at 1, so every legacy tree row is one tree.
+LEGACY_TREE_COUNT = 1
 
 # What a blank costs on the way out to legacy: the gap travels with the row.
 LEGACY_GAP_CONSEQUENCE = (
@@ -682,7 +689,7 @@ def map_tree_baseline(row, site):
                 "Baseline Strategic Significance"
             ),
             "Category": TREE_CATEGORY_EXISTING,
-            "Count": rounded_size(row.get("Count")),
+            "Count": LEGACY_TREE_COUNT,
         },
         site,
         "Comment",
@@ -717,7 +724,7 @@ def map_tree_pi(row, site, carry_lineage):
                 "Delay in starting habitat creation/enhancement in years"
             ),
             "Spatial risk category": row.get("Spatial risk category"),
-            "Count": rounded_size(row.get("Count")),
+            "Count": LEGACY_TREE_COUNT,
         },
         site,
         "Comment",
@@ -726,7 +733,7 @@ def map_tree_pi(row, site, carry_lineage):
     )
 
 
-def tree_lost_row(parent, lost_count, site):
+def tree_lost_row(parent, site):
     return with_site(
         {
             "Tree Ref": parent.get(REF_FIELD),
@@ -739,7 +746,7 @@ def tree_lost_row(parent, lost_count, site):
             ),
             "Retention Category": RETENTION_LOST,
             "Category": TREE_CATEGORY_EXISTING,
-            "Count": int(round(lost_count)),
+            "Count": LEGACY_TREE_COUNT,
         },
         site,
         "Comment",
@@ -752,8 +759,9 @@ def tree_lost_row(parent, lost_count, site):
 # ---------------------------------------------------------------------------
 
 # Mirrors the service's own reconciliation policy:
-#   shortfall — hedgerows and trees: any baseline size not carried forward is lost
-#   presence  — watercourses: a stretch either continues or is wholly removed
+#   shortfall — hedgerows: any baseline length not carried forward is lost
+#   presence  — watercourses and trees: a stretch or tree either continues or
+#               is wholly removed
 REMOVAL_RULE_SHORTFALL = "shortfall"
 REMOVAL_RULE_PRESENCE = "presence"
 
@@ -763,6 +771,7 @@ def synthesise_lost_rows(baseline_rows, pi_rows, size_field, rule, tolerance):
 
     Returns [(baseline_row, lost_size)] — the new template records removal by
     simply leaving the feature out, but legacy needs an explicit "Lost" row.
+    With no size_field, as for trees, each feature is one of its kind.
     """
     carried = defaultdict(float)
     has_child = set()
@@ -771,14 +780,14 @@ def synthesise_lost_rows(baseline_rows, pi_rows, size_field, rule, tolerance):
         if not parent:
             continue  # a brand-new feature accounts for no baseline
         has_child.add(parent)
-        size = numeric(row.get(size_field))
+        size = numeric(row.get(size_field)) if size_field else 1
         if size is not None:
             carried[parent] += size
 
     losses = []
     for row in baseline_rows:
         ref = row.get(REF_FIELD)
-        baseline_size = numeric(row.get(size_field))
+        baseline_size = numeric(row.get(size_field)) if size_field else 1
         if ref is None or baseline_size is None:
             continue
         if rule == REMOVAL_RULE_PRESENCE:
@@ -1506,6 +1515,11 @@ def _write_watercourses(baseline_conn, pi_conn, tables, site, carry_lineage, rep
 
 
 def _write_trees(baseline_conn, pi_conn, tables, site, carry_lineage, report):
+    for stage, table in (("baseline", "Individual Trees Baseline"),
+                         ("pi", "Individual Trees Post-Intervention")):
+        many = trees_counted_above_one(tables[stage], REF_FIELD)
+        if many:
+            report.warn(tree_count_warning(table, many))
     baseline_rows = [
         (row.get("_geom"), map_tree_baseline(row, site)) for row in tables["baseline"]
     ]
@@ -1514,21 +1528,19 @@ def _write_trees(baseline_conn, pi_conn, tables, site, carry_lineage, report):
         for row in tables["pi"]
     ]
 
+    # A tree is kept or felled: one with no post-intervention row is lost.
     losses = synthesise_lost_rows(
-        tables["baseline"], tables["pi"], "Count",
-        REMOVAL_RULE_SHORTFALL, COUNT_TOLERANCE,
+        tables["baseline"], tables["pi"], None, REMOVAL_RULE_PRESENCE, 0,
     )
-    for parent, lost_count in losses:
-        pi_rows.append((parent.get("_geom"), tree_lost_row(parent, lost_count, site)))
+    for parent, _size in losses:
+        pi_rows.append((parent.get("_geom"), tree_lost_row(parent, site)))
 
     insert_rows(baseline_conn, "Urban Trees", baseline_rows)
     insert_rows(pi_conn, "Urban Trees", pi_rows)
     report.count("Urban Trees (baseline)", len(baseline_rows))
     report.count("Urban Trees (post-intervention)", len(pi_rows))
     if losses:
-        detail = summarise_list(
-            f"{parent.get(REF_FIELD)} ({int(round(size))})" for parent, size in losses
-        )
+        detail = summarise_list(str(parent.get(REF_FIELD)) for parent, _size in losses)
         report.note(f"Urban Trees: synthesised {len(losses)} 'Lost' row(s) — {detail}")
     return pi_rows
 

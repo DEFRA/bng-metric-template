@@ -528,7 +528,7 @@ class ExportToMetricAlgorithm(QgsProcessingAlgorithm):
             "<p><b>Individual trees</b> go on the area habitat tabs, after "
             "the area habitats, as the metric holds them: broad habitat "
             "<i>Individual trees</i>, at the tree helper's area for their size "
-            "class times their count. An Enhanced tree keeps its baseline size "
+            "class, one tree per point. An Enhanced tree keeps its baseline size "
             "and moves to a better condition. The log names one that does "
             "not.</p>"
             "<p><b>What it does not fill:</b> the off-site tabs (D, E and F), "

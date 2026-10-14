@@ -420,7 +420,7 @@ def _better_water(condition):
 TREE_BASE_COLS = [
     'geom', 'Habitat Ref', 'Baseline Tree Size', 'Baseline Tree Type',
     'Baseline Rural or Urban Tree', 'Baseline Condition',
-    'Baseline Strategic Significance', 'Count', 'Comment', 'feature_uuid',
+    'Baseline Strategic Significance', 'Comment', 'feature_uuid',
     'Irreplaceable Habitat']
 TREE_PI_COLS = [
     'geom', 'Habitat Ref', 'Parent Ref', 'Baseline Tree Size', 'Baseline Tree Type',
@@ -430,7 +430,7 @@ TREE_PI_COLS = [
     'Proposed Condition', 'Proposed Strategic Significance', 'Category',
     'Habitat Created/Enhanced in advance/years',
     'Delay in starting habitat creation/enhancement in years',
-    'Spatial risk category', 'Count', 'Comment', 'parent_uuid', 'parent_geom',
+    'Spatial risk category', 'Comment', 'parent_uuid', 'parent_geom',
     'Irreplaceable Habitat']
 
 
@@ -448,13 +448,12 @@ def write_trees(conn, mesh):
         setting = 'Urban tree' if band == 3 else 'Rural tree'
         condition = lin._pick(lin.TREE_CONDITIONS, _hash01(seed, 1907))
         significance = BASELINE_SIGNIFICANCE
-        count = 1 if _hash01(seed, 1913) < 0.88 else 2
         feature_uuid = uid(f'tree/{ref}')
         blob = gw.point_blob(point)
         wkt = gw.point_wkt(point)
         note, irreplaceable = lin.baseline_tree(_hash01(seed, 1917))
         base_rows.append((blob, ref, size, tree_type, setting, condition,
-                          significance, count, note, feature_uuid,
+                          significance, note, feature_uuid,
                           irreplaceable))
 
         zone = sc.zone_of(mesh, min(int(station), mesh.stations - 1),
@@ -470,7 +469,7 @@ def write_trees(conn, mesh):
         pi_rows.append((
             blob, ref, ref, size, tree_type, setting, condition, significance,
             retention, size, tree_type, setting, proposed_condition,
-            significance, 'Existing', advance, delay, ON_SITE, count, note,
+            significance, 'Existing', advance, delay, ON_SITE, note,
             feature_uuid, wkt, irreplaceable))
 
     for extra in range(round(mesh.stations
@@ -500,7 +499,7 @@ def write_trees(conn, mesh):
             'Urban tree' if zone == sc.MITIGATION and
             _hash01(seed, 2027) < 0.12 else 'Rural tree', proposed_condition,
             lin.tree_significance(seed), 'Newly Planted', advance, delay, ON_SITE,
-            1, None, None, None, 'No'))
+            None, None, None, 'No'))
 
     insert_many(conn, TREE_BASELINE, TREE_BASE_COLS, base_rows)
     insert_many(conn, TREE_PI, TREE_PI_COLS, pi_rows)

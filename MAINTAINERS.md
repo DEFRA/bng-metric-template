@@ -86,7 +86,8 @@ The converter gives a warning for each of these:
   comments with a note.
 - **Loss rows copy the parent shape.** Legacy cannot record a removal by
   absence, so the conversion writes a loss row with the baseline shape. The
-  length or count removed is exact. The stretch removed is not known.
+  length removed is exact. The stretch removed is not known. A tree is kept
+  or felled whole: each legacy tree row has a `Count` of 1.
 
 Conversion back from legacy drops the loss rows, because the template records a
 removal by leaving the feature out.

@@ -289,6 +289,8 @@ AREA_PI = {
             "Proposed Condition", AREA_CONDITION, "Proposed Habitat Type"),
     },
     "CHANGE": {
+        "Comment": ("Comment", comment_carries,
+                    "kept, with the lineage note after it when asked for"),
         "Area": ("Area", hectares_to_whole_sq_metres,
                  "hectares to whole square metres"),
     },
@@ -303,7 +305,6 @@ AREA_PI = {
         "Survey Date": "site detail", "Survey Details": "site detail",
         "Mapped by": "site detail", "Company": "site detail",
         "Base Map": "site detail",
-        "Comment": "carries the lineage note when asked for",
     },
 }
 
@@ -362,6 +363,8 @@ HEDGEROW_PI = {
                         "the parent's reference, or the feature's own when it\n                         was created from nothing"),
     },
     "CHANGE": {
+        "Comment": ("Comments", comment_carries,
+                    "kept, with the lineage note after it when asked for"),
         "Length": ("Length", rounded_to_whole, "rounded to whole metres"),
     },
     "DROP": {
@@ -374,7 +377,6 @@ HEDGEROW_PI = {
         "Survey Date": "site detail", "Survey Details": "site detail",
         "Mapped by": "site detail", "Company": "site detail",
         "Base Map": "site detail",
-        "Comments": "carries the lineage note when asked for",
     },
 }
 
@@ -457,6 +459,8 @@ WATERCOURSE_PI = {
             "Proposed River Type"),
     },
     "CHANGE": {
+        "Comment": ("Comments", comment_carries,
+                    "kept, with the lineage note after it when asked for"),
         "Length": ("Length", rounded_to_whole, "rounded to whole metres"),
     },
     "DROP": {
@@ -469,7 +473,6 @@ WATERCOURSE_PI = {
         "Survey Date": "site detail", "Survey Details": "site detail",
         "Mapped by": "site detail", "Company": "site detail",
         "Base Map": "site detail",
-        "Comments": "carries the lineage note when asked for",
     },
 }
 
@@ -486,11 +489,14 @@ TREE_BASELINE = {
             "Baseline Condition", TREE_CONDITION, fallback=EXISTING_TREE),
     },
     "CHANGE": {
-        "Count": ("Count", rounded_to_whole, "whole trees either way"),
         "Comment": ("Comment", comment_carries, "kept"),
     },
-    "DROP": {"feature_uuid": "lineage key"},
+    "DROP": {
+        "feature_uuid": "lineage key",
+        "Irreplaceable Habitat": "the legacy template has no column for it",
+    },
     "INVENT": {
+        "Count": "1: the template records one tree per point",
         "Location": "site detail", "Site Name": "site detail",
         "Survey Date": "site detail", "Survey Details": "site detail",
         "Mapped by": "site detail", "Company": "site detail",
@@ -536,22 +542,24 @@ TREE_PI = {
             fallback=EXISTING_TREE),
     },
     "CHANGE": {
+        "Comment": ("Comment", comment_carries,
+                    "kept, with the lineage note after it when asked for"),
         "Proposed Condition": (
             "Proposed Condition", words_without_number,
             "the same words with no number: the Natural England template "
             "stores a tree's proposed condition as words"),
-        "Count": ("Count", rounded_to_whole, "whole trees either way"),
     },
     "DROP": {
+        "Irreplaceable Habitat": "the legacy template has no column for it",
         "parent_uuid": "lineage key",
         "parent_geom": "lineage",
     },
     "INVENT": {
+        "Count": "1: the template records one tree per point",
         "Location": "site detail", "Site Name": "site detail",
         "Survey Date": "site detail", "Survey Details": "site detail",
         "Mapped by": "site detail", "Company": "site detail",
         "Base Map": "site detail",
-        "Comment": "carries the lineage note when asked for",
     },
 }
 
