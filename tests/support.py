@@ -109,6 +109,15 @@ def columns(gpkg, table):
         conn.close()
 
 
+def template_version(gpkg):
+    """The template version record of a GeoPackage, or None."""
+    conn = connect_read_only(gpkg)
+    try:
+        return gpkg_common.read_template_version(conn)
+    finally:
+        conn.close()
+
+
 def read_rows(gpkg, table):
     """Every row of a table, as dicts, in fid order."""
     conn = connect_read_only(gpkg)

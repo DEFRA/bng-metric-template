@@ -2,7 +2,7 @@
 name=BNG Template Convert
 qgisMinimumVersion=3.22
 description=Convert habitat mapping between the legacy Natural England template and the BNG Service template.
-version=1.6.0
+version=1.7.0
 author=Defra BNG Metric Service
 email=
 
@@ -12,7 +12,9 @@ about=Moves a habitat map out of the BNG Service QGIS template without anyone ne
     Export to the Statutory Metric fills a copy of the metric workbook directly, with no CSVs and no import tool in between.
     All three appear in the Processing Toolbox and under Plugins > BNG Template Convert. No dependencies beyond QGIS itself.
 
-changelog=1.6.0
+changelog=1.7.0
+    For the BNG Service template that records its version. Convert from legacy records the template version in each GeoPackage it creates, as one row of the GeoPackage metadata extension, which the BNG service reads. Converting into a copy of the template leaves the copy's record as it is, and warns when the copy does not record the current version.
+  1.6.0
     For the BNG Service template with a Comment on its post-intervention layers, and individual trees that can be Enhanced. Every habitat layer, baseline and post-intervention, now has a Comment for the surveyor's own notes. An existing tree can be Enhanced, to a better condition only, keeping its size, type and setting, as the Statutory Metric allows. Individual trees gain Irreplaceable Habitat, for ancient and veteran trees: blank on a surveyed tree until chosen, and No on a planted tree.
     Export to the Statutory Metric writes individual trees, on the area habitat sheets after the area habitats: broad habitat "Individual trees", at the tree helper's area for the size class times the count. A Retained or Enhanced tree keeps its baseline size class. Trees carry their irreplaceable flag. The log names an Enhanced tree whose proposed condition is not better than its baseline one, whose size changes, or that is irreplaceable. It writes every comment into the "User comments" column of its sheet, and the reference and comment of each enhancement on the enhancement sheets. Merging rows keeps every distinct comment.
     Convert to legacy writes each post-intervention comment to the legacy post-intervention file, with the lineage after it. It writes an Enhanced tree as Enhanced and warns that the Natural England list does not offer it, and names irreplaceable trees, which legacy cannot record. It says when merging CSV rows replaces comments, and that baseline comments are not in the CSVs.

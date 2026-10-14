@@ -286,6 +286,29 @@ class OldToNewTest(support.TempDirTestCase):
         written = out / f"{self.baseline.stem} - Staged.gpkg"
         self.assertEqual(set(old_to_new.STAGED_LAYERS),
                          support.feature_tables(written))
+        self.assertEqual(
+            {"template": gpkg_common.TEMPLATE_NAME,
+             "version": gpkg_common.TEMPLATE_VERSION},
+            support.template_version(written))
+
+    def test_a_template_copy_keeps_its_version_and_is_not_warned_about(self):
+        self.assertEqual(gpkg_common.TEMPLATE_VERSION,
+                         support.template_version(self.target)["version"])
+        self.assertEqual([], self.warnings_mentioning("version"))
+
+    def test_a_target_without_a_version_is_warned_about_and_left_alone(self):
+        target = template_copy(self.tmp / "no-version")
+        conn = support.open_for_writing(target)
+        try:
+            conn.execute("DELETE FROM gpkg_metadata")
+            conn.execute("DELETE FROM gpkg_metadata_reference")
+            conn.commit()
+        finally:
+            conn.close()
+        report = fill(self.base_copy, self.pi_copy, target)
+        self.assertEqual(1, len([w for w in report.warnings
+                                 if "does not record its version" in w]))
+        self.assertIsNone(support.template_version(target))
 
 
 class RoundTripTest(support.TempDirTestCase):

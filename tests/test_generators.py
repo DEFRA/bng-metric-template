@@ -161,6 +161,10 @@ class SiteGeneratorTest(support.TempDirTestCase):
             cls.tmp / "other-seed", *SITE_ARGS, "--seed", "7")
         cls.gpkg = support.site_gpkg(cls.first)
 
+    def test_site_records_the_template_version(self):
+        self.assertEqual(gpkg_common.TEMPLATE_VERSION,
+                         support.template_version(self.gpkg)["version"])
+
     def test_same_inputs_give_the_same_geopackages(self):
         for relative in SITE_GPKGS:
             with self.subTest(file=str(relative)):

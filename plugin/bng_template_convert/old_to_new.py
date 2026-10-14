@@ -52,12 +52,15 @@ try:
         read_feature_table,
         read_only_uri,
         read_srs_rows,
+        TEMPLATE_VERSION,
+        read_template_version,
         register_spatial_functions,
         resolve_table_name,
         sq_metres_to_hectares,
         summarise_list,
         summarise_refs,
         update_layer_extent,
+        write_template_version,
     )
 except ImportError:  # pragma: no cover - running as a plain script
     from gpkg_common import (
@@ -75,12 +78,15 @@ except ImportError:  # pragma: no cover - running as a plain script
         read_feature_table,
         read_only_uri,
         read_srs_rows,
+        TEMPLATE_VERSION,
+        read_template_version,
         register_spatial_functions,
         resolve_table_name,
         sq_metres_to_hectares,
         summarise_list,
         summarise_refs,
         update_layer_extent,
+        write_template_version,
     )
 
 try:
@@ -1115,6 +1121,7 @@ def create_staged_gpkg(path, srs_rows):
         create_feature_table(
             conn, table, spec["geom_column"], spec["geom_type"], spec["columns"]
         )
+    write_template_version(conn)
     conn.commit()
     return conn
 
@@ -1142,6 +1149,32 @@ def resolve_template_tables(conn):
             f"{detail}. Point --into at a copy of the BNG Service template."
         )
     return resolved
+
+
+def _report_template_version(conn, report):
+    """Warn when the target template does not record the current version.
+
+    The conversion writes into the template as it is, so it does not add or
+    change the record: a copy of an earlier template is not the current
+    version, whatever its rows hold. The BNG service reads the record, and
+    refuses a file without it.
+    """
+    try:
+        record = read_template_version(conn)
+    except ValueError as error:
+        report.warn(f"The target's template version cannot be read: {error}")
+        return
+    if record is None:
+        report.warn(
+            "The target template does not record its version, so the BNG "
+            "service will not accept it. Convert into a fresh copy of the "
+            f"current template (version {TEMPLATE_VERSION}) instead."
+        )
+    elif record["version"] != TEMPLATE_VERSION:
+        report.warn(
+            f"The target is version {record['version']} of the template. The "
+            f"current version is {TEMPLATE_VERSION}."
+        )
 
 
 def open_template_gpkg(path, force):
@@ -1319,6 +1352,7 @@ def convert(baseline_path, pi_path, out_dir, into_path, force, dry_run,
         _report_missing_columns(missing, report)
         _report_dropped_comments(tables, missing, report)
         _report_extra_columns(extra_columns(conn, table_names), report)
+        _report_template_version(conn, report)
     else:
         if out_file:
             target = out_file
