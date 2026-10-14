@@ -759,8 +759,9 @@ def tree_lost_row(parent, site):
 # ---------------------------------------------------------------------------
 
 # Mirrors the service's own reconciliation policy:
-#   shortfall — hedgerows and trees: any baseline size not carried forward is lost
-#   presence  — watercourses: a stretch either continues or is wholly removed
+#   shortfall — hedgerows: any baseline length not carried forward is lost
+#   presence  — watercourses and trees: a stretch or tree either continues or
+#               is wholly removed
 REMOVAL_RULE_SHORTFALL = "shortfall"
 REMOVAL_RULE_PRESENCE = "presence"
 
