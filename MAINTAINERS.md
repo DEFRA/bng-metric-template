@@ -188,8 +188,10 @@ asks ecologists to record it as `Created`. The Metric then counts the whole
 baseline hedge as lost and the new hedge as created. The surveyor keeps the
 copied row, so the hedge keeps its link to its baseline parent, and its own
 hedge type. That is why `Hedgerow Habitat Options - post.csv` offers each
-hedge type its own type when `Created`, not only `N/A`. It is an edge case
-for the Metric calculation. Keep those rows: `DegradedHedgeListsTest` in
+hedge type its own type when `Created`, and not `N/A`. With `N/A`, a
+surveyor could save a Created hedge with no type, which the Metric cannot
+count; a lost hedge is recorded by deleting its row. It is an edge case for
+the Metric calculation. Keep those rows: `DegradedHedgeListsTest` in
 `tests/test_reference_lists.py` checks them, and `DegradedHedgerowTest` in
 `tests/test_to_metric.py` checks what the Metric makes of such a hedge.
 

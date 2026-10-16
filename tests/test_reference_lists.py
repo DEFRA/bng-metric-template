@@ -161,6 +161,7 @@ class EnhancedTreeListsTest(unittest.TestCase):
 
 HEDGES = "Hedgerows"
 CREATED = "Created"
+NOT_APPLICABLE = "N/A"
 
 
 class DegradedHedgeListsTest(unittest.TestCase):
@@ -175,9 +176,14 @@ class DegradedHedgeListsTest(unittest.TestCase):
 
     The surveyor keeps the copied row and sets it to Created ("HOW TO USE THIS
     TEMPLATE.md", Hedgerows), so the hedge keeps its link to its baseline
-    parent. Its Proposed Hedge Type must offer the hedge's own type, not only
-    N/A, and that type a condition to choose. See MAINTAINERS.md, "A hedge
+    parent. Its Proposed Hedge Type offers the hedge's own type, and only
+    that, and the type has a condition to choose. See MAINTAINERS.md, "A hedge
     whose condition gets worse".
+
+    N/A is not offered. The list used to offer only N/A here, apparently left
+    from the legacy template's "<hedge>Lost,N/A" rows. The BNG Service
+    template records a lost hedge by deleting its row, so a Created hedge
+    with no type records nothing the Metric can use.
     """
 
     def existing_hedges(self):
@@ -186,16 +192,26 @@ class DegradedHedgeListsTest(unittest.TestCase):
         return [row["Value"] for row in rows
                 if row["Options"] == CREATED and row["Value"] != TO_BE_CREATED]
 
-    def test_a_copied_hedge_set_to_created_offers_its_own_type(self):
+    def created_options(self):
         options = defaultdict(list)
         for row in csv_rows("bng-service",
                             f"{HEDGES}/Hedgerow Habitat Options - post.csv"):
             options[row["Value"]].append(row["Description"])
+        return options
+
+    def test_a_copied_hedge_set_to_created_offers_only_its_own_type(self):
+        options = self.created_options()
         hedges = self.existing_hedges()
         self.assertTrue(hedges)
         for hedge in hedges:
             with self.subTest(hedge=hedge):
-                self.assertIn(hedge, options[f"{hedge}{CREATED}"])
+                self.assertEqual([hedge], options[f"{hedge}{CREATED}"])
+
+    def test_a_copied_hedge_set_to_created_is_not_offered_n_a(self):
+        options = self.created_options()
+        for hedge in self.existing_hedges():
+            with self.subTest(hedge=hedge):
+                self.assertNotIn(NOT_APPLICABLE, options[f"{hedge}{CREATED}"])
 
     def test_its_own_type_offers_a_condition(self):
         conditions = {row["Habitat"]
