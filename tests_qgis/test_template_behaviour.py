@@ -47,6 +47,15 @@ OTHER_SQUARE = "POLYGON((200 0,300 0,300 100,200 100,200 0))"
 HEDGE_LINE = "LINESTRING(0 0,50 0,100 10)"
 TREE_POINT = "POINT(10 10)"
 
+# Unless OGR_SQLITE_JOURNAL is set, QGIS manages a GeoPackage's journal mode
+# itself and switches it back as it closes the file. On a file holding the
+# template version record (gpkg_metadata), GDAL then logs "ERROR 1:
+# sqlite3_get_table(...) failed: unable to open database file" whenever a
+# project that edited a layer is closed. The file and its record are
+# unharmed. Naming WAL, the mode QGIS uses anyway, skips that switch, so the
+# log shows only real errors.
+os.environ.setdefault("OGR_SQLITE_JOURNAL", "WAL")
+
 APP = QgsApplication([], True)
 APP.initQgis()
 QgsGui.editorWidgetRegistry().initEditors()

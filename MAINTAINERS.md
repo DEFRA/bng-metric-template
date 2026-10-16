@@ -181,6 +181,20 @@ post-intervention layers. `set_paste_defaults.py` and
 The parent is the one baseline feature whose shape is exactly the shape of the
 pasted feature.
 
+**A hedge whose condition gets worse is `Created`, on purpose.** It is the
+same hedge, in effect retained in a worse condition. But a retained habitat
+cannot get worse, and no other Retention Category fits, so the Metric team
+asks ecologists to record it as `Created`. The Metric then counts the whole
+baseline hedge as lost and the new hedge as created. The surveyor keeps the
+copied row, so the hedge keeps its link to its baseline parent, and its own
+hedge type. That is why `Hedgerow Habitat Options - post.csv` offers each
+hedge type its own type when `Created`, and not `N/A`. With `N/A`, a
+surveyor could save a Created hedge with no type, which the Metric cannot
+count; a lost hedge is recorded by deleting its row. It is an edge case for
+the Metric calculation. Keep those rows: `DegradedHedgeListsTest` in
+`tests/test_reference_lists.py` checks them, and `DegradedHedgerowTest` in
+`tests/test_to_metric.py` checks what the Metric makes of such a hedge.
+
 After any change to the template, check that the seven generated settings and
 the template version record are in step. Each command gives "no change
 needed" on a template that is in step, and exits with 1 otherwise:

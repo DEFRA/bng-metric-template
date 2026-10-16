@@ -159,6 +159,69 @@ class EnhancedTreeListsTest(unittest.TestCase):
         self.assertNotIn(ENHANCED, {row["Retention"] for row in rows})
 
 
+HEDGES = "Hedgerows"
+CREATED = "Created"
+NOT_APPLICABLE = "N/A"
+
+
+class DegradedHedgeListsTest(unittest.TestCase):
+    """A hedge whose condition gets worse keeps its type when set to Created.
+
+    Created looks wrong for a hedge that is still there: it is the same hedge,
+    in effect retained in a worse condition. But a retained habitat cannot get
+    worse, and no other Retention Category fits, so the Metric team asks
+    ecologists to record it as Created. The Metric then counts the old hedge
+    as lost and a new one created in its place (DegradedHedgerowTest in
+    test_to_metric.py).
+
+    The surveyor keeps the copied row and sets it to Created ("HOW TO USE THIS
+    TEMPLATE.md", Hedgerows), so the hedge keeps its link to its baseline
+    parent. Its Proposed Hedge Type offers the hedge's own type, and only
+    that, and the type has a condition to choose. See MAINTAINERS.md, "A hedge
+    whose condition gets worse".
+
+    N/A is not offered. The list used to offer only N/A here, apparently left
+    from the legacy template's "<hedge>Lost,N/A" rows. The BNG Service
+    template records a lost hedge by deleting its row, so a Created hedge
+    with no type records nothing the Metric can use.
+    """
+
+    def existing_hedges(self):
+        rows = csv_rows("bng-service",
+                        f"{HEDGES}/Hedgerow Retention Options.csv")
+        return [row["Value"] for row in rows
+                if row["Options"] == CREATED and row["Value"] != TO_BE_CREATED]
+
+    def created_options(self):
+        options = defaultdict(list)
+        for row in csv_rows("bng-service",
+                            f"{HEDGES}/Hedgerow Habitat Options - post.csv"):
+            options[row["Value"]].append(row["Description"])
+        return options
+
+    def test_a_copied_hedge_set_to_created_offers_only_its_own_type(self):
+        options = self.created_options()
+        hedges = self.existing_hedges()
+        self.assertTrue(hedges)
+        for hedge in hedges:
+            with self.subTest(hedge=hedge):
+                self.assertEqual([hedge], options[f"{hedge}{CREATED}"])
+
+    def test_a_copied_hedge_set_to_created_is_not_offered_n_a(self):
+        options = self.created_options()
+        for hedge in self.existing_hedges():
+            with self.subTest(hedge=hedge):
+                self.assertNotIn(NOT_APPLICABLE, options[f"{hedge}{CREATED}"])
+
+    def test_its_own_type_offers_a_condition(self):
+        conditions = {row["Habitat"]
+                      for row in csv_rows("bng-service",
+                                          f"{HEDGES}/Hedgerow Condition.csv")}
+        for hedge in self.existing_hedges():
+            with self.subTest(hedge=hedge):
+                self.assertIn(hedge, conditions)
+
+
 class ListFilesTest(unittest.TestCase):
 
     def test_every_list_the_converter_reads_exists_in_its_template(self):
