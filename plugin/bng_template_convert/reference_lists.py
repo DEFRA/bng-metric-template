@@ -388,6 +388,11 @@ CONDITION_LISTS = {
 }
 IRREPLACEABLE_LIST = _lookup(
     "Habitats/Habitat Irreplaceable.csv", "UKHAB", "Irreplaceable")
+# The habitats the Metric counts by their vertical area. They belong on the
+# Vertical Area Habitats layers, never on the area habitat ones.
+VERTICAL_HABITATS = _lookup(
+    "Vertical Area Habitats/Vertical Area Habitat Options- pre.csv", "UKHAB",
+    "ID")
 IRREPLACEABLE_COLUMN = "Irreplaceable Habitat"
 IRREPLACEABLE_TYPE_COLUMN = "Baseline Habitat Type"
 
@@ -395,7 +400,7 @@ RULE_LISTS = tuple(
     [lookup for columns in DISTINCTIVENESS_LISTS.values()
      for lookup, _type in columns.values()]
     + [AREA_CONDITIONS, HEDGEROW_CONDITIONS, WATERCOURSE_CONDITIONS,
-       IRREPLACEABLE_LIST])
+       IRREPLACEABLE_LIST, VERTICAL_HABITATS])
 
 
 def fill_template_values(key, rows):

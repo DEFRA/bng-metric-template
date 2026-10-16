@@ -60,6 +60,12 @@ same buttons and the same copy action. Part 9 gives the differences.
 file while you work. A folder that synchronises to the cloud can copy or lock
 the file during a save, and this can damage a day of mapping.
 
+**Upload the GeoPackage in this folder, `Layers/BNG Service Layers.gpkg`.**
+It records which version of the template it comes from. The BNG service reads
+that record, and refuses a GeoPackage that does not have it. A new GeoPackage
+that QGIS makes from your layers, with **Export** > **Save Features As...** or
+**Package Layers**, may not have the record.
+
 **Use a short path, such as `C:\BNG\`.** Windows refuses a file path longer
 than 260 characters. The longest path inside this folder is already 85
 characters.
@@ -652,7 +658,23 @@ is locked, and it stays when you move the feature.
 ### Vertical Area Habitats
 
 A vertical area habitat is a green wall or an intertidal hard structure. Draw
-it as a **line** along the base of the structure.
+it as a **line** along the base of the structure. These layers offer only the
+five habitats that the Statutory Metric counts by their vertical area:
+
+| Broad habitat | Habitat |
+| --- | --- |
+| Urban | Facade-bound green wall |
+| Urban | Ground based green wall |
+| Intertidal hard structures | Artificial hard structures |
+| Intertidal hard structures | Artificial features of hard structures |
+| Intertidal hard structures | Artificial hard structures with integrated greening of grey infrastructure (IGGI) |
+
+**The Area Habitats layers do not offer these five,** and do not offer the
+Intertidal hard structures broad habitat. They are not part of the site area,
+which the area habitats cover. Map the ground under a structure on Area
+Habitats, for example as Developed land; sealed surface.
+
+A green roof is an area habitat. Draw it on the Area Habitats layers.
 
 1. Click **Add Line Feature**.
 2. Left-click along the route, then right-click to finish.

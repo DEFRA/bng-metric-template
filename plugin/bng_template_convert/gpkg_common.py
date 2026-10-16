@@ -6,6 +6,7 @@ library alone: geometry is read straight out of the stored blobs and, wherever
 a feature is copied between files, the blob's bytes are reused untouched.
 """
 
+import json
 import math
 import os
 import pathlib
@@ -613,6 +614,170 @@ def create_gpkg_system_tables(conn, srs_rows):
     conn.executemany(
         "INSERT INTO gpkg_spatial_ref_sys VALUES (?,?,?,?,?,?)", srs_rows
     )
+
+
+# ---------------------------------------------------------------------------
+# Template version
+# ---------------------------------------------------------------------------
+
+# Every BNG Service template GeoPackage says which template it is, and which
+# version, so the BNG service can refuse a file it cannot read and support
+# more than one version. See "Template version" in MAINTAINERS.md for when to
+# raise TEMPLATE_VERSION.
+#
+# The record is one row of the GeoPackage metadata extension, referenced to
+# the whole GeoPackage. It is not a row of its own in gpkg_extensions: GDAL,
+# and so QGIS, warns on every open (scope read-write) or every edit
+# (write-only) of a file that names an extension it does not know, and
+# gpkg_metadata is one it knows. GDAL shows the record as dataset metadata,
+# GPKG_METADATA_ITEM_1, and keeps it when the layers are edited.
+TEMPLATE_METADATA_URI = "tag:defra.gov.uk,2026:bng-metric/gpkg-format"
+TEMPLATE_METADATA_MIME_TYPE = "application/json"
+# The format the file follows. It names the format, not the QGIS template,
+# so that another tool can write a file in the same format.
+FORMAT_NAME = "bng-service"
+TEMPLATE_VERSION = "1.0"
+
+GPKG_METADATA_EXTENSION = "gpkg_metadata"
+GPKG_METADATA_DEFINITION = (
+    "http://www.geopackage.org/spec120/#extension_metadata"
+)
+GPKG_METADATA_TABLES = ("gpkg_metadata", "gpkg_metadata_reference")
+METADATA_SCOPE_DATASET = "dataset"
+REFERENCE_SCOPE_GEOPACKAGE = "geopackage"
+
+
+def template_version_record(version=TEMPLATE_VERSION):
+    """The metadata text that names the format and its version."""
+    return json.dumps({"format": FORMAT_NAME, "version": version})
+
+
+def _create_metadata_tables(conn):
+    """Create the tables of the metadata extension, as the GeoPackage
+    specification defines them, unless the file has them."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS gpkg_extensions (
+            table_name TEXT,
+            column_name TEXT,
+            extension_name TEXT NOT NULL,
+            definition TEXT NOT NULL,
+            scope TEXT NOT NULL,
+            CONSTRAINT ge_tce UNIQUE (table_name, column_name, extension_name)
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS gpkg_metadata (
+            id INTEGER CONSTRAINT m_pk PRIMARY KEY ASC NOT NULL,
+            md_scope TEXT NOT NULL DEFAULT 'dataset',
+            md_standard_uri TEXT NOT NULL,
+            mime_type TEXT NOT NULL DEFAULT 'text/xml',
+            metadata TEXT NOT NULL DEFAULT ''
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS gpkg_metadata_reference (
+            reference_scope TEXT NOT NULL,
+            table_name TEXT,
+            column_name TEXT,
+            row_id_value INTEGER,
+            timestamp DATETIME NOT NULL
+                DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+            md_file_id INTEGER NOT NULL,
+            md_parent_id INTEGER,
+            CONSTRAINT crmr_mfi_fk FOREIGN KEY (md_file_id)
+                REFERENCES gpkg_metadata(id),
+            CONSTRAINT crmr_mpi_fk FOREIGN KEY (md_parent_id)
+                REFERENCES gpkg_metadata(id)
+        )
+        """
+    )
+    for table in GPKG_METADATA_TABLES:
+        conn.execute(
+            "INSERT INTO gpkg_extensions "
+            "(table_name, column_name, extension_name, definition, scope) "
+            "SELECT ?, NULL, ?, ?, 'read-write' WHERE NOT EXISTS ("
+            "SELECT 1 FROM gpkg_extensions WHERE table_name = ? "
+            "AND column_name IS NULL AND extension_name = ?)",
+            (table, GPKG_METADATA_EXTENSION, GPKG_METADATA_DEFINITION,
+             table, GPKG_METADATA_EXTENSION),
+        )
+
+
+def _template_metadata_ids(conn):
+    return [row[0] for row in conn.execute(
+        "SELECT id FROM gpkg_metadata WHERE md_standard_uri = ? ORDER BY id",
+        (TEMPLATE_METADATA_URI,),
+    )]
+
+
+def write_template_version(conn, version=TEMPLATE_VERSION):
+    """Record the template and its version in this GeoPackage.
+
+    Replaces any record of the template version that is there already, so
+    the file holds exactly one. Leaves any other metadata alone. The caller
+    commits.
+    """
+    _create_metadata_tables(conn)
+    for md_id in _template_metadata_ids(conn):
+        conn.execute(
+            "DELETE FROM gpkg_metadata_reference WHERE md_file_id = ?",
+            (md_id,),
+        )
+        conn.execute("DELETE FROM gpkg_metadata WHERE id = ?", (md_id,))
+    cursor = conn.execute(
+        "INSERT INTO gpkg_metadata "
+        "(md_scope, md_standard_uri, mime_type, metadata) VALUES (?,?,?,?)",
+        (METADATA_SCOPE_DATASET, TEMPLATE_METADATA_URI,
+         TEMPLATE_METADATA_MIME_TYPE, template_version_record(version)),
+    )
+    conn.execute(
+        "INSERT INTO gpkg_metadata_reference (reference_scope, md_file_id) "
+        "VALUES (?, ?)",
+        (REFERENCE_SCOPE_GEOPACKAGE, cursor.lastrowid),
+    )
+
+
+def read_template_version(conn):
+    """The format's name and version, as a dict, or None if not recorded.
+
+    Raises ValueError when the record is there but cannot be trusted: more
+    than one record, or one that is not the JSON the template writes.
+    """
+    has_table = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' "
+        "AND name = 'gpkg_metadata'"
+    ).fetchone()
+    if not has_table:
+        return None
+    rows = conn.execute(
+        "SELECT metadata FROM gpkg_metadata WHERE md_standard_uri = ?",
+        (TEMPLATE_METADATA_URI,),
+    ).fetchall()
+    if not rows:
+        return None
+    if len(rows) > 1:
+        raise ValueError(
+            f"The GeoPackage records the template version {len(rows)} times. "
+            "It must record it once."
+        )
+    try:
+        record = json.loads(rows[0][0])
+    except ValueError as error:
+        raise ValueError(
+            f"The template version record is not valid JSON: {error}"
+        ) from error
+    if (not isinstance(record, dict)
+            or not isinstance(record.get("format"), str)
+            or not isinstance(record.get("version"), str)):
+        raise ValueError(
+            "The template version record must name a format and a version."
+        )
+    return record
 
 
 def create_feature_table(conn, table, geom_column, geom_type, columns):

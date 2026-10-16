@@ -20,6 +20,8 @@ needed to use the template or the plugin.
 | `rename_table.py` | Points the layers at a GeoPackage table under its new name. Rename the table with GDAL too, which renames its index and triggers. Safe to run again |
 | `require_shape.py` | Gives the ref column of each data layer a hard constraint that the row has a shape, so a paste of rows with no shape (what Copy Layer leaves on the clipboard) opens the Fix Pasted Features dialog instead of adding blank rows. Safe to run again |
 | `order_dropdowns.py` | Makes each drop-down show its items in the order of the `Order` column of its reference list. Safe to run again |
+| `limit_vertical_habitats.py` | Makes the Vertical Area Habitats layers offer only the broad habitats of the habitats the Metric counts by vertical area, Urban (green walls) and Intertidal hard structures: the Baseline Broad Habitat Type list on both layers, and the filter of Proposed Broad Habitat Type, whose list is shared with the area habitat layers. Takes Intertidal hard structures, whose every habitat is a vertical one, off both area habitat layers: their Baseline Broad Habitat Type list, and the filter of Proposed Broad Habitat Type. Run `reset_stale_dropdowns.py` after it. Safe to run again |
+| `set_template_version.py` | Records the template version in the template's GeoPackage: one row of the GeoPackage metadata extension, with the version in `TEMPLATE_VERSION` of `plugin/bng_template_convert/gpkg_common.py`. `MAINTAINERS.md` says when to raise it. Safe to run again |
 | `check_metric_lookups.py` | Checks each condition in a filled Metric workbook against the lookup rows of the same workbook |
 | `check_legacy_template.py` | Checks the recorded findings about the Natural England template against `templates/legacy-ne/`. Put a fresh download there to check them again |
 
@@ -66,6 +68,8 @@ python3 development/tools/rename_field.py "templates/bng-service/BNG Service Hab
 python3 development/tools/rename_table.py "templates/bng-service/BNG Service Habitat Mapping.qgz" "<old>" "<new>"
 python3 development/tools/allow_blank.py "templates/bng-service/BNG Service Habitat Mapping.qgz"
 python3 development/tools/require_shape.py "templates/bng-service/BNG Service Habitat Mapping.qgz"
+python3 development/tools/limit_vertical_habitats.py "templates/bng-service/BNG Service Habitat Mapping.qgz"
+python3 development/tools/set_template_version.py "templates/bng-service/Layers/BNG Service Layers.gpkg"
 python3 development/tools/check_metric_lookups.py "Filled metric.xlsm"
 python3 development/tools/check_legacy_template.py
 ```

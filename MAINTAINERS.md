@@ -170,6 +170,7 @@ generated: the first run of the generator copies the whole folder.
 | Remove a column from the layers | `drop_field.py`, after the column is dropped from `Layers/BNG Service Layers.gpkg` and no button reads it |
 | Change a filtered drop-down, or a field of a post-intervention layer | `reset_stale_dropdowns.py`, then `set_paste_defaults.py` |
 | Add an `Order` column to a reference list | `order_dropdowns.py` |
+| Change which habitats the Vertical Area Habitats layers offer | The lists in `CSV References/Vertical Area Habitats/`, then `limit_vertical_habitats.py`, then `reset_stale_dropdowns.py`. Keep those habitats out of the area habitat lists in `CSV References/Habitats/` (Options, Distinctiveness and Condition); the tests check it |
 | Change a reference list of either template | `plugin/build_plugin.py`, then send the new zip to the users of the plugin |
 | Test a button against a site | `run_actions_headless.py`, with the Python that comes with QGIS |
 
@@ -180,9 +181,9 @@ post-intervention layers. `set_paste_defaults.py` and
 The parent is the one baseline feature whose shape is exactly the shape of the
 pasted feature.
 
-After any change to the template, check that the six generated settings are
-in step. Each command gives "no change needed" on a template that is in step,
-and exits with 1 otherwise:
+After any change to the template, check that the seven generated settings and
+the template version record are in step. Each command gives "no change
+needed" on a template that is in step, and exits with 1 otherwise:
 
 ```sh
 P="templates/bng-service/BNG Service Habitat Mapping.qgz"
@@ -192,6 +193,68 @@ python3 development/tools/set_paste_defaults.py --check "$P"
 python3 development/tools/order_dropdowns.py --check "$P"
 python3 development/tools/allow_blank.py --check "$P"
 python3 development/tools/require_shape.py --check "$P"
+python3 development/tools/limit_vertical_habitats.py --check "$P"
+python3 development/tools/set_template_version.py --check "templates/bng-service/Layers/BNG Service Layers.gpkg"
 ```
 
 Then generate the example site again. Its run ends with `dropdown_check.py`.
+
+## Template version
+
+**The template's GeoPackage records which format it follows, and which
+version.** The BNG service reads the record to know how to read a file, and
+refuses a file that has none, or a version it does not support. A surveyor's
+file keeps the version of the template copy it started from.
+
+The record is one row of the GeoPackage metadata extension, referenced to the
+whole GeoPackage:
+
+| Column of `gpkg_metadata` | Value |
+| --- | --- |
+| `md_scope` | `dataset` |
+| `md_standard_uri` | `tag:defra.gov.uk,2026:bng-metric/gpkg-format` |
+| `mime_type` | `application/json` |
+| `metadata` | `{"format": "bng-service", "version": "1.0"}` |
+
+To read it, select the `metadata` of the row with that `md_standard_uri`.
+GDAL shows it as the dataset metadata item `GPKG_METADATA_ITEM_1`.
+`read_template_version()` in `plugin/bng_template_convert/gpkg_common.py`
+reads it, and refuses a file that records it more than once.
+
+**Another tool can write a file in this format.** It must write this record,
+as well as the template's tables, columns and values. The service checks the
+whole file, not only the record: the record says which version the file
+claims to be, and the service checks the file against that version.
+
+**It is not a row of its own in `gpkg_extensions`.** GDAL, and so QGIS,
+warns about an extension that it does not know: on every open of the file
+when its scope is `read-write`, and on every edit when it is `write-only`.
+GDAL knows the metadata extension, gives no warning, and keeps the record
+when the layers are edited or when it writes its own metadata.
+
+**The version is `TEMPLATE_VERSION` in `gpkg_common.py`.** The plugin writes
+it into each GeoPackage that Convert from legacy creates, and
+`set_template_version.py` writes it into the template. The generators copy
+the template, so their sites carry it too.
+
+**Raise the version for every change to what the GeoPackage holds:** a
+table, a column, a geometry type, a value that a drop-down offers, or the
+meaning of a value. A change only to the project, such as a button, a style
+or a form, does not change it.
+
+- Raise the second number (1.0 to 1.1) for an addition that a reader of the
+  earlier version can ignore, such as a new column that can be blank.
+- Raise the first number (1.4 to 2.0) for any other change.
+
+To raise it:
+
+1. Change `TEMPLATE_VERSION` in `plugin/bng_template_convert/gpkg_common.py`.
+2. Write it into the template:
+
+   ```sh
+   python3 development/tools/set_template_version.py "templates/bng-service/Layers/BNG Service Layers.gpkg"
+   ```
+
+3. Raise the plugin version, with a changelog line, and rebuild the plugin.
+4. Tell the BNG service team. The service refuses the new version until it
+   supports it.

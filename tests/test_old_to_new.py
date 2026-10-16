@@ -298,6 +298,49 @@ class OldToNewTest(support.TempDirTestCase):
         written = out / f"{self.baseline.stem} - Staged.gpkg"
         self.assertEqual(set(old_to_new.STAGED_LAYERS),
                          support.feature_tables(written))
+        self.assertEqual(
+            {"format": gpkg_common.FORMAT_NAME,
+             "version": gpkg_common.TEMPLATE_VERSION},
+            support.template_version(written))
+
+    def test_a_template_copy_keeps_its_version_and_is_not_warned_about(self):
+        self.assertEqual(gpkg_common.TEMPLATE_VERSION,
+                         support.template_version(self.target)["version"])
+        self.assertEqual([], self.warnings_mentioning("version"))
+
+    def test_an_intertidal_hard_structure_on_area_habitats_is_warned_about(self):
+        folder = self.tmp / "intertidal"
+        baseline = support.copy_to(self.baseline, folder)
+        pi = support.copy_to(self.pi, folder)
+        carried = {row[PARCEL_REF] for row in support.read_rows(pi, "Habitats")}
+        ref = first(support.read_rows(baseline, "Habitats"),
+                    lambda r: r[PARCEL_REF] in carried)[PARCEL_REF]
+        structure = {"Baseline Broad Habitat Type": "Intertidal hard structures",
+                     "Baseline Habitat Type": "Artificial hard structures"}
+        support.update(baseline, "Habitats", structure, PARCEL_REF, ref)
+        support.update(pi, "Habitats", structure, PARCEL_REF, ref)
+        report = fill(baseline, pi, template_copy(folder))
+        warnings = [w for w in report.warnings
+                    if "Vertical Area Habitats layers" in w]
+        self.assertEqual(1, len(warnings))
+        self.assertIn(ref, warnings[0])
+        # The ref is on both stages, and is named once.
+        self.assertTrue(warnings[0].startswith("1 area habitat row(s)"),
+                        warnings[0])
+
+    def test_a_target_without_a_version_is_warned_about_and_left_alone(self):
+        target = template_copy(self.tmp / "no-version")
+        conn = support.open_for_writing(target)
+        try:
+            conn.execute("DELETE FROM gpkg_metadata")
+            conn.execute("DELETE FROM gpkg_metadata_reference")
+            conn.commit()
+        finally:
+            conn.close()
+        report = fill(self.base_copy, self.pi_copy, target)
+        self.assertEqual(1, len([w for w in report.warnings
+                                 if "does not record its version" in w]))
+        self.assertIsNone(support.template_version(target))
 
 
 class RoundTripTest(support.TempDirTestCase):

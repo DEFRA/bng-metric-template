@@ -60,10 +60,12 @@ PROPOSED_SIGNIFICANCE_EDITABLE = (
     'coalesce("Retention Category", \'\') <> \'Retained\'')
 IRREPLACEABLE_LIST_LAYER = "Habitat Irreplaceable"
 
-# The six generated settings, in the order MAINTAINERS.md runs them.
+# The generated settings, in the order MAINTAINERS.md runs them.
 CHECK_TOOLS = ("set_field_rules.py", "reset_stale_dropdowns.py",
                "set_paste_defaults.py", "order_dropdowns.py",
-               "allow_blank.py", "require_shape.py")
+               "allow_blank.py", "require_shape.py",
+               "limit_vertical_habitats.py")
+VERTICAL_BROAD_HABITATS = ["Intertidal hard structures", "Urban"]
 NO_CHANGE = "no change needed"
 
 
@@ -154,6 +156,33 @@ class ProjectXmlTest(unittest.TestCase):
         for name in data_layers():
             with self.subTest(layer=name):
                 self.assertIn(name, self.layers)
+
+    def test_vertical_layers_offer_only_vertical_broad_habitats(self):
+        for stage in (BASELINE, POST):
+            layer = self.layer(VERTICAL, stage)
+            with self.subTest(stage=stage):
+                self.assertEqual(
+                    [NULL_VALUE] + VERTICAL_BROAD_HABITATS,
+                    value_map_values(
+                        layer.widgets["Baseline Broad Habitat Type"]))
+        proposed = widget_options(self.layer(VERTICAL, POST).widgets[
+            "Proposed Broad Habitat Type"])
+        self.assertTrue(proposed["FilterExpression"].endswith(
+            "\"New\" IN ('Intertidal hard structures','Urban')"))
+
+    def test_area_layers_do_not_offer_a_vertical_only_broad_habitat(self):
+        """Intertidal hard structures are all counted by vertical area."""
+        for stage in (BASELINE, POST):
+            layer = self.layer(AREA, stage)
+            with self.subTest(stage=stage):
+                offered = value_map_values(
+                    layer.widgets["Baseline Broad Habitat Type"])
+                self.assertNotIn("Intertidal hard structures", offered)
+                self.assertIn("Urban", offered)
+        proposed = widget_options(self.layer(AREA, POST).widgets[
+            "Proposed Broad Habitat Type"])
+        self.assertTrue(proposed["FilterExpression"].endswith(
+            "NOT (\"New\" IN ('Intertidal hard structures'))"))
 
     def test_parent_checksum_is_gone_from_the_project(self):
         self.assertNotIn("parent_checksum", self.xml)

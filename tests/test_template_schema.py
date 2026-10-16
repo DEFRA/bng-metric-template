@@ -5,6 +5,7 @@ import unittest
 from tests import support
 
 # support puts the converter modules on sys.path.
+import gpkg_common
 import new_to_old
 import old_to_new
 
@@ -136,6 +137,26 @@ class TemplateSchemaTest(unittest.TestCase):
         staged.add(new_to_old.STAGED_REDLINE_TABLE)
         self.assertEqual(EXPECTED_TABLES, staged)
         self.assertEqual(EXPECTED_TABLES, set(old_to_new.STAGED_LAYERS))
+
+
+class TemplateVersionTest(unittest.TestCase):
+    """The template says which template it is, and which version."""
+
+    def test_template_records_the_current_version(self):
+        self.assertEqual(
+            {"format": gpkg_common.FORMAT_NAME,
+             "version": gpkg_common.TEMPLATE_VERSION},
+            support.template_version(support.SERVICE_GPKG))
+
+    def test_template_names_only_extensions_gdal_knows(self):
+        """GDAL, and so QGIS, warns on a file that names any other one."""
+        conn = support.connect_read_only(support.SERVICE_GPKG)
+        try:
+            names = {row[0] for row in conn.execute(
+                "SELECT extension_name FROM gpkg_extensions")}
+        finally:
+            conn.close()
+        self.assertEqual({"gpkg_rtree_index", "gpkg_metadata"}, names)
 
 
 class LegacyTemplateSchemaTest(unittest.TestCase):
