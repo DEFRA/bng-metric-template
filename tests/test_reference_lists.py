@@ -159,6 +159,46 @@ class EnhancedTreeListsTest(unittest.TestCase):
         self.assertNotIn(ENHANCED, {row["Retention"] for row in rows})
 
 
+HEDGES = "Hedgerows"
+CREATED = "Created"
+
+
+class DegradedHedgeListsTest(unittest.TestCase):
+    """A hedge whose condition gets worse keeps its type when set to Created.
+
+    A retained hedge cannot get worse, so the Statutory Metric records the
+    old hedge as lost and a new one created in its place. The surveyor keeps
+    the copied row and sets it to Created ("HOW TO USE THIS TEMPLATE.md",
+    Hedgerows), so its Proposed Hedge Type must offer the hedge's own type,
+    and that type a condition to choose.
+    """
+
+    def existing_hedges(self):
+        rows = csv_rows("bng-service",
+                        f"{HEDGES}/Hedgerow Retention Options.csv")
+        return [row["Value"] for row in rows
+                if row["Options"] == CREATED and row["Value"] != TO_BE_CREATED]
+
+    def test_a_copied_hedge_set_to_created_offers_its_own_type(self):
+        options = defaultdict(list)
+        for row in csv_rows("bng-service",
+                            f"{HEDGES}/Hedgerow Habitat Options - post.csv"):
+            options[row["Value"]].append(row["Description"])
+        hedges = self.existing_hedges()
+        self.assertTrue(hedges)
+        for hedge in hedges:
+            with self.subTest(hedge=hedge):
+                self.assertIn(hedge, options[f"{hedge}{CREATED}"])
+
+    def test_its_own_type_offers_a_condition(self):
+        conditions = {row["Habitat"]
+                      for row in csv_rows("bng-service",
+                                          f"{HEDGES}/Hedgerow Condition.csv")}
+        for hedge in self.existing_hedges():
+            with self.subTest(hedge=hedge):
+                self.assertIn(hedge, conditions)
+
+
 class ListFilesTest(unittest.TestCase):
 
     def test_every_list_the_converter_reads_exists_in_its_template(self):

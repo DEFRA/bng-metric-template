@@ -2,7 +2,7 @@
 name=BNG Template Convert
 qgisMinimumVersion=3.22
 description=Convert habitat mapping between the legacy Natural England template and the BNG Service template.
-version=1.8.0
+version=1.9.0
 author=Defra BNG Metric Service
 email=
 
@@ -12,7 +12,9 @@ about=Moves a habitat map out of the BNG Service QGIS template without anyone ne
     Export to the Statutory Metric fills a copy of the metric workbook directly, with no CSVs and no import tool in between.
     All three appear in the Processing Toolbox and under Plugins > BNG Template Convert. No dependencies beyond QGIS itself.
 
-changelog=1.8.0
+changelog=1.9.0
+    For version 1.1 of the BNG Service template, which can record a hedge whose condition gets worse. A copied hedge set to Created now offers its own hedge type as its Proposed Hedge Type, as the template's guide describes, so the hedge keeps its type and takes the worse condition. Convert from legacy records version 1.1 in each GeoPackage it creates, and warns when the copy of the template it fills records another version.
+  1.8.0
     For the BNG Service template that records its version. Convert from legacy records the template version in each GeoPackage it creates, as one row of the GeoPackage metadata extension, which the BNG service reads. Converting into a copy of the template leaves the copy's record as it is, and warns when the copy does not record the current version.
     For the BNG Service template whose area habitat layers no longer offer the habitats counted by vertical area. Convert from legacy names each legacy area habitat that is an intertidal hard structure, which the template records on the Vertical Area Habitats layers.
   1.7.0

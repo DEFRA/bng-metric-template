@@ -214,7 +214,7 @@ whole GeoPackage:
 | `md_scope` | `dataset` |
 | `md_standard_uri` | `tag:defra.gov.uk,2026:bng-metric/gpkg-format` |
 | `mime_type` | `application/json` |
-| `metadata` | `{"format": "bng-service", "version": "1.0"}` |
+| `metadata` | `{"format": "bng-service", "version": "1.1"}` |
 
 To read it, select the `metadata` of the row with that `md_standard_uri`.
 GDAL shows it as the dataset metadata item `GPKG_METADATA_ITEM_1`.
