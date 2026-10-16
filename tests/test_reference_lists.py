@@ -166,11 +166,18 @@ CREATED = "Created"
 class DegradedHedgeListsTest(unittest.TestCase):
     """A hedge whose condition gets worse keeps its type when set to Created.
 
-    A retained hedge cannot get worse, so the Statutory Metric records the
-    old hedge as lost and a new one created in its place. The surveyor keeps
-    the copied row and sets it to Created ("HOW TO USE THIS TEMPLATE.md",
-    Hedgerows), so its Proposed Hedge Type must offer the hedge's own type,
-    and that type a condition to choose.
+    Created looks wrong for a hedge that is still there: it is the same hedge,
+    in effect retained in a worse condition. But a retained habitat cannot get
+    worse, and no other Retention Category fits, so the Metric team asks
+    ecologists to record it as Created. The Metric then counts the old hedge
+    as lost and a new one created in its place (DegradedHedgerowTest in
+    test_to_metric.py).
+
+    The surveyor keeps the copied row and sets it to Created ("HOW TO USE THIS
+    TEMPLATE.md", Hedgerows), so the hedge keeps its link to its baseline
+    parent. Its Proposed Hedge Type must offer the hedge's own type, not only
+    N/A, and that type a condition to choose. See MAINTAINERS.md, "A hedge
+    whose condition gets worse".
     """
 
     def existing_hedges(self):
