@@ -636,7 +636,7 @@ TEMPLATE_METADATA_MIME_TYPE = "application/json"
 # The format the file follows. It names the format, not the QGIS template,
 # so that another tool can write a file in the same format.
 FORMAT_NAME = "bng-service"
-TEMPLATE_VERSION = "1.1"
+TEMPLATE_VERSION = "1.0"
 
 GPKG_METADATA_EXTENSION = "gpkg_metadata"
 GPKG_METADATA_DEFINITION = (
