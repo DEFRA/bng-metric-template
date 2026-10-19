@@ -701,10 +701,15 @@ Draw a hedgerow as a **line**. QGIS fills in `Length (m)` and locks it.
 - **A hedge whose condition gets worse:** a retained hedge cannot get worse,
   so the Statutory Metric records the old hedge as lost and a new one as
   created in its place. Keep the copied row and set **Retention Category** to
-  `Created`, then set the worse **Proposed Condition**. If the new hedge is
-  shorter, shorten the line. Its `Parent Ref` stays, so the two records stay
-  linked, but nothing is carried forward: the whole baseline hedge counts as
-  lost.
+  `Created`. It keeps its **Proposed Hedge Type**. Then set the worse
+  **Proposed Condition**. If the new hedge is shorter, shorten the line. Its
+  `Parent Ref` stays, so the two records stay linked, but nothing is carried
+  forward: the whole baseline hedge counts as lost.
+
+  `Created` is right here, although the hedge is still there. It is the
+  same hedge in a worse condition, but no other Retention Category fits a
+  hedge that gets worse, and the Metric team asks ecologists to record it
+  as `Created`.
 - **A new hedge:** draw a new line on the Post-Intervention layer (see *New
   habitats*).
 
