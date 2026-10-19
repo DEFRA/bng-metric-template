@@ -22,7 +22,9 @@ save blanks one if both are. Blank and `0` are both allowed.
 A blank years created in advance becomes `30+` on an area, vertical area or
 hedgerow row that records a habitat whose condition gets worse: `Created`,
 with a baseline type, and the same type proposed. The Metric team asks for
-this. The surveyor can pick another value.
+this. The surveyor can pick another value. On any other row of those layers
+`30+` is cleared, so it does not stay behind when the row changes, for
+example to `Enhanced`.
 
 Each filled column gets a default value expression applied on update, so it
 follows every change of the column it depends on, and a text widget that the
@@ -220,17 +222,28 @@ def degraded(kind):
 
 def advance_default(kind, advance, delay):
     """The years created in advance: blank while the delay is above 0, as
-    only_one_timing gives, and `30+` on a blank one of a row that records a
-    habitat whose condition gets worse.
+    only_one_timing gives. On a row that records a habitat whose condition
+    gets worse, a blank one becomes `30+`. On any other row, `30+` is
+    cleared.
 
     Only a blank value is filled, so the surveyor can pick another value,
     including `0`, and it is kept. Picking blank fills `30+` again.
+
+    `30+` is cleared elsewhere because it only fits a habitat that gets
+    worse, where the Metric records the same habitat lost and created again.
+    Elsewhere it would credit the habitat at once with gains it has not
+    made: a creation 30 years in advance would be baseline habitat. A
+    surveyor who sets a row to Created, then changes it, for example to
+    Enhanced, would otherwise keep the `30+` unseen. Any other value is the
+    surveyor's own choice and stays.
     """
     if kind not in DEGRADED_KINDS:
         return only_one_timing(advance, delay)
-    keep = (f'if("{advance}" IS NULL AND {degraded(kind)}, '
-            f'{DEGRADED_ADVANCE}, "{advance}")')
+    keep = (f'if({degraded(kind)}, '
+            f'coalesce("{advance}", {DEGRADED_ADVANCE}), '
+            f'if("{advance}" = {DEGRADED_ADVANCE}, NULL, "{advance}"))')
     return f'if(coalesce("{delay}", \'0\') <> \'0\', NULL, {keep})'
+
 
 
 def timing_editable(other):

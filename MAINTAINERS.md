@@ -191,7 +191,11 @@ asks for it to be created 30 or more years in advance, so
 `30+` on an area, vertical area or hedgerow row that is `Created`, has a
 baseline type, and keeps that type. A change of type, such as built-on
 ground, gets no default, and nor does a watercourse, which follows the
-Metric's own creation rules. `DegradedAdvance` in
+Metric's own creation rules. On any other area, vertical area or hedgerow
+row it clears `30+`, so the value cannot stay behind on a row changed, for
+example, to `Enhanced`, and credit it with gains it has not made. `30+`
+fits only a habitat that gets worse: a creation 30 years in advance would
+be baseline habitat. This rests on the Metric team confirming it. `DegradedAdvance` in
 `tests_qgis/test_template_behaviour.py` checks it. The surveyor keeps the
 copied row, so the hedge keeps its link to its baseline parent, and its own
 hedge type. That is why `Hedgerow Habitat Options - post.csv` offers each

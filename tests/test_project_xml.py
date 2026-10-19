@@ -64,14 +64,14 @@ DEGRADED_TYPES = {
 
 def advance_default(kind, advance, delay):
     """Blank while the delay is above 0; 30+ on a blank one of a row that is
-    Created and keeps its baseline type."""
+    Created and keeps its baseline type, and never 30+ on any other row."""
     keep = f'"{advance}"'
     if kind in DEGRADED_TYPES:
         base, proposed = DEGRADED_TYPES[kind]
-        keep = (f'if("{advance}" IS NULL AND "Retention Category" = '
-                f'\'Created\' AND "{base}" IS NOT NULL AND "{base}" NOT IN '
-                f'(\'To be created\', \'N/A\') AND "{proposed}" = "{base}", '
-                f'\'30+\', "{advance}")')
+        keep = (f'if("Retention Category" = \'Created\' AND "{base}" IS NOT '
+                f'NULL AND "{base}" NOT IN (\'To be created\', \'N/A\') AND '
+                f'"{proposed}" = "{base}", coalesce("{advance}", \'30+\'), '
+                f'if("{advance}" = \'30+\', NULL, "{advance}"))')
     return f'if(coalesce("{delay}", \'0\') <> \'0\', NULL, {keep})'
 
 

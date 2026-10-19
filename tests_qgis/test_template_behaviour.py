@@ -255,8 +255,9 @@ class DegradedAdvance(TemplateCase):
     The Metric team asks for an area habitat or a hedge that gets worse to be
     recorded as Created, in the same habitat type, with 30 or more years
     created in advance. The template fills that in, and the surveyor can pick
-    another value. Watercourses follow the Metric's own rules, so they get no
-    default.
+    another value. 30+ fits no other row, so it is cleared on one: it would
+    credit the habitat with gains it has not made. Watercourses follow the
+    Metric's own rules, so they get no default.
     """
 
     def degrade(self, name, wkt, values):
@@ -288,6 +289,36 @@ class DegradedAdvance(TemplateCase):
         row = self.set(layer, fid, DELAY, "5")
         self.assertEqual(row[DELAY], "5")
         self.assertTrue(is_null(row[ADVANCE]) or row[ADVANCE] == "0")
+
+    def test_changing_the_row_back_clears_30_plus(self):
+        for name, wkt, values in ((AREA_PI, SQUARE, GRASSLAND),
+                                  (HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)):
+            with self.subTest(layer=name):
+                layer, fid, _row = self.degrade(name, wkt, values)
+                row = self.set(layer, fid, RETENTION, "Enhanced")
+                self.assertTrue(is_null(row[ADVANCE]))
+
+    def test_changing_the_habitat_type_clears_30_plus(self):
+        layer, fid, _row = self.degrade(AREA_PI, SQUARE, GRASSLAND)
+        row = self.set(layer, fid, "Proposed Habitat Type",
+                       "Other neutral grassland")
+        self.assertTrue(is_null(row[ADVANCE]))
+
+    def test_the_surveyors_own_value_stays_when_the_row_changes(self):
+        layer, fid, _row = self.degrade(HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)
+        self.set(layer, fid, ADVANCE, "25")
+        self.assertEqual(self.set(layer, fid, RETENTION, "Enhanced")[ADVANCE],
+                         "25")
+
+    def test_30_plus_is_not_kept_on_another_row(self):
+        layer = self.layer(AREA_PI)
+        fid = self.add(layer, SQUARE, **{REF: "PI-1", RETENTION: "Created",
+                                         "Proposed Broad Habitat Type":
+                                         "Grassland",
+                                         "Proposed Habitat Type":
+                                         "Modified grassland"})
+        self.assertTrue(is_null(self.set(layer, fid, ADVANCE,
+                                         THIRTY_PLUS)[ADVANCE]))
 
     def test_a_change_of_habitat_type_gets_no_default(self):
         built_on = {**GRASSLAND, "Proposed Broad Habitat Type": "Urban",
