@@ -530,6 +530,94 @@ class DegradedHedgerowTest(support.TempDirTestCase):
         self.assertRegex(lost[0], r"[1-9]\d* feature\(s\) carry nothing")
 
 
+
+WATERCOURSE_BASELINE = "Watercourses Baseline"
+WATERCOURSE_PI = "Watercourses Post-Intervention"
+WATERCOURSE_BASELINE_SHEET = to_metric.LAYOUT["watercourses"]["baseline"][0]
+WATERCOURSE_CREATION_SHEET = to_metric.LAYOUT["watercourses"]["creation"][0]
+WATERCOURSE_COLUMNS = {stage: to_metric.LAYOUT["watercourses"][stage][3]
+                       for stage in ("baseline", "creation")}
+WATERCOURSE_LENGTH_M = 51.0
+WORSE_WATERCOURSE = {
+    "Retention Category": "Created",
+    "Proposed River Type": "Ditches",
+    "Proposed Condition": "Poor",
+    "Proposed Strategic Significance": "Low",
+    "Proposed Encroachment into Watercourse": "Major",
+    "Proposed Encroachment into riparian zone": "Major/Major",
+    "Spatial risk category": "N/A",
+}
+
+
+class CreatedExistingWatercourseTest(support.TempDirTestCase):
+    """An existing watercourse set to Created, worse in condition and
+    encroachment.
+
+    The surveyor copies the baseline watercourse, which links it to its
+    parent, and sets it to Created with its own type. As with a hedge
+    (DegradedHedgerowTest), the Metric then counts the baseline watercourse
+    as lost and the Created one as new. The link stays, but nothing is
+    carried forward.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.gpkg = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                   "worse-watercourse.gpkg")
+        uuid = "c0ffee00-0000-4000-8000-000000000002"
+        support.insert_feature(cls.gpkg, WATERCOURSE_BASELINE,
+                               support.line(WATERCOURSE_LINE),
+                               {"Habitat Ref": "WC-02",
+                                "Length": WATERCOURSE_LENGTH_M,
+                                "feature_uuid": uuid, **WATERCOURSE})
+        support.insert_feature(cls.gpkg, WATERCOURSE_PI,
+                               support.line(WATERCOURSE_LINE),
+                               {"Habitat Ref": "WC-02", "Parent Ref": "WC-02",
+                                "parent_uuid": uuid,
+                                "Length": WATERCOURSE_LENGTH_M,
+                                **WATERCOURSE, **WORSE_WATERCOURSE})
+        cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
+        cls.out = cls.tmp / "worse-watercourse.xlsx"
+        cls.report = to_metric.convert(cls.gpkg, cls.blank, cls.out)
+
+    def row_of(self, stage):
+        sheet = (WATERCOURSE_BASELINE_SHEET if stage == "baseline"
+                 else WATERCOURSE_CREATION_SHEET)
+        xml = sheet_xml(self.out, sheet)
+        columns = WATERCOURSE_COLUMNS[stage]
+        rows = [row for row, text
+                in cells_by_row(xml, columns["ref"]).items()
+                if text == "WC-02"]
+        self.assertEqual(1, len(rows))
+        return xml, columns, rows[0]
+
+    def number(self, xml, column, row):
+        found = numbers_in_column(xml, column, row, row)
+        return found[0] if found else 0.0
+
+    def test_the_baseline_watercourse_is_wholly_lost(self):
+        xml, columns, row = self.row_of("baseline")
+        self.assertAlmostEqual(WATERCOURSE_LENGTH_M / to_metric.METRES_PER_KM,
+                               self.number(xml, columns["size"], row),
+                               delta=LENGTH_TOLERANCE_KM)
+        self.assertEqual(0.0, self.number(xml, columns["retained"], row))
+        self.assertEqual(0.0, self.number(xml, columns["enhanced"], row))
+
+    def test_the_created_watercourse_keeps_its_type_and_is_worse(self):
+        xml, columns, row = self.row_of("creation")
+        expected = {"habitat": "Ditches", "condition": "Poor",
+                    "encroachment": "Major", "riparian": "Major/Major"}
+        for column, value in expected.items():
+            with self.subTest(column=column):
+                self.assertEqual(value,
+                                 cells_by_row(xml, columns[column])[row])
+        self.assertAlmostEqual(WATERCOURSE_LENGTH_M / to_metric.METRES_PER_KM,
+                               self.number(xml, columns["size"], row),
+                               delta=LENGTH_TOLERANCE_KM)
+
+
 class OlderTemplateTreeCountTest(support.TempDirTestCase):
     """A file from the template before 1.7.0, whose trees have a Count."""
 

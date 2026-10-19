@@ -222,6 +222,81 @@ class DegradedHedgeListsTest(unittest.TestCase):
                 self.assertIn(hedge, conditions)
 
 
+
+WATERCOURSES = "Watercourses"
+CULVERT = "Culvert"
+WORST_ENCROACHMENT = "Major"
+WORST_RIPARIAN = "Major/Major"
+
+
+class DegradedWatercourseListsTest(unittest.TestCase):
+    """An existing watercourse set to Created keeps its own type.
+
+    The Metric team asks for an existing watercourse to be recordable as
+    Created, as a hedge is (DegradedHedgeListsTest). Unlike a hedge, the
+    template gives a watercourse no recipe: a watercourse that gets worse is
+    recorded by the Metric's own watercourse rules, which the surveyor
+    applies. See MAINTAINERS.md, "An existing watercourse set to Created".
+
+    The list used to offer only N/A here, which has no condition and no
+    encroachment, so a Created watercourse recorded nothing the Metric could
+    use. Its own type offers every condition and encroachment the type has,
+    so the encroachment can be worse than the baseline's. A culvert offers
+    only Poor, and no encroachment, so a Created culvert cannot be worse.
+    """
+
+    def existing_watercourses(self):
+        rows = csv_rows("bng-service",
+                        f"{WATERCOURSES}/Watercourse Retention Options.csv")
+        return [row["Value"] for row in rows
+                if row["Options"] == CREATED and row["Value"] != TO_BE_CREATED]
+
+    def offered(self, relative, key, value):
+        options = defaultdict(list)
+        for row in csv_rows("bng-service", f"{WATERCOURSES}/{relative}"):
+            options[row[key]].append(row[value])
+        return options
+
+    def created_options(self):
+        return self.offered("Watercourse Habitat Options - post.csv",
+                            "Value", "Description")
+
+    def test_a_copied_watercourse_set_to_created_offers_only_its_own_type(self):
+        options = self.created_options()
+        watercourses = self.existing_watercourses()
+        self.assertTrue(watercourses)
+        for watercourse in watercourses:
+            with self.subTest(watercourse=watercourse):
+                self.assertEqual([watercourse],
+                                 options[f"{watercourse}{CREATED}"])
+
+    def test_a_copied_watercourse_set_to_created_is_not_offered_n_a(self):
+        options = self.created_options()
+        for watercourse in self.existing_watercourses():
+            with self.subTest(watercourse=watercourse):
+                self.assertNotIn(NOT_APPLICABLE,
+                                 options[f"{watercourse}{CREATED}"])
+
+    def test_its_own_type_offers_a_condition(self):
+        conditions = self.offered("Watercourse Condition.csv",
+                                  "Habitat", "Condition")
+        for watercourse in self.existing_watercourses():
+            with self.subTest(watercourse=watercourse):
+                self.assertTrue(conditions[watercourse])
+
+    def test_its_own_type_offers_a_worse_encroachment(self):
+        encroachment = self.offered("Watercourse Encroachment.csv",
+                                    "Value", "Description")
+        riparian = self.offered("Riparian Encroachment.csv",
+                                "Value", "Description")
+        for watercourse in self.existing_watercourses():
+            if watercourse == CULVERT:
+                continue
+            with self.subTest(watercourse=watercourse):
+                self.assertIn(WORST_ENCROACHMENT, encroachment[watercourse])
+                self.assertIn(WORST_RIPARIAN, riparian[watercourse])
+
+
 class ListFilesTest(unittest.TestCase):
 
     def test_every_list_the_converter_reads_exists_in_its_template(self):

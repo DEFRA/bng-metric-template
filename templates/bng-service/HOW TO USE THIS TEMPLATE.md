@@ -561,7 +561,7 @@ Open the attribute table of each layer and compare the totals.
 | **Area Habitats** baseline total and post-intervention total | The same. Ground cannot disappear. |
 | Hedgerow, watercourse, vertical area habitat and tree totals | The post-intervention total can be smaller. The difference is what you removed, and the service lists it as removed. |
 | Each post-intervention row | Has a Retention Category |
-| `Created` rows | Have Proposed values. For area habitats, only a Fill Ring shape has a blank `Parent Ref`. A split, copied or pasted row keeps the parcel's `Parent Ref`. For the other types, a `Created` row always has a blank `Parent Ref`. |
+| `Created` rows | Have Proposed values. For area habitats, only a Fill Ring shape has a blank `Parent Ref`. A split, copied or pasted row keeps the parcel's `Parent Ref`. For the other types, a new feature has a blank `Parent Ref`. A copied hedgerow or watercourse set to `Created` keeps its `Parent Ref`. |
 | `Enhanced` rows | Have Baseline and Proposed values |
 | `Retained` rows | Proposed values agree with Baseline values. A shortened hedge stays `Retained` at its new length. |
 | `Retained` and `Enhanced` rows | Have a `Parent Ref`. A blank one is a paste that found no baseline feature (section 4.2). |
@@ -737,6 +737,17 @@ re-meandered channel moves and gets longer. This is correct.
   original length there. The calculation needs it after the channel moves.
 - **A stretch is fully lost**, for example culverted or filled: delete its
   copied row.
+- **An existing stretch recorded as created:** keep the copied row and set
+  **Retention Category** to `Created`. It keeps its **Proposed River Type**,
+  and you can then set a worse **Proposed Condition** or worse encroachment.
+  Its `Parent Ref` stays, so the two records stay linked, but nothing is
+  carried forward: the whole baseline stretch counts as lost. When to record
+  a stretch this way, and its years created in advance, follow the Statutory
+  Metric's watercourse rules. For example, the Metric allows 10 or more years
+  in advance where encroachment increases with no other impact. The source is
+  the Statutory Biodiversity Metric User Guide (June 2026), section 7,
+  *Watercourse creation*: "Creation in advance may be set to 10+ years if
+  there are increases in encroachment with no other impacts."
 - **A new channel:** draw it on the Post-Intervention layer (see *New
   habitats*).
 
