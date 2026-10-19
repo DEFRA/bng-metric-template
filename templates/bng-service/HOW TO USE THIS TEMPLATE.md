@@ -283,7 +283,7 @@ cleared. Select it again. A condition that still fits stays.
 | Baseline and Proposed Distinctiveness | Fills in the band of the habitat type, and locks the field. Blank until you choose a habitat type. |
 | Baseline Strategic Significance | Always `Low`, and locked. |
 | Proposed Strategic Significance | `Low` on a new or copied row, and never blank. Change it to `High` where the site is in an area formally identified in a local strategy. On a `Retained` row it is `Low`, as the baseline is, and you cannot change it. |
-| Habitat created in advance and Delay in starting habitat creation | The Metric allows one or the other. While one is above 0, the other is greyed out. To switch, set the first to `0` or blank, then pick the other. `0` and blank are both allowed. On a habitat whose condition gets worse (Part 5e, and Vertical Area Habitats and Hedgerows in Part 9), a blank years created in advance becomes `30+` once the Proposed Condition is worse than the Baseline Condition: set it to `0` to use a delay instead. On any other row of those layers you cannot keep `30+`: it is cleared. |
+| Habitat created in advance and Delay in starting habitat creation | The Metric allows one or the other. While one is above 0, the other is greyed out. To switch, set the first to `0` or blank, then pick the other. `0` and blank are both allowed. On a habitat whose condition gets worse (Part 5e, and Vertical Area Habitats and Hedgerows in Part 9), a blank years created in advance becomes `30+` once the Proposed Condition is worse than the Baseline Condition: set it to `0` to use a delay instead. On any other row of those layers, `30+` shows a warning, but you can save it. |
 | Baseline and Proposed Condition | Fills in the condition when the habitat allows one only, for example `N/A - Other` for Developed land; sealed surface. You can still change it. |
 | Spatial risk category | Always `N/A` on the post-intervention layers, and locked. |
 
@@ -548,7 +548,7 @@ condition.
    Type** as the baseline.
 4. Set the worse **Proposed Condition**.
 5. Check **Habitat created in advance/years**. Once the condition is worse
-   than the baseline, the template fills in `30+`, as the Metric team asks.
+   than the baseline, the template fills in `30+`, as the Metric User Guide asks.
    Pick another value only if you have a reason, and give your ecological
    reasons in the **Comment**.
 
@@ -564,9 +564,11 @@ Retention Category fits a habitat that gets worse. The row keeps its `Parent
 Ref`, but nothing is carried forward: the whole baseline parcel counts as
 lost.
 
-If you change the row back, for example to `Enhanced`, or change its habitat
-type, or set the condition back to the baseline condition or better, the
-template clears the `30+`. It fits only a habitat that gets worse.
+**If you change the row back,** for example to `Enhanced`, or change its
+habitat type, or set the condition back to the baseline condition or better,
+the `30+` stays and the form shows a warning beside it. Change it, unless you
+mean `30+`. A `30+` left behind on a row that is not a habitat getting worse
+overstates its units.
 
 The source is the Statutory Biodiversity Metric User Guide (June 2026),
 section 5, *Habitat retention*. Where the condition of a retained habitat
@@ -747,7 +749,7 @@ Draw a hedgerow as a **line**. QGIS fills in `Length (m)` and locks it.
   created in its place. Keep the copied row and set **Retention Category** to
   `Created`. It keeps its **Proposed Hedge Type**. Then set the worse
   **Proposed Condition**. The template fills in `30+` for **Habitat created
-  in advance/years**, as the Metric team asks; give your reasons in the
+  in advance/years**, as the Metric User Guide asks; give your reasons in the
   **Comment** if you change it. If the new hedge is shorter, shorten the line. Its
   `Parent Ref` stays, so the two records stay linked, but nothing is carried
   forward: the whole baseline hedge counts as lost.

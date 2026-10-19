@@ -24,6 +24,7 @@ EDITABLE = "1"
 # QgsFieldConstraints: ConstraintExpression = 4, ConstraintStrengthHard = 1.
 EXPRESSION_CONSTRAINT = 4
 HARD = "1"
+SOFT = "2"
 SHAPE_EXPRESSION = "$geometry IS NOT NULL"
 
 RED_LINE = "Red Line Boundary"
@@ -71,18 +72,22 @@ WORSE_CONDITION = (
     "array_find(@rank, \"Baseline Condition\") >= 0, false))")
 
 
+def degraded(kind):
+    """A row that is Created, keeps its baseline type and is in a worse
+    condition."""
+    base, proposed = DEGRADED_TYPES[kind]
+    return (f'"Retention Category" = \'Created\' AND "{base}" IS NOT NULL '
+            f'AND "{base}" NOT IN (\'To be created\', \'N/A\') AND '
+            f'"{proposed}" = "{base}" AND {WORSE_CONDITION}')
+
+
 def advance_default(kind, advance, delay):
-    """Blank while the delay is above 0; 30+ on a blank one of a row that is
-    Created, keeps its baseline type and is in a worse condition, and never
-    30+ on any other row."""
+    """Blank while the delay is above 0; 30+ on a blank one of a degraded
+    row; otherwise the surveyor's value."""
     keep = f'"{advance}"'
     if kind in DEGRADED_TYPES:
-        base, proposed = DEGRADED_TYPES[kind]
-        keep = (f'if("Retention Category" = \'Created\' AND "{base}" IS NOT '
-                f'NULL AND "{base}" NOT IN (\'To be created\', \'N/A\') AND '
-                f'"{proposed}" = "{base}" AND {WORSE_CONDITION}, '
-                f'coalesce("{advance}", \'30+\'), '
-                f'if("{advance}" = \'30+\', NULL, "{advance}"))')
+        keep = (f'if("{advance}" IS NULL AND {degraded(kind)}, \'30+\', '
+                f'"{advance}")')
     return f'if(coalesce("{delay}", \'0\') <> \'0\', NULL, {keep})'
 
 
@@ -339,6 +344,20 @@ class ProjectXmlTest(unittest.TestCase):
                     self.assertEqual(
                         f'coalesce("{other}", \'0\') = \'0\'',
                         layer.data_defined_editable.get(field))
+
+    def test_30_plus_outside_a_degraded_row_gets_a_warning(self):
+        for kind, _stage, layer in self.each_stage(
+                stages=(POST,), kinds=tuple(DEGRADED_TYPES)):
+            advance = TIMING[kind][0]
+            with self.subTest(layer=kind):
+                constraint = layer.constraints[advance]
+                flags = int(constraint.get("constraints"))
+                self.assertTrue(flags & EXPRESSION_CONSTRAINT)
+                self.assertEqual(SOFT, constraint.get("exp_strength"))
+                self.assertEqual(
+                    f'coalesce("{advance}", \'\') <> \'30+\' OR '
+                    f'({degraded(kind)})',
+                    layer.constraint_expressions[advance])
 
     def test_data_layers_refuse_a_row_with_no_shape(self):
         for name in data_layers():

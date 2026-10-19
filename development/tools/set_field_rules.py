@@ -22,10 +22,11 @@ save blanks one if both are. Blank and `0` are both allowed.
 A blank years created in advance becomes `30+` on an area, vertical area or
 hedgerow row that records a habitat whose condition gets worse: `Created`,
 with a baseline type, the same type proposed, and a Proposed Condition
-ranked below the Baseline Condition. The Metric team asks for
-this. The surveyor can pick another value. On any other row of those layers
-`30+` is cleared, so it does not stay behind when the row changes, for
-example to `Enhanced`.
+ranked below the Baseline Condition, as the Metric User Guide asks (section
+5, "Habitat retention"). The surveyor can pick another value. On any other
+row of those layers `30+` is kept, but a soft constraint shows a warning in
+the form: a `30+` left behind when a row changes, for example to
+`Enhanced`, would credit the habitat at once with gains it has not made.
 
 Each filled column gets a default value expression applied on update, so it
 follows every change of the column it depends on, and a text widget that the
@@ -50,6 +51,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import paste_lineage                                            # noqa: E402
+import require_shape                                            # noqa: E402
 from qgz_actions import escape, read_project, write_project     # noqa: E402
 from reset_stale_dropdowns import default_element               # noqa: E402
 
@@ -213,6 +215,8 @@ def only_one_timing(field, other):
 # which the surveyor applies.
 DEGRADED_KINDS = (AREA, VERTICAL, HEDGE)
 DEGRADED_ADVANCE = "'30+'"
+# QgsFieldConstraints.ConstraintStrengthSoft: the form warns, and saves.
+SOFT = "2"
 
 # The conditions, best first. Hedgerows use Good, Moderate and Poor, in the
 # same order. A condition not in the list, such as `N/A - Other` or
@@ -248,26 +252,38 @@ def degraded(kind):
 def advance_default(kind, advance, delay):
     """The years created in advance: blank while the delay is above 0, as
     only_one_timing gives. On a row that records a habitat whose condition
-    gets worse, a blank one becomes `30+`. On any other row, `30+` is
-    cleared.
+    gets worse, a blank one becomes `30+`.
 
     Only a blank value is filled, so the surveyor can pick another value,
-    including `0`, and it is kept. Picking blank fills `30+` again.
-
-    `30+` is cleared elsewhere because it only fits a habitat that gets
-    worse, where the Metric records the same habitat lost and created again.
-    Elsewhere it would credit the habitat at once with gains it has not
-    made: a creation 30 years in advance would be baseline habitat. A
-    surveyor who sets a row to Created, then changes it, for example to
-    Enhanced, would otherwise keep the `30+` unseen. Any other value is the
-    surveyor's own choice and stays.
+    including `0`, and it is kept. Picking blank fills `30+` again. A `30+`
+    on any other row is kept too: the Metric allows creation in advance in
+    general, so the template does not decide it. advance_warning() flags it.
     """
     if kind not in DEGRADED_KINDS:
         return only_one_timing(advance, delay)
-    keep = (f'if({degraded(kind)}, '
-            f'coalesce("{advance}", {DEGRADED_ADVANCE}), '
-            f'if("{advance}" = {DEGRADED_ADVANCE}, NULL, "{advance}"))')
+    keep = (f'if("{advance}" IS NULL AND {degraded(kind)}, '
+            f'{DEGRADED_ADVANCE}, "{advance}")')
     return f'if(coalesce("{delay}", \'0\') <> \'0\', NULL, {keep})'
+
+
+def advance_warning(kind, advance):
+    """A soft constraint: `30+` years in advance outside a habitat whose
+    condition gets worse.
+
+    The default fills `30+` only on such a row, but cannot clear it when the
+    row changes, for example to Enhanced, without also refusing a `30+` the
+    surveyor chose. A `30+` left behind credits the habitat at once with
+    gains it has not made, so the form shows a warning beside it. The row
+    can still be saved.
+    """
+    return (f'coalesce("{advance}", \'\') <> {DEGRADED_ADVANCE} '
+            f'OR ({degraded(kind)})')
+
+
+ADVANCE_WARNING = ("30+ years created in advance is for a habitat whose "
+                   "condition gets worse: Created, the same habitat type as "
+                   "the baseline, and a worse condition. Check this row: a "
+                   "30+ left from an earlier choice overstates its units.")
 
 
 def timing_editable(other):
@@ -437,6 +453,28 @@ def set_editable_when(block, field, expression):
     return block[:section.start()] + text + block[section.end():]
 
 
+def set_soft_constraint(block, field, expression, description, errors,
+                        layer):
+    """Give the field an expression constraint that warns, and does not
+    refuse the row."""
+    start, end, tag = require_shape.element("constraints", field, block)
+    flags = int(re.search(r'\bconstraints="(\d+)"', tag).group(1))
+    new_tag = require_shape.set_attribute(
+        tag, "constraints", flags | require_shape.EXPRESSION_FLAG)
+    new_tag = require_shape.set_attribute(new_tag, "exp_strength", SOFT)
+    block = block[:start] + new_tag + block[end:]
+    start, end, tag = require_shape.element("constraintExpressions", field,
+                                            block)
+    current = html.unescape(re.search(r'\bexp="([^"]*)"', tag).group(1))
+    if current and current != expression and DEGRADED_ADVANCE not in current:
+        errors.append(f"{layer}: {field!r} already has a constraint no tool "
+                      f"wrote: {current}")
+        return block
+    new_tag = require_shape.set_attribute(tag, "exp", escape(expression))
+    new_tag = require_shape.set_attribute(new_tag, "desc", escape(description))
+    return block[:start] + new_tag + block[end:]
+
+
 def rewrite(xml):
     known = paste_lineage.layers(xml)
     ids = {name: layer_id for name, (layer_id, _) in known.items()}
@@ -463,6 +501,11 @@ def rewrite(xml):
             advance, delay = TIMING[kind]
             block = set_editable_when(block, advance, timing_editable(delay))
             block = set_editable_when(block, delay, timing_editable(advance))
+            if kind in DEGRADED_KINDS:
+                block = set_soft_constraint(block, advance,
+                                            advance_warning(kind, advance),
+                                            ADVANCE_WARNING, errors,
+                                            name.group(1))
         if block != before:
             changed.append(name.group(1))
         return block
