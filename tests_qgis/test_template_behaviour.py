@@ -31,6 +31,7 @@ AREA_PI = "Area Habitats Post-Intervention"
 HEDGE_BASE = "Hedgerows Baseline"
 HEDGE_PI = "Hedgerows Post-Intervention"
 TREE_PI = "Individual Trees Post-Intervention"
+WATER_PI = "Watercourses Post-Intervention"
 
 REF = "Habitat Ref"
 RETENTION = "Retention Category"
@@ -225,6 +226,82 @@ class AdvanceOrDelay(TemplateCase):
         row = self.set(layer, fid, ADVANCE, "3")
         self.assertEqual(row[ADVANCE], "3")
         self.assertTrue(is_null(row[DELAY]) or row[DELAY] == "0")
+
+
+
+GRASSLAND = {"Baseline Broad Habitat Type": "Grassland",
+             "Baseline Habitat Type": "Modified grassland",
+             "Baseline Condition": "Moderate",
+             "Proposed Broad Habitat Type": "Grassland",
+             "Proposed Habitat Type": "Modified grassland"}
+NATIVE_HEDGE = {"Baseline Hedge Type": "Native hedgerow",
+                "Baseline Condition": "Good",
+                "Proposed Hedge Type": "Native hedgerow"}
+DITCH = {"Baseline River Type": "Ditches",
+         "Baseline Condition": "Moderate",
+         "Proposed River Type": "Ditches"}
+THIRTY_PLUS = "30+"
+
+
+class DegradedAdvance(TemplateCase):
+    """A habitat whose condition gets worse is created 30+ years in advance.
+
+    The Metric team asks for an area habitat or a hedge that gets worse to be
+    recorded as Created, in the same habitat type, with 30 or more years
+    created in advance. The template fills that in, and the surveyor can pick
+    another value. Watercourses follow the Metric's own rules, so they get no
+    default.
+    """
+
+    def degrade(self, name, wkt, values):
+        layer = self.layer(name)
+        fid = self.add(layer, wkt, **{REF: "PI-1", RETENTION: "Retained",
+                                      **values})
+        self.assertTrue(is_null(self.get(layer, fid)[ADVANCE]))
+        return layer, fid, self.set(layer, fid, RETENTION, "Created")
+
+    def test_a_worse_area_habitat_or_hedge_is_30_plus_years_in_advance(self):
+        for name, wkt, values in ((AREA_PI, SQUARE, GRASSLAND),
+                                  (HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)):
+            with self.subTest(layer=name):
+                _layer, _fid, row = self.degrade(name, wkt, values)
+                self.assertEqual(row[ADVANCE], THIRTY_PLUS)
+
+    def test_the_surveyor_can_pick_another_value(self):
+        layer, fid, _row = self.degrade(HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)
+        for value in ("10", "0"):
+            with self.subTest(value=value):
+                self.assertEqual(self.set(layer, fid, ADVANCE, value)[ADVANCE],
+                                 value)
+
+    def test_a_delay_takes_its_place(self):
+        layer, fid, _row = self.degrade(HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)
+        self.set(layer, fid, ADVANCE, "0")
+        row = self.set(layer, fid, DELAY, "5")
+        self.assertEqual(row[DELAY], "5")
+        self.assertTrue(is_null(row[ADVANCE]) or row[ADVANCE] == "0")
+
+    def test_a_change_of_habitat_type_gets_no_default(self):
+        built_on = {**GRASSLAND, "Proposed Broad Habitat Type": "Urban",
+                    "Proposed Habitat Type": "Developed land; sealed surface"}
+        layer = self.layer(AREA_PI)
+        fid = self.add(layer, SQUARE, **{REF: "PI-1", RETENTION: "Created",
+                                         **built_on})
+        row = self.get(layer, fid)
+        self.assertEqual(row["Proposed Habitat Type"],
+                         "Developed land; sealed surface")
+        self.assertTrue(is_null(row[ADVANCE]))
+
+    def test_a_new_hedge_gets_no_default(self):
+        layer = self.layer(HEDGE_PI)
+        fid = self.add(layer, HEDGE_LINE, **{
+            REF: "PI-1", RETENTION: "Created",
+            "Proposed Hedge Type": "Native hedgerow"})
+        self.assertTrue(is_null(self.get(layer, fid)[ADVANCE]))
+
+    def test_a_created_existing_watercourse_gets_no_default(self):
+        _layer, _fid, row = self.degrade(WATER_PI, HEDGE_LINE, DITCH)
+        self.assertTrue(is_null(row[ADVANCE]))
 
 
 class TheForm(TemplateCase):

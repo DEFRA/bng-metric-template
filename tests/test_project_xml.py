@@ -53,6 +53,28 @@ TIMING = {kind: ("Habitat created in advance/years",
 TIMING[TREE] = ("Habitat Created/Enhanced in advance/years",
                 "Delay in starting habitat creation/enhancement in years")
 
+# Kind -> (baseline type, proposed type) of the layers whose blank years
+# created in advance become 30+ on a habitat whose condition gets worse.
+DEGRADED_TYPES = {
+    AREA: ("Baseline Habitat Type", "Proposed Habitat Type"),
+    VERTICAL: ("Baseline Habitat Type", "Proposed Habitat Type"),
+    HEDGE: ("Baseline Hedge Type", "Proposed Hedge Type"),
+}
+
+
+def advance_default(kind, advance, delay):
+    """Blank while the delay is above 0; 30+ on a blank one of a row that is
+    Created and keeps its baseline type."""
+    keep = f'"{advance}"'
+    if kind in DEGRADED_TYPES:
+        base, proposed = DEGRADED_TYPES[kind]
+        keep = (f'if("{advance}" IS NULL AND "Retention Category" = '
+                f'\'Created\' AND "{base}" IS NOT NULL AND "{base}" NOT IN '
+                f'(\'To be created\', \'N/A\') AND "{proposed}" = "{base}", '
+                f'\'30+\', "{advance}")')
+    return f'if(coalesce("{delay}", \'0\') <> \'0\', NULL, {keep})'
+
+
 PROPOSED_SIGNIFICANCE_DEFAULT = (
     'if("Retention Category" = \'Retained\', \'Low\', '
     'coalesce("Proposed Strategic Significance", \'Low\'))')
@@ -296,8 +318,11 @@ class ProjectXmlTest(unittest.TestCase):
             advance, delay = TIMING[kind]
             for field, other in ((advance, delay), (delay, advance)):
                 with self.subTest(layer=kind, field=field):
-                    expected = (f'if(coalesce("{other}", \'0\') <> \'0\', '
-                                f'NULL, "{field}")')
+                    expected = (
+                        advance_default(kind, advance, delay)
+                        if field == advance else
+                        f'if(coalesce("{other}", \'0\') <> \'0\', '
+                        f'NULL, "{field}")')
                     self.assertEqual((expected, APPLY_ON_UPDATE),
                                      layer.default(field))
                     self.assertEqual(

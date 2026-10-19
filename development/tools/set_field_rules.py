@@ -19,6 +19,11 @@ The years created in advance and the years of delay cannot both be above 0.
 While one is above 0, the other drop-down is greyed out in the form, and a
 save blanks one if both are. Blank and `0` are both allowed.
 
+A blank years created in advance becomes `30+` on an area, vertical area or
+hedgerow row that records a habitat whose condition gets worse: `Created`,
+with a baseline type, and the same type proposed. The Metric team asks for
+this. The surveyor can pick another value.
+
 Each filled column gets a default value expression applied on update, so it
 follows every change of the column it depends on, and a text widget that the
 surveyor cannot edit. A field has one default expression, so a filled column
@@ -108,6 +113,7 @@ PROPOSED_SIGNIFICANCE = "Proposed Strategic Significance"
 SPATIAL_RISK = "Spatial risk category"
 RETENTION = "Retention Category"
 RETAINED = "Retained"
+CREATED = "Created"
 
 # Kind -> (years created in advance, years of delay). The metric allows one.
 TIMING = {
@@ -195,6 +201,38 @@ def only_one_timing(field, other):
     return (f'if(coalesce("{other}", \'0\') <> \'0\', NULL, "{field}")')
 
 
+# A row that records a habitat whose condition gets worse: Created, with a
+# baseline part, and the same habitat type as its baseline. The Metric team
+# asks for it to be created 30 or more years in advance (User Guide, section
+# 5, "Habitat retention"). The rule is for the area and hedgerow modules;
+# watercourses follow the Metric's own creation rules, which the surveyor
+# applies.
+DEGRADED_KINDS = (AREA, VERTICAL, HEDGE)
+DEGRADED_ADVANCE = "'30+'"
+
+
+def degraded(kind):
+    base, proposed = TYPE_COLUMNS[kind]
+    blanks = ", ".join(f"'{v}'" for v in NO_BASELINE)
+    return (f'"{RETENTION}" = \'{CREATED}\' AND "{base}" IS NOT NULL '
+            f'AND "{base}" NOT IN ({blanks}) AND "{proposed}" = "{base}"')
+
+
+def advance_default(kind, advance, delay):
+    """The years created in advance: blank while the delay is above 0, as
+    only_one_timing gives, and `30+` on a blank one of a row that records a
+    habitat whose condition gets worse.
+
+    Only a blank value is filled, so the surveyor can pick another value,
+    including `0`, and it is kept. Picking blank fills `30+` again.
+    """
+    if kind not in DEGRADED_KINDS:
+        return only_one_timing(advance, delay)
+    keep = (f'if("{advance}" IS NULL AND {degraded(kind)}, '
+            f'{DEGRADED_ADVANCE}, "{advance}")')
+    return f'if(coalesce("{delay}", \'0\') <> \'0\', NULL, {keep})'
+
+
 def timing_editable(other):
     """A timing drop-down can be used only while the other is blank or 0.
 
@@ -233,8 +271,8 @@ def rules_for(kind, stage, ids):
                       proposed_significance(), "1"))
         rules.append((SPATIAL_RISK, None, True, NA, "1"))
         advance, delay = TIMING[kind]
-        rules.append((advance, None, False, only_one_timing(advance, delay),
-                      "1"))
+        rules.append((advance, None, False,
+                      advance_default(kind, advance, delay), "1"))
         rules.append((delay, None, False, only_one_timing(delay, advance),
                       "1"))
     return rules
