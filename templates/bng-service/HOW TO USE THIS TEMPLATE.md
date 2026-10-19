@@ -559,6 +559,13 @@ lost.
 If you change the row back, for example to `Enhanced`, or change its habitat
 type, the template clears the `30+`. It fits only a habitat that gets worse.
 
+The source is the Statutory Biodiversity Metric User Guide (June 2026),
+section 5, *Habitat retention*. Where the condition of a retained habitat
+cannot be maintained or enhanced, it says to record the habitat as lost,
+record the same area and habitat type as created in a lower condition, set
+the 'habitat created in advance' function to 30 plus years, and give your
+ecological reasons in the comments. The same rule applies to hedgerows.
+
 When you finish, click the **pencil**, then click **Save**.
 
 ---
