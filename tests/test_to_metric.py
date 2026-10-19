@@ -530,7 +530,6 @@ class DegradedHedgerowTest(support.TempDirTestCase):
         self.assertRegex(lost[0], r"[1-9]\d* feature\(s\) carry nothing")
 
 
-
 WATERCOURSE_BASELINE = "Watercourses Baseline"
 WATERCOURSE_PI = "Watercourses Post-Intervention"
 WATERCOURSE_BASELINE_SHEET = to_metric.LAYOUT["watercourses"]["baseline"][0]

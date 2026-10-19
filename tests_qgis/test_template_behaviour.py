@@ -229,7 +229,6 @@ class AdvanceOrDelay(TemplateCase):
         self.assertTrue(is_null(row[DELAY]) or row[DELAY] == "0")
 
 
-
 GRASSLAND = {"Baseline Broad Habitat Type": "Grassland",
              "Baseline Habitat Type": "Modified grassland",
              "Baseline Condition": "Moderate",

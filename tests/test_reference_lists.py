@@ -222,7 +222,6 @@ class DegradedHedgeListsTest(unittest.TestCase):
                 self.assertIn(hedge, conditions)
 
 
-
 WATERCOURSES = "Watercourses"
 CULVERT = "Culvert"
 WORST_ENCROACHMENT = "Major"
@@ -261,7 +260,7 @@ class DegradedWatercourseListsTest(unittest.TestCase):
         return self.offered("Watercourse Habitat Options - post.csv",
                             "Value", "Description")
 
-    def test_a_copied_watercourse_set_to_created_offers_only_its_own_type(self):
+    def test_a_created_copied_watercourse_offers_only_its_own_type(self):
         options = self.created_options()
         watercourses = self.existing_watercourses()
         self.assertTrue(watercourses)

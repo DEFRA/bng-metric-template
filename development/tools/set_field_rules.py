@@ -270,7 +270,6 @@ def advance_default(kind, advance, delay):
     return f'if(coalesce("{delay}", \'0\') <> \'0\', NULL, {keep})'
 
 
-
 def timing_editable(other):
     """A timing drop-down can be used only while the other is blank or 0.
 
