@@ -21,7 +21,8 @@ save blanks one if both are. Blank and `0` are both allowed.
 
 A blank years created in advance becomes `30+` on an area, vertical area or
 hedgerow row that records a habitat whose condition gets worse: `Created`,
-with a baseline type, and the same type proposed. The Metric team asks for
+with a baseline type, the same type proposed, and a Proposed Condition
+ranked below the Baseline Condition. The Metric team asks for
 this. The surveyor can pick another value. On any other row of those layers
 `30+` is cleared, so it does not stay behind when the row changes, for
 example to `Enhanced`.
@@ -204,20 +205,44 @@ def only_one_timing(field, other):
 
 
 # A row that records a habitat whose condition gets worse: Created, with a
-# baseline part, and the same habitat type as its baseline. The Metric team
-# asks for it to be created 30 or more years in advance (User Guide, section
-# 5, "Habitat retention"). The rule is for the area and hedgerow modules;
-# watercourses follow the Metric's own creation rules, which the surveyor
-# applies.
+# baseline part, the same habitat type as its baseline, and a worse
+# condition. The Metric team asks for it to be created 30 or more years in
+# advance (User Guide, section 5, "Habitat retention": "the same area and
+# habitat type as created in a lower condition"). The rule is for the area
+# and hedgerow modules; watercourses follow the Metric's own creation rules,
+# which the surveyor applies.
 DEGRADED_KINDS = (AREA, VERTICAL, HEDGE)
 DEGRADED_ADVANCE = "'30+'"
+
+# The conditions, best first. Hedgerows use Good, Moderate and Poor, in the
+# same order. A condition not in the list, such as `N/A - Other` or
+# `Condition Assessment N/A`, has no rank, so it is never worse.
+CONDITION_RANK = ("Good", "Fairly Good", "Moderate", "Fairly Poor", "Poor")
+CONDITION = ("Baseline Condition", "Proposed Condition")
+
+
+def worse_condition():
+    """The Proposed Condition is ranked below a ranked Baseline Condition.
+
+    The same or a better condition is not a habitat that gets worse: a
+    same-type Created row in the same condition, such as grassland stripped
+    for temporary works and reseeded, is a new creation, and keeps its
+    temporal risk.
+    """
+    ranks = ", ".join(f"'{c}'" for c in CONDITION_RANK)
+    base, proposed = CONDITION
+    return (f"with_variable('rank', array({ranks}), "
+            f'coalesce(array_find(@rank, "{proposed}") > '
+            f'array_find(@rank, "{base}") '
+            f'AND array_find(@rank, "{base}") >= 0, false))')
 
 
 def degraded(kind):
     base, proposed = TYPE_COLUMNS[kind]
     blanks = ", ".join(f"'{v}'" for v in NO_BASELINE)
     return (f'"{RETENTION}" = \'{CREATED}\' AND "{base}" IS NOT NULL '
-            f'AND "{base}" NOT IN ({blanks}) AND "{proposed}" = "{base}"')
+            f'AND "{base}" NOT IN ({blanks}) AND "{proposed}" = "{base}" '
+            f'AND {worse_condition()}')
 
 
 def advance_default(kind, advance, delay):

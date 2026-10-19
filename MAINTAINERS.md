@@ -189,13 +189,19 @@ baseline hedge as lost and the new hedge as created. The Metric team also
 asks for it to be created 30 or more years in advance, so
 `set_field_rules.py` fills a blank **Habitat created in advance/years** with
 `30+` on an area, vertical area or hedgerow row that is `Created`, has a
-baseline type, and keeps that type. A change of type, such as built-on
-ground, gets no default, and nor does a watercourse, which follows the
+baseline type, keeps that type, and has a Proposed Condition ranked below
+its Baseline Condition (Good, Fairly Good, Moderate, Fairly Poor, Poor;
+hedgerows use three of these in the same order). The same or a better
+condition gets no default: a same-type `Created` row such as grassland
+stripped for temporary works and reseeded is a new creation, and keeps its
+temporal risk. An N/A condition has no rank and gets no default. A change of
+type, such as built-on ground, gets no default, and nor does a watercourse, which follows the
 Metric's own creation rules. On any other area, vertical area or hedgerow
 row it clears `30+`, so the value cannot stay behind on a row changed, for
 example, to `Enhanced`, and credit it with gains it has not made. `30+`
 fits only a habitat that gets worse: a creation 30 years in advance would
-be baseline habitat. This rests on the Metric team confirming it. `DegradedAdvance` in
+be baseline habitat. This rests on the Metric team confirming it.
+`DegradedAdvance` in
 `tests_qgis/test_template_behaviour.py` checks it. The surveyor keeps the
 copied row, so the hedge keeps its link to its baseline parent, and its own
 hedge type. That is why `Hedgerow Habitat Options - post.csv` offers each

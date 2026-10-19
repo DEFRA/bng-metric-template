@@ -62,15 +62,26 @@ DEGRADED_TYPES = {
 }
 
 
+# The Proposed Condition is ranked below a ranked Baseline Condition, best
+# first. N/A conditions have no rank.
+WORSE_CONDITION = (
+    "with_variable('rank', array('Good', 'Fairly Good', 'Moderate', "
+    "'Fairly Poor', 'Poor'), coalesce(array_find(@rank, \"Proposed "
+    "Condition\") > array_find(@rank, \"Baseline Condition\") AND "
+    "array_find(@rank, \"Baseline Condition\") >= 0, false))")
+
+
 def advance_default(kind, advance, delay):
     """Blank while the delay is above 0; 30+ on a blank one of a row that is
-    Created and keeps its baseline type, and never 30+ on any other row."""
+    Created, keeps its baseline type and is in a worse condition, and never
+    30+ on any other row."""
     keep = f'"{advance}"'
     if kind in DEGRADED_TYPES:
         base, proposed = DEGRADED_TYPES[kind]
         keep = (f'if("Retention Category" = \'Created\' AND "{base}" IS NOT '
                 f'NULL AND "{base}" NOT IN (\'To be created\', \'N/A\') AND '
-                f'"{proposed}" = "{base}", coalesce("{advance}", \'30+\'), '
+                f'"{proposed}" = "{base}" AND {WORSE_CONDITION}, '
+                f'coalesce("{advance}", \'30+\'), '
                 f'if("{advance}" = \'30+\', NULL, "{advance}"))')
     return f'if(coalesce("{delay}", \'0\') <> \'0\', NULL, {keep})'
 

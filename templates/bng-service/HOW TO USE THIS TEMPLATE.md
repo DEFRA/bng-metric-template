@@ -283,7 +283,7 @@ cleared. Select it again. A condition that still fits stays.
 | Baseline and Proposed Distinctiveness | Fills in the band of the habitat type, and locks the field. Blank until you choose a habitat type. |
 | Baseline Strategic Significance | Always `Low`, and locked. |
 | Proposed Strategic Significance | `Low` on a new or copied row, and never blank. Change it to `High` where the site is in an area formally identified in a local strategy. On a `Retained` row it is `Low`, as the baseline is, and you cannot change it. |
-| Habitat created in advance and Delay in starting habitat creation | The Metric allows one or the other. While one is above 0, the other is greyed out. To switch, set the first to `0` or blank, then pick the other. `0` and blank are both allowed. On a habitat whose condition gets worse (Part 5e, and Vertical Area Habitats and Hedgerows in Part 9), a blank years created in advance becomes `30+`: set it to `0` to use a delay instead. On any other row of those layers you cannot keep `30+`: it is cleared. |
+| Habitat created in advance and Delay in starting habitat creation | The Metric allows one or the other. While one is above 0, the other is greyed out. To switch, set the first to `0` or blank, then pick the other. `0` and blank are both allowed. On a habitat whose condition gets worse (Part 5e, and Vertical Area Habitats and Hedgerows in Part 9), a blank years created in advance becomes `30+` once the Proposed Condition is worse than the Baseline Condition: set it to `0` to use a delay instead. On any other row of those layers you cannot keep `30+`: it is cleared. |
 | Baseline and Proposed Condition | Fills in the condition when the habitat allows one only, for example `N/A - Other` for Developed land; sealed surface. You can still change it. |
 | Spatial risk category | Always `N/A` on the post-intervention layers, and locked. |
 
@@ -547,9 +547,17 @@ condition.
 3. Keep the same **Proposed Broad Habitat Type** and **Proposed Habitat
    Type** as the baseline.
 4. Set the worse **Proposed Condition**.
-5. Check **Habitat created in advance/years**. The template fills in `30+`,
-   as the Metric team asks. Pick another value only if you have a reason,
-   and give your ecological reasons in the **Comment**.
+5. Check **Habitat created in advance/years**. Once the condition is worse
+   than the baseline, the template fills in `30+`, as the Metric team asks.
+   Pick another value only if you have a reason, and give your ecological
+   reasons in the **Comment**.
+
+**The template fills in `30+` only when the condition is worse.** A
+`Created` row of the same type in the same or a better condition is a new
+habitat, for example grassland stripped for temporary works and reseeded. It
+keeps the time a new habitat takes to establish, so it gets no `30+`. A
+condition such as `N/A - Other` has no better or worse, so it gets no `30+`
+either.
 
 `Created` is right here, although the habitat is still there. No other
 Retention Category fits a habitat that gets worse. The row keeps its `Parent
@@ -557,7 +565,8 @@ Ref`, but nothing is carried forward: the whole baseline parcel counts as
 lost.
 
 If you change the row back, for example to `Enhanced`, or change its habitat
-type, the template clears the `30+`. It fits only a habitat that gets worse.
+type, or set the condition back to the baseline condition or better, the
+template clears the `30+`. It fits only a habitat that gets worse.
 
 The source is the Statutory Biodiversity Metric User Guide (June 2026),
 section 5, *Habitat retention*. Where the condition of a retained habitat

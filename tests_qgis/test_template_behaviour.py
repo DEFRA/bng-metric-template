@@ -247,25 +247,32 @@ DITCH = {"Baseline River Type": "Ditches",
          "Baseline Condition": "Moderate",
          "Proposed River Type": "Ditches"}
 THIRTY_PLUS = "30+"
+PROPOSED_CONDITION = "Proposed Condition"
+WORSE = "Poor"
 
 
 class DegradedAdvance(TemplateCase):
     """A habitat whose condition gets worse is created 30+ years in advance.
 
     The Metric team asks for an area habitat or a hedge that gets worse to be
-    recorded as Created, in the same habitat type, with 30 or more years
+    recorded as Created, in the same habitat type and a worse condition, with
+    30 or more years
     created in advance. The template fills that in, and the surveyor can pick
     another value. 30+ fits no other row, so it is cleared on one: it would
     credit the habitat with gains it has not made. Watercourses follow the
     Metric's own rules, so they get no default.
     """
 
-    def degrade(self, name, wkt, values):
+    def degrade(self, name, wkt, values, condition=WORSE):
+        """Copy a row, set it to Created, then set its Proposed Condition."""
         layer = self.layer(name)
         fid = self.add(layer, wkt, **{REF: "PI-1", RETENTION: "Retained",
                                       **values})
         self.assertTrue(is_null(self.get(layer, fid)[ADVANCE]))
-        return layer, fid, self.set(layer, fid, RETENTION, "Created")
+        self.set(layer, fid, RETENTION, "Created")
+        row = self.set(layer, fid, PROPOSED_CONDITION, condition)
+        self.assertEqual(row[PROPOSED_CONDITION], condition)
+        return layer, fid, row
 
     def test_a_worse_area_habitat_or_hedge_is_30_plus_years_in_advance(self):
         # Vertical area habitats follow the area habitat rules.
@@ -275,6 +282,33 @@ class DegradedAdvance(TemplateCase):
             with self.subTest(layer=name):
                 _layer, _fid, row = self.degrade(name, wkt, values)
                 self.assertEqual(row[ADVANCE], THIRTY_PLUS)
+
+    def test_the_same_or_a_better_condition_gets_no_default(self):
+        # Grassland stripped for temporary works and reseeded, in its
+        # baseline condition or better, is a new creation, not a habitat
+        # that gets worse, and keeps its temporal risk.
+        for condition in ("Moderate", "Good"):
+            with self.subTest(condition=condition):
+                _layer, _fid, row = self.degrade(AREA_PI, SQUARE, GRASSLAND,
+                                                 condition)
+                self.assertTrue(is_null(row[ADVANCE]))
+
+    def test_a_condition_with_no_rank_gets_no_default(self):
+        layer = self.layer(AREA_PI)
+        sealed = {"Baseline Broad Habitat Type": "Urban",
+                  "Baseline Habitat Type": "Developed land; sealed surface",
+                  "Baseline Condition": "N/A - Other",
+                  "Proposed Broad Habitat Type": "Urban",
+                  "Proposed Habitat Type": "Developed land; sealed surface"}
+        fid = self.add(layer, SQUARE, **{REF: "PI-1", RETENTION: "Created",
+                                         PROPOSED_CONDITION: "N/A - Other",
+                                         **sealed})
+        self.assertTrue(is_null(self.get(layer, fid)[ADVANCE]))
+
+    def test_setting_the_condition_back_clears_30_plus(self):
+        layer, fid, _row = self.degrade(AREA_PI, SQUARE, GRASSLAND)
+        row = self.set(layer, fid, PROPOSED_CONDITION, "Moderate")
+        self.assertTrue(is_null(row[ADVANCE]))
 
     def test_the_surveyor_can_pick_another_value(self):
         layer, fid, _row = self.degrade(HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)
