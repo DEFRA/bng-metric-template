@@ -10,8 +10,8 @@ import sys
 import tempfile
 import unittest
 
-from qgis.core import (QgsApplication, QgsFeature, QgsGeometry, QgsProject,
-                       QgsVectorLayerUtils)
+from qgis.core import (QgsApplication, QgsFeature, QgsFieldConstraints,
+                       QgsGeometry, QgsProject, QgsVectorLayerUtils)
 from qgis.gui import (QgsAttributeEditorContext, QgsAttributeForm, QgsGui,
                       QgsEditorWidgetWrapper)
 from qgis.PyQt import QtWidgets
@@ -31,6 +31,8 @@ AREA_PI = "Area Habitats Post-Intervention"
 HEDGE_BASE = "Hedgerows Baseline"
 HEDGE_PI = "Hedgerows Post-Intervention"
 TREE_PI = "Individual Trees Post-Intervention"
+WATER_PI = "Watercourses Post-Intervention"
+VERTICAL_PI = "Vertical Area Habitats Post-Intervention"
 
 REF = "Habitat Ref"
 RETENTION = "Retention Category"
@@ -225,6 +227,161 @@ class AdvanceOrDelay(TemplateCase):
         row = self.set(layer, fid, ADVANCE, "3")
         self.assertEqual(row[ADVANCE], "3")
         self.assertTrue(is_null(row[DELAY]) or row[DELAY] == "0")
+
+
+GRASSLAND = {"Baseline Broad Habitat Type": "Grassland",
+             "Baseline Habitat Type": "Modified grassland",
+             "Baseline Condition": "Moderate",
+             "Proposed Broad Habitat Type": "Grassland",
+             "Proposed Habitat Type": "Modified grassland"}
+GREEN_WALL = {"Baseline Broad Habitat Type": "Urban",
+              "Baseline Habitat Type": "Facade-bound green wall",
+              "Baseline Condition": "Good",
+              "Proposed Broad Habitat Type": "Urban",
+              "Proposed Habitat Type": "Facade-bound green wall"}
+NATIVE_HEDGE = {"Baseline Hedge Type": "Native hedgerow",
+                "Baseline Condition": "Good",
+                "Proposed Hedge Type": "Native hedgerow"}
+DITCH = {"Baseline River Type": "Ditches",
+         "Baseline Condition": "Moderate",
+         "Proposed River Type": "Ditches"}
+THIRTY_PLUS = "30+"
+PROPOSED_CONDITION = "Proposed Condition"
+WORSE = "Poor"
+
+
+class DegradedAdvance(TemplateCase):
+    """A habitat whose condition gets worse is created 30+ years in advance.
+
+    The Metric team asks for an area habitat or a hedge that gets worse to be
+    recorded as Created, in the same habitat type and a worse condition, with
+    30 or more years
+    created in advance. The template fills that in, and the surveyor can pick
+    another value. A 30+ on any other row is kept, but the form warns: one
+    left behind would credit the habitat with gains it has not made.
+    Watercourses follow the Metric's own rules, so they get no default.
+    """
+
+    def degrade(self, name, wkt, values, condition=WORSE):
+        """Copy a row, set it to Created, then set its Proposed Condition."""
+        layer = self.layer(name)
+        fid = self.add(layer, wkt, **{REF: "PI-1", RETENTION: "Retained",
+                                      **values})
+        self.assertTrue(is_null(self.get(layer, fid)[ADVANCE]))
+        self.set(layer, fid, RETENTION, "Created")
+        row = self.set(layer, fid, PROPOSED_CONDITION, condition)
+        self.assertEqual(row[PROPOSED_CONDITION], condition)
+        return layer, fid, row
+
+    def test_a_worse_area_habitat_or_hedge_is_30_plus_years_in_advance(self):
+        # Vertical area habitats follow the area habitat rules.
+        for name, wkt, values in ((AREA_PI, SQUARE, GRASSLAND),
+                                  (VERTICAL_PI, HEDGE_LINE, GREEN_WALL),
+                                  (HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)):
+            with self.subTest(layer=name):
+                _layer, _fid, row = self.degrade(name, wkt, values)
+                self.assertEqual(row[ADVANCE], THIRTY_PLUS)
+
+    def test_the_same_or_a_better_condition_gets_no_default(self):
+        # Grassland stripped for temporary works and reseeded, in its
+        # baseline condition or better, is a new creation, not a habitat
+        # that gets worse, and keeps its temporal risk.
+        for condition in ("Moderate", "Good"):
+            with self.subTest(condition=condition):
+                _layer, _fid, row = self.degrade(AREA_PI, SQUARE, GRASSLAND,
+                                                 condition)
+                self.assertTrue(is_null(row[ADVANCE]))
+
+    def test_a_condition_with_no_rank_gets_no_default(self):
+        layer = self.layer(AREA_PI)
+        sealed = {"Baseline Broad Habitat Type": "Urban",
+                  "Baseline Habitat Type": "Developed land; sealed surface",
+                  "Baseline Condition": "N/A - Other",
+                  "Proposed Broad Habitat Type": "Urban",
+                  "Proposed Habitat Type": "Developed land; sealed surface"}
+        fid = self.add(layer, SQUARE, **{REF: "PI-1", RETENTION: "Created",
+                                         PROPOSED_CONDITION: "N/A - Other",
+                                         **sealed})
+        self.assertTrue(is_null(self.get(layer, fid)[ADVANCE]))
+
+    def warns(self, layer, fid):
+        """The soft constraint on the years created in advance fails."""
+        valid, _errors = QgsVectorLayerUtils.validateAttribute(
+            layer, self.get(layer, fid), layer.fields().indexOf(ADVANCE),
+            QgsFieldConstraints.ConstraintStrengthSoft)
+        return not valid
+
+    def test_a_worse_row_has_no_warning(self):
+        layer, fid, _row = self.degrade(HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)
+        self.assertFalse(self.warns(layer, fid))
+
+    def test_a_30_plus_left_behind_is_kept_with_a_warning(self):
+        # A row set back, for example to Enhanced, to another type, or to
+        # the baseline condition, keeps the 30+ the template filled in. It
+        # can still be saved, but the form warns beside it.
+        changes = ((RETENTION, "Enhanced"),
+                   ("Proposed Habitat Type", "Other neutral grassland"),
+                   (PROPOSED_CONDITION, "Moderate"))
+        for column, value in changes:
+            with self.subTest(change=column):
+                layer, fid, _row = self.degrade(AREA_PI, SQUARE, GRASSLAND)
+                row = self.set(layer, fid, column, value)
+                self.assertEqual(row[ADVANCE], THIRTY_PLUS)
+                self.assertTrue(self.warns(layer, fid))
+
+    def test_a_30_plus_the_surveyor_picks_elsewhere_is_kept_with_a_warning(
+            self):
+        layer = self.layer(AREA_PI)
+        fid = self.add(layer, SQUARE, **{REF: "PI-1", RETENTION: "Created",
+                                         "Proposed Broad Habitat Type":
+                                         "Grassland",
+                                         "Proposed Habitat Type":
+                                         "Modified grassland"})
+        row = self.set(layer, fid, ADVANCE, THIRTY_PLUS)
+        self.assertEqual(row[ADVANCE], THIRTY_PLUS)
+        self.assertTrue(self.warns(layer, fid))
+
+    def test_the_surveyor_can_pick_another_value(self):
+        layer, fid, _row = self.degrade(HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)
+        for value in ("10", "0"):
+            with self.subTest(value=value):
+                self.assertEqual(self.set(layer, fid, ADVANCE, value)[ADVANCE],
+                                 value)
+
+    def test_a_delay_takes_its_place(self):
+        layer, fid, _row = self.degrade(HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)
+        self.set(layer, fid, ADVANCE, "0")
+        row = self.set(layer, fid, DELAY, "5")
+        self.assertEqual(row[DELAY], "5")
+        self.assertTrue(is_null(row[ADVANCE]) or row[ADVANCE] == "0")
+
+    def test_the_surveyors_own_value_stays_when_the_row_changes(self):
+        layer, fid, _row = self.degrade(HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)
+        self.set(layer, fid, ADVANCE, "25")
+        self.assertEqual(self.set(layer, fid, RETENTION, "Enhanced")[ADVANCE],
+                         "25")
+
+    def test_a_change_of_habitat_type_gets_no_default(self):
+        built_on = {**GRASSLAND, "Proposed Broad Habitat Type": "Urban",
+                    "Proposed Habitat Type": "Developed land; sealed surface"}
+        layer = self.layer(AREA_PI)
+        fid = self.add(layer, SQUARE, **{REF: "PI-1", RETENTION: "Created",
+                                         **built_on})
+        row = self.get(layer, fid)
+        self.assertEqual(row["Proposed Habitat Type"],
+                         "Developed land; sealed surface")
+        self.assertTrue(is_null(row[ADVANCE]))
+
+    def test_a_new_hedge_gets_no_default(self):
+        layer = self.layer(HEDGE_PI)
+        fid = self.add(layer, HEDGE_LINE, **{
+            REF: "PI-1", RETENTION: "Created",
+            "Proposed Hedge Type": "Native hedgerow"})
+        self.assertTrue(is_null(self.get(layer, fid)[ADVANCE]))
+
+    def test_a_created_existing_watercourse_gets_no_default(self):
+        _layer, _fid, row = self.degrade(WATER_PI, HEDGE_LINE, DITCH)
+        self.assertTrue(is_null(row[ADVANCE]))
 
 
 class TheForm(TemplateCase):

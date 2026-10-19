@@ -24,6 +24,7 @@ EDITABLE = "1"
 # QgsFieldConstraints: ConstraintExpression = 4, ConstraintStrengthHard = 1.
 EXPRESSION_CONSTRAINT = 4
 HARD = "1"
+SOFT = "2"
 SHAPE_EXPRESSION = "$geometry IS NOT NULL"
 
 RED_LINE = "Red Line Boundary"
@@ -52,6 +53,43 @@ TIMING = {kind: ("Habitat created in advance/years",
           for kind in (AREA, VERTICAL, HEDGE, WATER)}
 TIMING[TREE] = ("Habitat Created/Enhanced in advance/years",
                 "Delay in starting habitat creation/enhancement in years")
+
+# Kind -> (baseline type, proposed type) of the layers whose blank years
+# created in advance become 30+ on a habitat whose condition gets worse.
+DEGRADED_TYPES = {
+    AREA: ("Baseline Habitat Type", "Proposed Habitat Type"),
+    VERTICAL: ("Baseline Habitat Type", "Proposed Habitat Type"),
+    HEDGE: ("Baseline Hedge Type", "Proposed Hedge Type"),
+}
+
+
+# The Proposed Condition is ranked below a ranked Baseline Condition, best
+# first. N/A conditions have no rank.
+WORSE_CONDITION = (
+    "with_variable('rank', array('Good', 'Fairly Good', 'Moderate', "
+    "'Fairly Poor', 'Poor'), coalesce(array_find(@rank, \"Proposed "
+    "Condition\") > array_find(@rank, \"Baseline Condition\") AND "
+    "array_find(@rank, \"Baseline Condition\") >= 0, false))")
+
+
+def degraded(kind):
+    """A row that is Created, keeps its baseline type and is in a worse
+    condition."""
+    base, proposed = DEGRADED_TYPES[kind]
+    return (f'"Retention Category" = \'Created\' AND "{base}" IS NOT NULL '
+            f'AND "{base}" NOT IN (\'To be created\', \'N/A\') AND '
+            f'"{proposed}" = "{base}" AND {WORSE_CONDITION}')
+
+
+def advance_default(kind, advance, delay):
+    """Blank while the delay is above 0; 30+ on a blank one of a degraded
+    row; otherwise the surveyor's value."""
+    keep = f'"{advance}"'
+    if kind in DEGRADED_TYPES:
+        keep = (f'if("{advance}" IS NULL AND {degraded(kind)}, \'30+\', '
+                f'"{advance}")')
+    return f'if(coalesce("{delay}", \'0\') <> \'0\', NULL, {keep})'
+
 
 PROPOSED_SIGNIFICANCE_DEFAULT = (
     'if("Retention Category" = \'Retained\', \'Low\', '
@@ -296,13 +334,30 @@ class ProjectXmlTest(unittest.TestCase):
             advance, delay = TIMING[kind]
             for field, other in ((advance, delay), (delay, advance)):
                 with self.subTest(layer=kind, field=field):
-                    expected = (f'if(coalesce("{other}", \'0\') <> \'0\', '
-                                f'NULL, "{field}")')
+                    expected = (
+                        advance_default(kind, advance, delay)
+                        if field == advance else
+                        f'if(coalesce("{other}", \'0\') <> \'0\', '
+                        f'NULL, "{field}")')
                     self.assertEqual((expected, APPLY_ON_UPDATE),
                                      layer.default(field))
                     self.assertEqual(
                         f'coalesce("{other}", \'0\') = \'0\'',
                         layer.data_defined_editable.get(field))
+
+    def test_30_plus_outside_a_degraded_row_gets_a_warning(self):
+        for kind, _stage, layer in self.each_stage(
+                stages=(POST,), kinds=tuple(DEGRADED_TYPES)):
+            advance = TIMING[kind][0]
+            with self.subTest(layer=kind):
+                constraint = layer.constraints[advance]
+                flags = int(constraint.get("constraints"))
+                self.assertTrue(flags & EXPRESSION_CONSTRAINT)
+                self.assertEqual(SOFT, constraint.get("exp_strength"))
+                self.assertEqual(
+                    f'coalesce("{advance}", \'\') <> \'30+\' OR '
+                    f'({degraded(kind)})',
+                    layer.constraint_expressions[advance])
 
     def test_data_layers_refuse_a_row_with_no_shape(self):
         for name in data_layers():

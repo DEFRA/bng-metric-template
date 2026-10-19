@@ -185,7 +185,29 @@ pasted feature.
 same hedge, in effect retained in a worse condition. But a retained habitat
 cannot get worse, and no other Retention Category fits, so the Metric team
 asks ecologists to record it as `Created`. The Metric then counts the whole
-baseline hedge as lost and the new hedge as created. The surveyor keeps the
+baseline hedge as lost and the new hedge as created. The Statutory
+Biodiversity Metric User Guide (June 2026), section 5, *Habitat retention*,
+also asks for it to be created 30 or more years in advance: record "the
+same area and habitat type as created in a lower condition" and "set the
+'habitat created in advance' function to 30 plus years". The rule covers
+the area and hedgerow modules. So `set_field_rules.py` fills a blank **Habitat created in advance/years** with
+`30+` on an area, vertical area or hedgerow row that is `Created`, has a
+baseline type, keeps that type, and has a Proposed Condition ranked below
+its Baseline Condition (Good, Fairly Good, Moderate, Fairly Poor, Poor;
+hedgerows use three of these in the same order). The same or a better
+condition gets no default: a same-type `Created` row such as grassland
+stripped for temporary works and reseeded is a new creation, and keeps its
+temporal risk. An N/A condition has no rank and gets no default. A change of
+type, such as built-on ground, gets no default, and nor does a watercourse,
+which follows the Metric's own creation rules. **A `30+` on any other row is
+kept, with a warning.** The Metric allows creation in advance in general,
+for example for habitat banking, so the template does not refuse `30+`
+elsewhere. But a default expression cannot tell a `30+` it filled from one
+the surveyor chose, so it cannot clear one left behind on a row changed,
+for example, to `Enhanced`, where it would credit the habitat at once with
+gains it has not made. A soft constraint on the field shows a warning in the
+form instead, and the row still saves. `DegradedAdvance` in
+`tests_qgis/test_template_behaviour.py` checks it. The surveyor keeps the
 copied row, so the hedge keeps its link to its baseline parent, and its own
 hedge type. That is why `Hedgerow Habitat Options - post.csv` offers each
 hedge type its own type when `Created`, and not `N/A`. With `N/A`, a
