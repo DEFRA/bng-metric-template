@@ -195,6 +195,20 @@ the Metric calculation. Keep those rows: `DegradedHedgeListsTest` in
 `tests/test_reference_lists.py` checks them, and `DegradedHedgerowTest` in
 `tests/test_to_metric.py` checks what the Metric makes of such a hedge.
 
+**An existing watercourse set to `Created` keeps its own type, too.** The
+Metric team asks for an existing watercourse to be recordable as `Created`,
+as a hedge is. `Watercourse Habitat Options - post.csv` therefore offers each
+watercourse type its own type when `Created`, and not `N/A`, which has no
+condition or encroachment and which the Metric cannot count. Its own type
+offers every condition and encroachment of the type, so the encroachment can
+be worse than the baseline's. Unlike a hedge, the template has no recipe for
+a watercourse that gets worse: the surveyor applies the Metric's own
+watercourse rules, including its years created in advance. A culvert offers
+only `Poor` and no encroachment, so a `Created` culvert is never worse.
+`DegradedWatercourseListsTest` in `tests/test_reference_lists.py` checks the
+lists, and `CreatedExistingWatercourseTest` in `tests/test_to_metric.py`
+checks what the Metric makes of such a watercourse.
+
 After any change to the template, check that the seven generated settings and
 the template version record are in step. Each command gives "no change
 needed" on a template that is in step, and exits with 1 otherwise:
