@@ -283,7 +283,7 @@ cleared. Select it again. A condition that still fits stays.
 | Baseline and Proposed Distinctiveness | Fills in the band of the habitat type, and locks the field. Blank until you choose a habitat type. |
 | Baseline Strategic Significance | Always `Low`, and locked. |
 | Proposed Strategic Significance | `Low` on a new or copied row, and never blank. Change it to `High` where the site is in an area formally identified in a local strategy. On a `Retained` row it is `Low`, as the baseline is, and you cannot change it. |
-| Habitat created in advance and Delay in starting habitat creation | The Metric allows one or the other. While one is above 0, the other is greyed out. To switch, set the first to `0` or blank, then pick the other. `0` and blank are both allowed. On a habitat whose condition gets worse (Part 5e, and Hedgerows in Part 9), a blank years created in advance becomes `30+`: set it to `0` to use a delay instead. |
+| Habitat created in advance and Delay in starting habitat creation | The Metric allows one or the other. While one is above 0, the other is greyed out. To switch, set the first to `0` or blank, then pick the other. `0` and blank are both allowed. On a habitat whose condition gets worse (Part 5e, and Vertical Area Habitats and Hedgerows in Part 9), a blank years created in advance becomes `30+`: set it to `0` to use a delay instead. |
 | Baseline and Proposed Condition | Fills in the condition when the habitat allows one only, for example `N/A - Other` for Developed land; sealed surface. You can still change it. |
 | Spatial risk category | Always `N/A` on the post-intervention layers, and locked. |
 
@@ -707,6 +707,11 @@ field is not locked.
 The other fields work as for area habitats, except removal. **For a demolished
 structure, delete its copied row.** A new structure is drawn on the
 Post-Intervention layer (see *New habitats*).
+
+**A vertical area habitat whose condition gets worse follows the area habitat
+rule** (Part 5e). Keep the copied row, set it to `Created` in the same habitat
+type, and set the worse **Proposed Condition**. The template fills in `30+`
+for **Habitat created in advance/years**.
 
 ### Hedgerows
 

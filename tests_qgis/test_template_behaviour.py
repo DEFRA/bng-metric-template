@@ -32,6 +32,7 @@ HEDGE_BASE = "Hedgerows Baseline"
 HEDGE_PI = "Hedgerows Post-Intervention"
 TREE_PI = "Individual Trees Post-Intervention"
 WATER_PI = "Watercourses Post-Intervention"
+VERTICAL_PI = "Vertical Area Habitats Post-Intervention"
 
 REF = "Habitat Ref"
 RETENTION = "Retention Category"
@@ -234,6 +235,11 @@ GRASSLAND = {"Baseline Broad Habitat Type": "Grassland",
              "Baseline Condition": "Moderate",
              "Proposed Broad Habitat Type": "Grassland",
              "Proposed Habitat Type": "Modified grassland"}
+GREEN_WALL = {"Baseline Broad Habitat Type": "Urban",
+              "Baseline Habitat Type": "Facade-bound green wall",
+              "Baseline Condition": "Good",
+              "Proposed Broad Habitat Type": "Urban",
+              "Proposed Habitat Type": "Facade-bound green wall"}
 NATIVE_HEDGE = {"Baseline Hedge Type": "Native hedgerow",
                 "Baseline Condition": "Good",
                 "Proposed Hedge Type": "Native hedgerow"}
@@ -261,7 +267,9 @@ class DegradedAdvance(TemplateCase):
         return layer, fid, self.set(layer, fid, RETENTION, "Created")
 
     def test_a_worse_area_habitat_or_hedge_is_30_plus_years_in_advance(self):
+        # Vertical area habitats follow the area habitat rules.
         for name, wkt, values in ((AREA_PI, SQUARE, GRASSLAND),
+                                  (VERTICAL_PI, HEDGE_LINE, GREEN_WALL),
                                   (HEDGE_PI, HEDGE_LINE, NATIVE_HEDGE)):
             with self.subTest(layer=name):
                 _layer, _fid, row = self.degrade(name, wkt, values)
