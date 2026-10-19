@@ -744,7 +744,10 @@ re-meandered channel moves and gets longer. This is correct.
   carried forward: the whole baseline stretch counts as lost. When to record
   a stretch this way, and its years created in advance, follow the Statutory
   Metric's watercourse rules. For example, the Metric allows 10 or more years
-  in advance where encroachment increases with no other impact.
+  in advance where encroachment increases with no other impact. The source is
+  the Statutory Biodiversity Metric User Guide (June 2026), section 7,
+  *Watercourse creation*: "Creation in advance may be set to 10+ years if
+  there are increases in encroachment with no other impacts."
 - **A new channel:** draw it on the Post-Intervention layer (see *New
   habitats*).
 
