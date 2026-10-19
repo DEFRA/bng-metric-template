@@ -283,7 +283,7 @@ cleared. Select it again. A condition that still fits stays.
 | Baseline and Proposed Distinctiveness | Fills in the band of the habitat type, and locks the field. Blank until you choose a habitat type. |
 | Baseline Strategic Significance | Always `Low`, and locked. |
 | Proposed Strategic Significance | `Low` on a new or copied row, and never blank. Change it to `High` where the site is in an area formally identified in a local strategy. On a `Retained` row it is `Low`, as the baseline is, and you cannot change it. |
-| Habitat created in advance and Delay in starting habitat creation | The Metric allows one or the other. While one is above 0, the other is greyed out. To switch, set the first to `0` or blank, then pick the other. `0` and blank are both allowed. |
+| Habitat created in advance and Delay in starting habitat creation | The Metric allows one or the other. While one is above 0, the other is greyed out. To switch, set the first to `0` or blank, then pick the other. `0` and blank are both allowed. On a habitat whose condition gets worse (Part 5e, and Hedgerows in Part 9), a blank years created in advance becomes `30+`: set it to `0` to use a delay instead. |
 | Baseline and Proposed Condition | Fills in the condition when the habitat allows one only, for example `N/A - Other` for Developed land; sealed surface. You can still change it. |
 | Spatial risk category | Always `N/A` on the post-intervention layers, and locked. |
 
@@ -536,6 +536,26 @@ or vertical area habitat has no replacement surface. For these, delete the
 copied row. The missing row records the removal (Part 9). The service lists
 all removals when it checks the file, so a row deleted by mistake shows there.
 
+### 5e. A habitat whose condition gets worse
+
+A retained habitat cannot get worse, so the Statutory Metric records the old
+habitat as lost and the same habitat as created in its place, in the worse
+condition.
+
+1. Keep the copied row and its shape.
+2. Set **Retention Category** to `Created`.
+3. Keep the same **Proposed Broad Habitat Type** and **Proposed Habitat
+   Type** as the baseline.
+4. Set the worse **Proposed Condition**.
+5. Check **Habitat created in advance/years**. The template fills in `30+`,
+   as the Metric team asks. Pick another value only if you have a reason,
+   and give your ecological reasons in the **Comment**.
+
+`Created` is right here, although the habitat is still there. No other
+Retention Category fits a habitat that gets worse. The row keeps its `Parent
+Ref`, but nothing is carried forward: the whole baseline parcel counts as
+lost.
+
 When you finish, click the **pencil**, then click **Save**.
 
 ---
@@ -702,7 +722,9 @@ Draw a hedgerow as a **line**. QGIS fills in `Length (m)` and locks it.
   so the Statutory Metric records the old hedge as lost and a new one as
   created in its place. Keep the copied row and set **Retention Category** to
   `Created`. It keeps its **Proposed Hedge Type**. Then set the worse
-  **Proposed Condition**. If the new hedge is shorter, shorten the line. Its
+  **Proposed Condition**. The template fills in `30+` for **Habitat created
+  in advance/years**, as the Metric team asks; give your reasons in the
+  **Comment** if you change it. If the new hedge is shorter, shorten the line. Its
   `Parent Ref` stays, so the two records stay linked, but nothing is carried
   forward: the whole baseline hedge counts as lost.
 

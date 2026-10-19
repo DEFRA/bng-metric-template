@@ -185,7 +185,14 @@ pasted feature.
 same hedge, in effect retained in a worse condition. But a retained habitat
 cannot get worse, and no other Retention Category fits, so the Metric team
 asks ecologists to record it as `Created`. The Metric then counts the whole
-baseline hedge as lost and the new hedge as created. The surveyor keeps the
+baseline hedge as lost and the new hedge as created. The Metric team also
+asks for it to be created 30 or more years in advance, so
+`set_field_rules.py` fills a blank **Habitat created in advance/years** with
+`30+` on an area, vertical area or hedgerow row that is `Created`, has a
+baseline type, and keeps that type. A change of type, such as built-on
+ground, gets no default, and nor does a watercourse, which follows the
+Metric's own creation rules. `DegradedAdvance` in
+`tests_qgis/test_template_behaviour.py` checks it. The surveyor keeps the
 copied row, so the hedge keeps its link to its baseline parent, and its own
 hedge type. That is why `Hedgerow Habitat Options - post.csv` offers each
 hedge type its own type when `Created`, and not `N/A`. With `N/A`, a
