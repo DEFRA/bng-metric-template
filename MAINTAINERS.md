@@ -207,7 +207,14 @@ the surveyor chose, so it cannot clear one left behind on a row changed,
 for example, to `Enhanced`, where it would credit the habitat at once with
 gains it has not made. A soft constraint on the field shows a warning in the
 form instead, and the row still saves. `DegradedAdvance` in
-`tests_qgis/test_template_behaviour.py` checks it. The surveyor keeps the
+`tests_qgis/test_template_behaviour.py` checks it.
+
+Every advance and delay drop-down offers blank, `0` to `30` and `30+`.
+`set_field_rules.py` writes that list. A value outside it is cleared when
+the row is saved, and it does not count as a year above 0. Only a blank
+becomes `30+`: a text value cleared on that save stays blank.
+
+The surveyor keeps the
 copied row, so the hedge keeps its link to its baseline parent, and its own
 hedge type. That is why `Hedgerow Habitat Options - post.csv` offers each
 hedge type its own type when `Created`, and not `N/A`. With `N/A`, a
