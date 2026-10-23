@@ -164,6 +164,8 @@ ENHANCEMENT_TYPE = "Enhancement Type"
 HABITAT_CREATED_ENHANCED_IN_ADVANCE_YEARS = (
     "Habitat Created/Enhanced in advance/years")
 HABITAT_CREATED_IN_ADVANCE_YEARS = "Habitat created in advance/years"
+# The legacy meanders layer spells it with a trailing space.
+MEANDER_ADVANCE_YEARS = HABITAT_CREATED_IN_ADVANCE_YEARS + " "
 HABITATS = "Habitats"
 HEDGEROWS = "Hedgerows"
 HEDGEROWS_BASELINE = "Hedgerows Baseline"
@@ -1068,9 +1070,7 @@ def build_meander_rows(rows, index, report):
                 PROPOSED_ENCROACHMENT_INTO_RIPARIAN_ZONE
             ),
             BASELINE_DISTINCTIVENESS: row.get(BASELINE_DISTINCTIVENESS),
-            HABITAT_CREATED_IN_ADVANCE_YEARS: row.get(
-                "Habitat created in advance/years "
-            )
+            HABITAT_CREATED_IN_ADVANCE_YEARS: row.get(MEANDER_ADVANCE_YEARS)
             or row.get(HABITAT_CREATED_IN_ADVANCE_YEARS),
             DELAY_IN_STARTING_HABITAT_CREATION_YEARS: row.get(
                 DELAY_IN_STARTING_HABITAT_CREATION_YEARS
@@ -1714,6 +1714,9 @@ def timing_columns(row):
     if HABITAT_CREATED_ENHANCED_IN_ADVANCE_YEARS in row:
         return (HABITAT_CREATED_ENHANCED_IN_ADVANCE_YEARS,
                 DELAY_IN_STARTING_HABITAT_CREATION_ENHANCEMENT_IN_YEARS)
+    if MEANDER_ADVANCE_YEARS in row:
+        return (MEANDER_ADVANCE_YEARS,
+                DELAY_IN_STARTING_HABITAT_CREATION_YEARS)
     return (HABITAT_CREATED_IN_ADVANCE_YEARS,
             DELAY_IN_STARTING_HABITAT_CREATION_YEARS)
 

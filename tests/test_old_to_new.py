@@ -500,6 +500,34 @@ class TimingTextTest(unittest.TestCase):
         both = [w for w in report.warnings if "above 0" in w]
         self.assertEqual(1, len(both))
         self.assertIn("W-3", both[0])
+
+    def test_a_meander_text_advance_is_blank_in_the_watercourse(self):
+        # The legacy meanders layer spells its advance column with a
+        # trailing space.
+        advance = old_to_new.MEANDER_ADVANCE_YEARS
+        post = {key: [] for key in old_to_new.LEGACY_REFS}
+        post[old_to_new.MEANDERS] = [
+            {old_to_new.BASELINE_PARCEL_REF: "M-1", advance: "N/A",
+             DELAY: "N/A"},
+            {old_to_new.BASELINE_PARCEL_REF: "M-2", advance: "3",
+             DELAY: "5"},
+        ]
+        report = old_to_new.Report()
+        old_to_new._post_timing(post, report)
+
+        rows = old_to_new.build_meander_rows(
+            post[old_to_new.MEANDERS], {}, old_to_new.Report())
+        text, years = (values for _blob, values in rows)
+        self.assertIsNone(text[ADVANCE])
+        self.assertIsNone(text[DELAY])
+        self.assertEqual("3", years[ADVANCE])
+        self.assertEqual("5", years[DELAY])
+
+        blanked = " ".join(w for w in report.warnings if "left blank" in w)
+        self.assertIn("M-1", blanked)
+        self.assertNotIn("M-2", blanked)
+        both = " ".join(w for w in report.warnings if "above 0" in w)
+        self.assertIn("M-2", both)
         self.assertNotIn("W-1", both[0])
         self.assertNotIn("H-1", both[0])
 
