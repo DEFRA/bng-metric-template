@@ -218,6 +218,50 @@ class AdvanceOrDelay(TemplateCase):
                 self.set(layer, fid, advance, "4")
                 self.assert_not_both(layer, fid, advance, delay)
 
+    def stored(self, name, wkt, values, ref="PI-1"):
+        """A saved row holding `values` as an older file would, past the
+        template's rules, then opened for editing."""
+        layer = self.layer(name)
+        self.add(layer, wkt, **{REF: ref})
+        self.assertTrue(layer.commitChanges(), layer.commitErrors())
+        (fid,) = [f.id() for f in layer.getFeatures() if f[REF] == ref]
+        index = layer.fields().indexOf
+        self.assertTrue(layer.dataProvider().changeAttributeValues(
+            {fid: {index(column): value for column, value in values.items()}}))
+        layer.reload()
+        row = self.get(layer, fid)
+        for column, value in values.items():
+            self.assertEqual(row[column], value)
+        layer.startEditing()
+        return layer, fid
+
+    def test_an_old_text_value_is_cleared_when_the_row_is_edited(self):
+        cases = [(name, column, text)
+                 for name in (HEDGE_PI, WATER_PI)
+                 for column in (ADVANCE, DELAY)
+                 for text in ("N/A", "Habitat already in target condition")]
+        for number, (name, column, text) in enumerate(cases):
+            with self.subTest(layer=name, column=column, text=text):
+                layer, fid = self.stored(name, HEDGE_LINE, {column: text},
+                                         ref=f"PI-{number}")
+                self.set(layer, fid, COMMENT, NOTE)
+                self.assertTrue(layer.commitChanges(), layer.commitErrors())
+                row = self.get(layer, fid)
+                self.assertTrue(is_null(row[column]), row[column])
+                self.assertEqual(row[COMMENT], NOTE)
+
+    def test_an_old_text_value_does_not_blank_a_year_beside_it(self):
+        # Text is not a year above 0, so the other column keeps its year.
+        for name in (HEDGE_PI, WATER_PI):
+            with self.subTest(layer=name):
+                layer, fid = self.stored(name, HEDGE_LINE,
+                                         {ADVANCE: "N/A", DELAY: "5"})
+                self.set(layer, fid, COMMENT, NOTE)
+                self.assertTrue(layer.commitChanges(), layer.commitErrors())
+                row = self.get(layer, fid)
+                self.assertTrue(is_null(row[ADVANCE]), row[ADVANCE])
+                self.assertEqual(row[DELAY], "5")
+
     def test_a_value_beside_a_zero_is_kept(self):
         # Once advance is above 0, the delay is stored blank: a 0 there
         # becomes NULL, which the Metric reads the same way.

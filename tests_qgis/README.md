@@ -35,7 +35,7 @@ the image pinned by digest.
 | `Comments` | Every habitat layer, on both stages, saves a comment and lets the form edit it |
 | `EnhancedTrees` | An existing tree can be Enhanced to a better condition; the same condition, another size, a newly planted tree, a tree already in Good condition or an irreplaceable tree is refused, and marking an Enhanced tree irreplaceable clears Enhanced; the only better condition fills itself in |
 | `IrreplaceableTrees` | A surveyed tree's Irreplaceable Habitat starts blank and takes Yes or No; a planted tree's is always No |
-| `AdvanceOrDelay` | A table cell cannot leave both timing values above 0, on area habitats, hedgerows and trees |
+| `AdvanceOrDelay` | A table cell cannot leave both timing values above 0, on area habitats, hedgerows and trees; on a saved hedgerow or watercourse row, `N/A` or `Habitat already in target condition` from an older file is cleared when the row is edited, and does not blank a year in the other column |
 | `TheForm` | Picking one timing value greys out the other; Retained greys out proposed significance; distinctiveness and baseline significance are locked |
 | `EveryRowNeedsAShape` | A row with no shape breaks the hard constraint, so a mistaken paste is refused |
 | `PasteLineage` | A feature with exactly a baseline feature's shape gets its `Parent Ref` and `parent_uuid`; a new shape gets neither |
