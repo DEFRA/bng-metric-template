@@ -540,13 +540,15 @@ def _timing_text(value):
 
 
 def _year_as_stored(value):
-    """A year the metric offers, as the row stores it, or None.
+    """A year the metric offers, as its drop-down stores it, or None.
 
     None covers a blank and any text that is not a year, such as N/A from
-    an older file. A year is returned unchanged.
+    an older file. A year is returned as text without spaces around it,
+    which is the form the metric's list holds.
     """
-    if _timing_text(value) in METRIC_YEARS:
-        return value
+    text = _timing_text(value)
+    if text in METRIC_YEARS:
+        return text
     return None
 
 
@@ -559,9 +561,9 @@ def _is_text_timing(value):
 def proposed_values(row, type_field, text_years=None):
     """What a post-intervention part will become.
 
-    Advance and delay are written as the row stores them. Text that is
-    not a year the metric offers is left blank, and the row is named in
-    `text_years`.
+    Advance and delay are written as the year the row holds, without spaces
+    around it. Text that is not a year the metric offers is left blank, and
+    the row is named in `text_years`.
     """
     if text_years is not None and (
             _is_text_timing(row.get(ADVANCE_FIELD))

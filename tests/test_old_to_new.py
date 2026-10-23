@@ -501,6 +501,24 @@ class TimingTextTest(unittest.TestCase):
         self.assertEqual(1, len(both))
         self.assertIn("W-3", both[0])
 
+    def test_a_year_is_written_without_spaces_around_it(self):
+        # The template's rule compares exactly, so " 5" would be cleared on
+        # the next edit.
+        post = {key: [] for key in old_to_new.LEGACY_REFS}
+        post[old_to_new.WATERCOURSES_KEY] = [
+            {old_to_new.PARCEL_REF: "W-1", ADVANCE: " 5", DELAY: None},
+            {old_to_new.PARCEL_REF: "W-2", ADVANCE: "  ", DELAY: "30+ "},
+            {old_to_new.PARCEL_REF: "W-3", ADVANCE: 7, DELAY: "0"},
+        ]
+        report = old_to_new.Report()
+        old_to_new._post_timing(post, report)
+
+        rows = post[old_to_new.WATERCOURSES_KEY]
+        self.assertEqual(("5", None), (rows[0][ADVANCE], rows[0][DELAY]))
+        self.assertEqual((None, "30+"), (rows[1][ADVANCE], rows[1][DELAY]))
+        self.assertEqual(("7", "0"), (rows[2][ADVANCE], rows[2][DELAY]))
+        self.assertFalse([w for w in report.warnings if "left blank" in w])
+
     def test_a_meander_text_advance_is_blank_in_the_watercourse(self):
         # The legacy meanders layer spells its advance column with a
         # trailing space.

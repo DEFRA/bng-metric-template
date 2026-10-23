@@ -690,6 +690,8 @@ class TextTimingExportTest(support.TempDirTestCase):
                                ADVANCE: "30+", DELAY: None}),
             _area("A-both", **{"Retention Category": "Created",
                                ADVANCE: "4", DELAY: "6"}),
+            _area("A-pad", **{"Retention Category": "Created",
+                              ADVANCE: " 5", DELAY: "  "}),
             _area("A-ret", **{"Retention Category": "Retained",
                               "parent_uuid": kept, ADVANCE: "N/A"}),
             _area("A-enh", **{"Retention Category": "Enhanced",
@@ -732,6 +734,9 @@ class TextTimingExportTest(support.TempDirTestCase):
     def test_years_above_zero_are_written_as_the_row_stores_them(self):
         self.assertEqual(("4", "6"), self.years("creation", "A-both"))
 
+    def test_a_year_is_written_without_spaces_around_it(self):
+        self.assertEqual(("5", None), self.years("creation", "A-pad"))
+
     def test_an_enhanced_row_blanks_its_text_and_keeps_its_year(self):
         self.assertEqual(("12", None), self.years("enhancement", "A-enh"))
 
@@ -743,7 +748,7 @@ class TextTimingExportTest(support.TempDirTestCase):
         self.assertEqual(1, len(areas))
         for ref in ("A-text", "A-na", "A-enh"):
             self.assertIn(ref, areas[0])
-        for ref in ("A-year", "A-both", "A-ret"):
+        for ref in ("A-year", "A-both", "A-pad", "A-ret"):
             self.assertNotIn(ref, areas[0])
         trees = self.warnings_for(TREE_PI)
         self.assertEqual(1, len(trees))

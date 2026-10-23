@@ -1691,14 +1691,22 @@ def _post_timing(post, report):
 def _clear_text_timing(row, advance, delay):
     """Set a timing value the drop-down does not offer to blank.
 
-    Returns whether this row held such a value.
+    A year is written as the drop-down stores it, without spaces around
+    it: the template's rule compares exactly, and would clear " 5" on the
+    next edit.
+
+    Returns whether this row held a value that is not a year.
     """
     cleared = False
     for field in (advance, delay):
-        text = _timing_text(row.get(field))
+        if field not in row:
+            continue
+        text = _timing_text(row[field])
         if text and text not in TIMING_YEARS:
             row[field] = None
             cleared = True
+        else:
+            row[field] = text or None
     return cleared
 
 

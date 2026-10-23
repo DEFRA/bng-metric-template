@@ -14,7 +14,7 @@ about=Moves a habitat map out of the BNG Service QGIS template without anyone ne
 
 changelog=1.8.1
     Convert from legacy writes a text value for years created in advance or years of delay, such as N/A or Habitat already in target condition, as blank, and names the rows. The template offers blank, 0 to 30 and 30+ only.
-    Export to the Statutory Metric leaves a text value from an older file blank in the years cell, and names the rows. A year the row stores, including 0 and 30+, is written as it is.
+    Export to the Statutory Metric leaves a text value from an older file blank in the years cell, and names the rows. A year the row holds, including 0 and 30+, is written as that year, without spaces around it.
   1.8.0
     For the BNG Service template that records its version. Convert from legacy records the template version in each GeoPackage it creates, as one row of the GeoPackage metadata extension, which the BNG service reads. Converting into a copy of the template leaves the copy's record as it is, and warns when the copy does not record the current version.
     For the BNG Service template whose area habitat layers no longer offer the habitats counted by vertical area. Convert from legacy names each legacy area habitat that is an intertidal hard structure, which the template records on the Vertical Area Habitats layers.
