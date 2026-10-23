@@ -105,6 +105,38 @@ class NsipGeneratorTest(support.TempDirTestCase):
         self.assertEqual(0, result.returncode, support.describe(result))
         self.assertIn(ALL_VALUES_OFFERED, result.stdout)
 
+    def test_dropdown_check_limits_advance_and_delay_to_the_years_list(self):
+        # Blank, 0 to 30 and 30+ when the other column is not a year above
+        # 0. Text such as N/A is not a year above 0, so it does not blank
+        # the other column. A year above 0 in either one blanks the other.
+        site = self.tmp / "timing-years"
+        shutil.copytree(self.site, site)
+        gpkg = site / support.SERVICE_GPKG_IN_SITE
+        table = "Area Habitats Post-Intervention"
+        advance = "Habitat created in advance/years"
+        delay = "Delay in starting habitat creation/years"
+        rows = support.read_rows(gpkg, table)
+        self.assertGreaterEqual(len(rows), 4)
+        text, both, kept, alongside = rows[:4]
+        support.update(gpkg, table, {advance: "N/A", delay: "0"},
+                       "fid", text["fid"])
+        support.update(gpkg, table, {advance: "4", delay: "6"},
+                       "fid", both["fid"])
+        support.update(gpkg, table, {advance: "30+", delay: None},
+                       "fid", kept["fid"])
+        support.update(gpkg, table, {advance: "5", delay: "N/A"},
+                       "fid", alongside["fid"])
+        result = support.run_python(support.DROPDOWN_CHECK, site)
+        self.assertEqual(1, result.returncode, support.describe(result))
+        self.assertIn(f"{table} / {advance}", result.stdout)
+        self.assertIn(f"{table} / {delay}", result.stdout)
+        for value in ("N/A", "4", "6"):
+            with self.subTest(value=value):
+                self.assertIn(repr(value), result.stdout)
+        for value in ("30+", "5", "0"):
+            with self.subTest(value=value):
+                self.assertNotIn(repr(value), result.stdout)
+
     def test_dropdown_check_names_a_value_no_list_offers(self):
         site = self.tmp / "bad-value"
         shutil.copytree(self.site, site)

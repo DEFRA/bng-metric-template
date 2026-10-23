@@ -13,6 +13,10 @@ every value the list would not have offered.
 A blank is always accepted: it is a missing value, which the service reports
 as such, not an invalid one.
 
+An advance or delay column offers blank, 0 to 30 and 30+. When the other
+column is a year above 0, it offers only a blank. Text such as N/A is not
+a year above 0.
+
 Some columns the template fills itself, from the habitat type or a fixed
 rule, and shows read-only: distinctiveness, strategic significance, spatial
 risk and Irreplaceable Habitat. Those are checked against the lists and the
@@ -30,7 +34,6 @@ check rather than being guessed at.
 import csv
 import glob
 import os
-import re
 import sqlite3
 import sys
 import urllib.parse
@@ -38,7 +41,87 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 EXAMPLES_PER_FIELD = 3
-TOKEN = re.compile(r"\s*(?:(\"[^\"]*\")|('(?:[^']|'')*')|([A-Za-z_]+)|(.))")
+
+
+def _word_char(char):
+    return char == "_" or "A" <= char <= "Z" or "a" <= char <= "z"
+
+
+def _double_quoted(text, start):
+    end = text.find('"', start + 1)
+    if end < 0:
+        return None
+    return end + 1
+
+
+def _single_quoted(text, start):
+    """End of a single-quoted token, or None when it never closes.
+
+    A doubled quote is one quote. The scan remembers the last place a
+    closing quote could sit, so a run of quotes is not retried.
+    """
+    j = start + 1
+    last_good = None
+    n = len(text)
+    while j < n:
+        if text[j] != "'":
+            j += 1
+            continue
+        if j + 1 < n and text[j + 1] == "'":
+            last_good = j + 1
+            j += 2
+            continue
+        return j + 1
+    return last_good
+
+
+def _word_end(text, start):
+    j = start + 1
+    n = len(text)
+    while j < n and _word_char(text[j]):
+        j += 1
+    return j
+
+
+def _take_quoted(tokens, text, start, quote, scan):
+    end = scan(text, start)
+    if end is None:
+        tokens.append(("", "", "", quote))
+        return start + 1
+    if quote == '"':
+        tokens.append((text[start:end], "", "", ""))
+    else:
+        tokens.append(("", text[start:end], "", ""))
+    return end
+
+
+def tokenize(text):
+    """The filter's tokens as (double quote, single quote, word, other).
+
+    Whitespace is skipped. Each character is read once.
+    """
+    tokens = []
+    i = 0
+    n = len(text)
+    while i < n:
+        char = text[i]
+        if char.isspace():
+            i += 1
+            continue
+        if char == '"':
+            i = _take_quoted(tokens, text, i, char, _double_quoted)
+            continue
+        if char == "'":
+            i = _take_quoted(tokens, text, i, char, _single_quoted)
+            continue
+        if _word_char(char):
+            end = _word_end(text, i)
+            tokens.append(("", "", text[i:end], ""))
+            i = end
+            continue
+        tokens.append(("", "", "", char))
+        i += 1
+    return tokens
 
 
 class Filter:
@@ -52,7 +135,7 @@ class Filter:
 
     def __init__(self, text):
         self.text = text
-        self.tokens = [t for t in TOKEN.findall(text.strip())]
+        self.tokens = tokenize(text.strip())
         self.pos = 0
         self.tree = self._or()
         if self.pos != len(self.tokens):
@@ -92,7 +175,7 @@ class Filter:
 
     def _not(self):
         if self._keyword("NOT"):
-            return ("not", self._not())
+            return ("not", self._not(), None)
         token = self._peek()
         if token and token[3] == "(":
             self.pos += 1
@@ -170,30 +253,44 @@ class Filter:
             return next((v for v in values if v is not None), None)
         return "".join(v or "" for v in values)
 
+    def _same(self, entry, row, node):
+        left = self.value(entry, row, node[1])
+        right = self.value(entry, row, node[2])
+        if left is None or right is None:
+            return None
+        return left == right
+
+    def _member(self, entry, row, node):
+        left = self.value(entry, row, node[1])
+        items = [self.value(entry, row, item) for item in node[2]]
+        if left is None:
+            return None
+        if left in items:
+            return True
+        if None in items:
+            return None
+        return False
+
     def truth(self, entry, row, node=None):
         """True, False or None (NULL), with SQL's three-valued logic."""
         node = node or self.tree
         kind = node[0]
         if kind == "eq":
-            left = self.value(entry, row, node[1])
-            right = self.value(entry, row, node[2])
-            return None if left is None or right is None else left == right
+            return self._same(entry, row, node)
         if kind == "in":
-            left = self.value(entry, row, node[1])
-            items = [self.value(entry, row, item) for item in node[2]]
-            if left is None:
-                return None
-            if left in items:
-                return True
-            return None if None in items else False
+            return self._member(entry, row, node)
         if kind == "not":
             inner = self.truth(entry, row, node[1])
-            return None if inner is None else not inner
+            if inner is None:
+                return None
+            return not inner
         results = [self.truth(entry, row, term) for term in node[1]]
         decisive = kind == "or"
         if decisive in results:
             return decisive
-        return None if None in results else not decisive
+        if None in results:
+            return None
+        return not decisive
 
     def matches(self, entry, row):
         return self.truth(entry, row) is True
@@ -230,36 +327,51 @@ def build_checks(site, project):
     layers = {ml.findtext("id"): ml for ml in project.iter("maplayer")}
     checks = {}
     for layer in layers.values():
-        source = layer.findtext("datasource") or ""
-        if "layername=" not in source or layer.find("fieldConfiguration") is None:
-            continue
-        table = source.split("layername=")[1].split("|")[0]
-        names = {f.get("name") for f in layer.find("fieldConfiguration")}
-        for field in layer.find("fieldConfiguration"):
-            if field.get("name") in RULE_FIELDS:
-                continue
-            widget = field.find("editWidget")
-            kind = widget.get("type") if widget is not None else None
-            if kind == "ValueMap":
-                allowed = {o.get("value") for o in widget.iter("Option")
-                           if o.get("type") == "QString" and o.get("name")}
-                checks.setdefault(table, []).append(
-                    (field.get("name"), lambda row, a=allowed: a))
-            elif kind == "ValueRelation":
-                opts = options(widget)
-                rows = csv_rows(site, layers[opts["Layer"]].findtext("datasource"))
-                key = opts["Key"]
-                text = (opts.get("FilterExpression") or "").strip()
-                flt = Filter(text) if text else None
-                # QGIS ignores a filter that reads a column the layer lacks,
-                # and offers the whole list, so the check does the same.
-                if flt and not flt.fields() <= names:
-                    flt = None
-                checks.setdefault(table, []).append(
-                    (field.get("name"), allowed_by(rows, key, flt)))
+        _add_dropdowns(checks, site, layers, layer)
     for table, fields in rule_checks(site).items():
         checks.setdefault(table, []).extend(fields)
     return checks
+
+
+def _add_dropdowns(checks, site, layers, layer):
+    source = layer.findtext("datasource") or ""
+    configuration = layer.find("fieldConfiguration")
+    if "layername=" not in source or configuration is None:
+        return
+    table = source.split("layername=")[1].split("|")[0]
+    names = {f.get("name") for f in configuration}
+    for field in configuration:
+        check = _dropdown(site, layers, names, field)
+        if check:
+            checks.setdefault(table, []).append(check)
+
+
+def _dropdown(site, layers, names, field):
+    """One Value Map or Value Relation, or None when a rule owns the field.
+
+    Advance and delay are Value Maps, but the pair rule decides which of
+    blank, 0 to 30 and 30+ a row may hold.
+    """
+    name = field.get("name")
+    if name in RULE_FIELDS or name in TIMING_FIELDS:
+        return None
+    widget = field.find("editWidget")
+    kind = widget.get("type") if widget is not None else None
+    if kind == "ValueMap":
+        allowed = {o.get("value") for o in widget.iter("Option")
+                   if o.get("type") == "QString" and o.get("name")}
+        return (name, lambda row, values=allowed: values)
+    if kind != "ValueRelation":
+        return None
+    opts = options(widget)
+    rows = csv_rows(site, layers[opts["Layer"]].findtext("datasource"))
+    text = (opts.get("FilterExpression") or "").strip()
+    flt = Filter(text) if text else None
+    # QGIS ignores a filter that reads a column the layer lacks, and offers
+    # the whole list, so the check does the same.
+    if flt and flt.fields() - names:
+        flt = None
+    return (name, allowed_by(rows, opts["Key"], flt))
 
 
 # ------------------------------------------------ columns the template fills
@@ -346,17 +458,9 @@ def baseline_significance(type_column, post):
     return lambda row: {LOW} if has_type(row.get(type_column)) else BLANK
 
 
-class Anything:
-    """Every value, for a column that a rule only limits in some rows."""
-
-    def __contains__(self, value):
-        return True
-
-
-ANYTHING = Anything()
 RETAINED = "Retained"
-# Table stem -> (years created in advance, years of delay). Both above 0 is
-# not allowed: a value above 0 in one blanks the other.
+# Table stem -> (years created in advance, years of delay). A year above 0
+# in one blanks the other. Otherwise each allows blank, 0 to 30 and 30+.
 TIMING = {
     "Individual Trees": ("Habitat Created/Enhanced in advance/years",
                          "Delay in starting habitat creation/enhancement "
@@ -364,14 +468,25 @@ TIMING = {
 }
 DEFAULT_TIMING = ("Habitat created in advance/years",
                   "Delay in starting habitat creation/years")
+TIMING_FIELDS = {field for pair in (*TIMING.values(), DEFAULT_TIMING)
+                 for field in pair}
+# Blank, 0 to 30 and 30+. 30+ is the only text the list holds. A year above
+# 0 is any of those except 0. Text such as N/A is not one.
+TIMING_YEARS = {str(year) for year in range(31)} | {"30+"}
+YEARS_ABOVE_ZERO = TIMING_YEARS - {"0"}
 
 
-def above_zero(value):
-    return blank_to_none(value) not in (None, "0")
+def year_above_zero(value):
+    return blank_to_none(value) in YEARS_ABOVE_ZERO
 
 
-def blank_while_other_set(other):
-    return lambda row: BLANK if above_zero(row.get(other)) else ANYTHING
+def timing_allowed(other):
+    """Blank while `other` is a year above 0; otherwise the years list."""
+    def allowed(row):
+        if year_above_zero(row.get(other)):
+            return BLANK
+        return TIMING_YEARS | BLANK
+    return allowed
 
 
 def proposed_significance(row):
@@ -387,30 +502,34 @@ def rule_checks(site):
     checks = {}
     for stem, (type_stem, lists) in KINDS.items():
         for stage, post in STAGES:
-            table = f"{stem} {stage}"
-            baseline_type = f"Baseline {type_stem}"
-            fields = [("Baseline Strategic Significance",
-                       baseline_significance(baseline_type, post))]
-            if lists:
-                fields.append(("Baseline Distinctiveness", from_type(
-                    list_values(site, *lists[0]), baseline_type)))
-            if post:
-                fields.append(("Proposed Strategic Significance",
-                               proposed_significance))
-                advance, delay = TIMING.get(stem, DEFAULT_TIMING)
-                fields.append((advance, blank_while_other_set(delay)))
-                fields.append((delay, blank_while_other_set(advance)))
-                fields.append(("Spatial risk category",
-                               lambda row: {NOT_APPLICABLE}))
-                if lists:
-                    fields.append(("Proposed Distinctiveness", from_type(
-                        list_values(site, *lists[1]),
-                        f"Proposed {type_stem}")))
-            if stem in ("Area Habitats", "Vertical Area Habitats"):
-                fields.append(("Irreplaceable Habitat", irreplaceable_rule(
-                    irreplaceable, baseline_type)))
-            checks[table] = fields
+            checks[f"{stem} {stage}"] = _rule_fields(
+                site, stem, type_stem, lists, post, irreplaceable)
     return checks
+
+
+def _rule_fields(site, stem, type_stem, lists, post, irreplaceable):
+    baseline_type = f"Baseline {type_stem}"
+    fields = [("Baseline Strategic Significance",
+               baseline_significance(baseline_type, post))]
+    if lists:
+        fields.append(("Baseline Distinctiveness", from_type(
+            list_values(site, *lists[0]), baseline_type)))
+    if post:
+        advance, delay = TIMING.get(stem, DEFAULT_TIMING)
+        fields.append(("Proposed Strategic Significance",
+                       proposed_significance))
+        fields.extend((
+            (advance, timing_allowed(delay)),
+            (delay, timing_allowed(advance)),
+            ("Spatial risk category", lambda row: {NOT_APPLICABLE}),
+        ))
+        if lists:
+            fields.append(("Proposed Distinctiveness", from_type(
+                list_values(site, *lists[1]), f"Proposed {type_stem}")))
+    if stem in ("Area Habitats", "Vertical Area Habitats"):
+        fields.append(("Irreplaceable Habitat", irreplaceable_rule(
+            irreplaceable, baseline_type)))
+    return fields
 
 
 def allowed_by(rows, key, flt):
@@ -439,19 +558,26 @@ def check_site(site):
     invalid = {}
     for table, fields in sorted(checks.items()):
         for record in conn.execute(f'SELECT * FROM "{table}"'):
-            row = dict(record)
-            for field, allowed in fields:
-                value = blank_to_none(row.get(field))
-                if value is None and field not in RULE_FIELDS:
-                    continue
-                if value in allowed(row):
-                    continue
-                count, examples = invalid.get((table, field), (0, []))
-                if len(examples) < EXAMPLES_PER_FIELD:
-                    examples.append(value)
-                invalid[(table, field)] = (count + 1, examples)
+            _collect_invalid(invalid, table, fields, dict(record))
     conn.close()
     return invalid
+
+
+def _collect_invalid(invalid, table, fields, row):
+    for field, allowed in fields:
+        value = blank_to_none(row.get(field))
+        if value is None and field not in RULE_FIELDS:
+            continue
+        if value in allowed(row):
+            continue
+        _note_invalid(invalid, table, field, value)
+
+
+def _note_invalid(invalid, table, field, value):
+    count, examples = invalid.get((table, field), (0, []))
+    if len(examples) < EXAMPLES_PER_FIELD:
+        examples.append(value)
+    invalid[(table, field)] = (count + 1, examples)
 
 
 def report(invalid):
