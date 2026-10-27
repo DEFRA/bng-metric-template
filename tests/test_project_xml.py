@@ -81,14 +81,34 @@ def degraded(kind):
             f'"{proposed}" = "{base}" AND {WORSE_CONDITION}')
 
 
+# Blank, then these: the years the Statutory Metric takes.
+YEAR_VALUES = tuple(str(year) for year in range(31)) + ("30+",)
+YEARS_OFFERED = ", ".join(f"'{year}'" for year in YEAR_VALUES)
+YEARS_ABOVE_ZERO = ", ".join(
+    f"'{year}'" for year in YEAR_VALUES if year != "0")
+
+
+def other_above_zero(other):
+    return f'coalesce("{other}", \'0\') IN ({YEARS_ABOVE_ZERO})'
+
+
+def kept_year(field):
+    return (f'if(coalesce("{field}", \'0\') IN ({YEARS_OFFERED}), '
+            f'"{field}", NULL)')
+
+
+def only_one_timing(field, other):
+    return f'if({other_above_zero(other)}, NULL, {kept_year(field)})'
+
+
 def advance_default(kind, advance, delay):
-    """Blank while the delay is above 0; 30+ on a blank one of a degraded
-    row; otherwise the surveyor's value."""
-    keep = f'"{advance}"'
+    """Blank while the delay is a year above 0; 30+ on a blank one of a
+    degraded row; a value the list does not offer is cleared."""
+    keep = kept_year(advance)
     if kind in DEGRADED_TYPES:
         keep = (f'if("{advance}" IS NULL AND {degraded(kind)}, \'30+\', '
-                f'"{advance}")')
-    return f'if(coalesce("{delay}", \'0\') <> \'0\', NULL, {keep})'
+                f'{kept_year(advance)})')
+    return f'if({other_above_zero(delay)}, NULL, {keep})'
 
 
 PROPOSED_SIGNIFICANCE_DEFAULT = (
@@ -329,6 +349,15 @@ class ProjectXmlTest(unittest.TestCase):
                 self.assertEqual("", options["FilterExpression"])
                 self.assertIn("Strategic Significance", options["LayerName"])
 
+    def test_timing_dropdowns_offer_years_only(self):
+        for kind, _stage, layer in self.each_stage(stages=(POST,)):
+            for field in TIMING[kind]:
+                with self.subTest(layer=kind, field=field):
+                    widget = layer.widgets[field]
+                    self.assertEqual(VALUE_MAP, widget.get("type"))
+                    self.assertEqual([NULL_VALUE, *YEAR_VALUES],
+                                     value_map_values(widget))
+
     def test_timing_fields_allow_only_one_of_advance_and_delay(self):
         for kind, _stage, layer in self.each_stage(stages=(POST,)):
             advance, delay = TIMING[kind]
@@ -337,12 +366,12 @@ class ProjectXmlTest(unittest.TestCase):
                     expected = (
                         advance_default(kind, advance, delay)
                         if field == advance else
-                        f'if(coalesce("{other}", \'0\') <> \'0\', '
-                        f'NULL, "{field}")')
+                        only_one_timing(field, other))
                     self.assertEqual((expected, APPLY_ON_UPDATE),
                                      layer.default(field))
                     self.assertEqual(
-                        f'coalesce("{other}", \'0\') = \'0\'',
+                        f'coalesce("{other}", \'0\') NOT IN '
+                        f'({YEARS_ABOVE_ZERO})',
                         layer.data_defined_editable.get(field))
 
     def test_30_plus_outside_a_degraded_row_gets_a_warning(self):

@@ -40,6 +40,10 @@ HOW IT MAPS
     The template stores strategic significance as "Low" or "High". The
     metric's own wording is written instead (see reference_lists.py).
 
+    Years created in advance and years of delay are written as the row
+    stores them. The metric holds blank, 0 to 30 and 30+. Text from an
+    older file, such as N/A, is left blank, and the report names the rows.
+
     A value the metric needs and the layer leaves blank is written as a
     blank. The metric then flags that row or leaves its units blank, and a
     total including it can read Check Data, so the report lists every such
@@ -107,9 +111,19 @@ except ImportError:  # pragma: no cover - running as a plain script
     )
 
 try:
-    from .reference_lists import to_legacy_significance
+    from .reference_lists import (
+        BASELINE_SIGNIFICANCE,
+        IRREPLACEABLE_COLUMN,
+        PROPOSED_SIGNIFICANCE,
+        to_legacy_significance,
+    )
 except ImportError:  # pragma: no cover - running as a plain script
-    from reference_lists import to_legacy_significance
+    from reference_lists import (
+        BASELINE_SIGNIFICANCE,
+        IRREPLACEABLE_COLUMN,
+        PROPOSED_SIGNIFICANCE,
+        to_legacy_significance,
+    )
 
 NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
@@ -117,6 +131,30 @@ REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
 METRES_PER_KM = 1000
 
 RETAINED, ENHANCED, CREATED = "Retained", "Enhanced", "Created"
+
+
+# Layer keys, sheet stages, and the column and line-field names used below.
+AREAS, HEDGEROWS, WATERCOURSES, TREES = (
+    "areas", "hedgerows", "watercourses", "trees")
+BASELINE, CREATION, ENHANCEMENT = "baseline", "creation", "enhancement"
+FEATURE_UUID, PARENT_UUID = "feature_uuid", "parent_uuid"
+BASELINE_CONDITION = "Baseline Condition"
+PROPOSED_CONDITION = "Proposed Condition"
+BASELINE_BROAD_HABITAT = "Baseline Broad Habitat Type"
+PROPOSED_BROAD_HABITAT = "Proposed Broad Habitat Type"
+BASELINE_TREE_SIZE = "Baseline Tree Size"
+PROPOSED_TREE_SIZE = "Proposed Tree Size"
+LENGTH = "Length"
+LINE_COMMENT, LINE_NUMBER = "comment", "number"
+RETAINED_SIZE, ENHANCED_SIZE = "retained", "enhanced"
+WHOLLY_LOST, PARTLY_LOST = "wholly lost", "partly lost"
+IRREPLACEABLE_LOST, OVERSUBSCRIBED = "irreplaceable lost", "oversubscribed"
+MERGED_COMMENTS = "_comments"
+UTF8 = "utf-8"
+WORKBOOK_XML = "xl/workbook.xml"
+WORKBOOK_RELS = "xl/_rels/workbook.xml.rels"
+CONTENT_TYPES_XML = "[Content_Types].xml"
+
 
 # Excel refuses to open a macro-free workbook named .xlsm, and a macro
 # workbook named .xlsx, so a filled copy has to carry the extension of the
@@ -143,9 +181,9 @@ MACRO_EXTENSION, PLAIN_EXTENSION = ".xlsm", ".xlsx"
 # linear sizes to whole metres.
 SHORTFALL, PRESENCE = "shortfall", "presence"
 ACCOUNTING = {
-    "areas": (SHORTFALL, 0.5 / SQ_METRES_PER_HECTARE),
-    "hedgerows": (SHORTFALL, 0.5),
-    "watercourses": (PRESENCE, 0.5),
+    AREAS: (SHORTFALL, 0.5 / SQ_METRES_PER_HECTARE),
+    HEDGEROWS: (SHORTFALL, 0.5),
+    WATERCOURSES: (PRESENCE, 0.5),
 }
 
 # The columns the metric needs before it can score a row, on the layers they
@@ -154,30 +192,30 @@ ACCOUNTING = {
 # or not. Proposed values are needed on Enhanced and Created parts only: a
 # Retained part scores on its parent's baseline values.
 BASELINE_NEEDS = {
-    "areas": ("Baseline Broad Habitat Type", "Baseline Habitat Type",
-              "Baseline Condition", "Baseline Strategic Significance",
-              "Irreplaceable Habitat", "Area"),
-    "hedgerows": ("Baseline Hedge Type", "Baseline Condition",
-                  "Baseline Strategic Significance", "Length"),
-    "watercourses": ("Baseline River Type", "Baseline Condition",
-                     "Baseline Strategic Significance",
-                     "Baseline Encroachment into Watercourse",
-                     "Baseline Encroachment into riparian zone", "Length"),
+    AREAS: (BASELINE_BROAD_HABITAT, "Baseline Habitat Type",
+            BASELINE_CONDITION, BASELINE_SIGNIFICANCE,
+            IRREPLACEABLE_COLUMN, "Area"),
+    HEDGEROWS: ("Baseline Hedge Type", BASELINE_CONDITION,
+                BASELINE_SIGNIFICANCE, LENGTH),
+    WATERCOURSES: ("Baseline River Type", BASELINE_CONDITION,
+                   BASELINE_SIGNIFICANCE,
+                   "Baseline Encroachment into Watercourse",
+                   "Baseline Encroachment into riparian zone", LENGTH),
 }
 PROPOSED_NEEDS = {
-    "areas": ("Proposed Broad Habitat Type", "Proposed Habitat Type",
-              "Proposed Condition", "Proposed Strategic Significance"),
-    "hedgerows": ("Proposed Hedge Type", "Proposed Condition",
-                  "Proposed Strategic Significance"),
-    "watercourses": ("Proposed River Type", "Proposed Condition",
-                     "Proposed Strategic Significance",
-                     "Proposed Encroachment into Watercourse",
-                     "Proposed Encroachment into riparian zone"),
+    AREAS: (PROPOSED_BROAD_HABITAT, "Proposed Habitat Type",
+            PROPOSED_CONDITION, PROPOSED_SIGNIFICANCE),
+    HEDGEROWS: ("Proposed Hedge Type", PROPOSED_CONDITION,
+                PROPOSED_SIGNIFICANCE),
+    WATERCOURSES: ("Proposed River Type", PROPOSED_CONDITION,
+                   PROPOSED_SIGNIFICANCE,
+                   "Proposed Encroachment into Watercourse",
+                   "Proposed Encroachment into riparian zone"),
 }
 RETENTION_FIELD = "Retention Category"
 # A Retained or Enhanced area habitat row takes its irreplaceable flag from the
 # part rather than the parent, so the part needs one too.
-KEPT_AREA_NEEDS = ("Irreplaceable Habitat",)
+KEPT_AREA_NEEDS = (IRREPLACEABLE_COLUMN,)
 
 # Column letters were found by taking, on each sheet's first data row, the
 # cells that EXIST but hold nothing. Those are the inputs; everything else is a
@@ -206,48 +244,46 @@ KEPT_AREA_NEEDS = ("Irreplaceable Habitat",)
 # encroachment makes the multiplier blank and the row's units blank with it,
 # so a watercourse written without them scores nothing at all.
 LAYOUT = {
-    "areas": {
-        "baseline": ("A-1 On-Site Habitat Baseline", 11, 258,
-                     dict(broad="E", habitat="F", irreplaceable="G", size="H",
-                          condition="K", significance="M", retained="S",
-                          enhanced="T", comment="Z", ref="AB")),
-        "creation": ("A-2 On-Site Habitat Creation", 11, 256,
-                     dict(broad="D", habitat="E", size="G", condition="J",
-                          significance="L", advance="P", delay="Q",
-                          comment="Z", ref="AB")),
-        "enhancement": ("A-3 On-Site Habitat Enhancement", 12, 257,
-                        dict(habitat="R", condition="Y", significance="AA",
-                             advance="AE", delay="AF", comment="AO",
-                             ref="AQ")),
+    AREAS: {
+        BASELINE: ("A-1 On-Site Habitat Baseline", 11, 258, {
+            "broad": "E", "habitat": "F", "irreplaceable": "G", "size": "H",
+            "condition": "K", "significance": "M", "retained": "S",
+            "enhanced": "T", "comment": "Z", "ref": "AB"}),
+        CREATION: ("A-2 On-Site Habitat Creation", 11, 256, {
+            "broad": "D", "habitat": "E", "size": "G", "condition": "J",
+            "significance": "L", "advance": "P", "delay": "Q",
+            "comment": "Z", "ref": "AB"}),
+        ENHANCEMENT: ("A-3 On-Site Habitat Enhancement", 12, 257, {
+            "habitat": "R", "condition": "Y", "significance": "AA",
+            "advance": "AE", "delay": "AF", "comment": "AO", "ref": "AQ"}),
     },
-    "hedgerows": {
-        "baseline": ("B-1 On-Site Hedge Baseline", 10, 257,
-                     dict(number="C", habitat="D", size="E", condition="H",
-                          significance="J", retained="P", enhanced="Q",
-                          comment="V", ref="X")),
-        "creation": ("B-2 On-Site Hedge Creation", 12, 259,
-                     dict(number="C", habitat="D", size="E", condition="H",
-                          significance="J", advance="N", delay="O",
-                          comment="X", ref="Z")),
-        "enhancement": ("B-3 On-Site Hedge Enhancement", 12, 257,
-                        dict(habitat="M", condition="S", significance="U",
-                             advance="Y", delay="Z", comment="AI", ref="AK")),
+    HEDGEROWS: {
+        BASELINE: ("B-1 On-Site Hedge Baseline", 10, 257, {
+            "number": "C", "habitat": "D", "size": "E", "condition": "H",
+            "significance": "J", "retained": "P", "enhanced": "Q",
+            "comment": "V", "ref": "X"}),
+        CREATION: ("B-2 On-Site Hedge Creation", 12, 259, {
+            "number": "C", "habitat": "D", "size": "E", "condition": "H",
+            "significance": "J", "advance": "N", "delay": "O",
+            "comment": "X", "ref": "Z"}),
+        ENHANCEMENT: ("B-3 On-Site Hedge Enhancement", 12, 257, {
+            "habitat": "M", "condition": "S", "significance": "U",
+            "advance": "Y", "delay": "Z", "comment": "AI", "ref": "AK"}),
     },
-    "watercourses": {
-        "baseline": ("C-1 On-Site WaterC' Baseline", 10, 257,
-                     dict(habitat="D", size="E", condition="H",
-                          significance="J", encroachment="M", riparian="O",
-                          retained="U", enhanced="V", comment="AB",
-                          ref="AD")),
-        "creation": ("C-2 On-Site WaterC' Creation", 12, 259,
-                     dict(habitat="C", size="D", condition="G",
-                          significance="I", advance="M", delay="N",
-                          encroachment="V", riparian="X", comment="AA",
-                          ref="AC")),
-        "enhancement": ("C-3 On-Site WaterC' Enhancement", 12, 257,
-                        dict(habitat="N", condition="T", significance="V",
-                             advance="Z", delay="AA", encroachment="AI",
-                             riparian="AK", comment="AN", ref="AP")),
+    WATERCOURSES: {
+        BASELINE: ("C-1 On-Site WaterC' Baseline", 10, 257, {
+            "habitat": "D", "size": "E", "condition": "H",
+            "significance": "J", "encroachment": "M", "riparian": "O",
+            "retained": "U", "enhanced": "V", "comment": "AB", "ref": "AD"}),
+        CREATION: ("C-2 On-Site WaterC' Creation", 12, 259, {
+            "habitat": "C", "size": "D", "condition": "G",
+            "significance": "I", "advance": "M", "delay": "N",
+            "encroachment": "V", "riparian": "X", "comment": "AA",
+            "ref": "AC"}),
+        ENHANCEMENT: ("C-3 On-Site WaterC' Enhancement", 12, 257, {
+            "habitat": "N", "condition": "T", "significance": "V",
+            "advance": "Z", "delay": "AA", "encroachment": "AI",
+            "riparian": "AK", "comment": "AN", "ref": "AP"}),
     },
 }
 
@@ -255,12 +291,12 @@ LAYOUT = {
 # factor taking the template's units to the metric's. Areas are hectares on
 # both sides; the metric wants linear features in KILOMETRES.
 MODULES = (
-    ("areas", "Area Habitats Baseline", "Area Habitats Post-Intervention",
+    (AREAS, "Area Habitats Baseline", "Area Habitats Post-Intervention",
      "Area", "Habitat Type", 1.0),
-    ("hedgerows", "Hedgerows Baseline", "Hedgerows Post-Intervention",
-     "Length", "Hedge Type", 1.0 / METRES_PER_KM),
-    ("watercourses", "Watercourses Baseline", "Watercourses Post-Intervention",
-     "Length", "River Type", 1.0 / METRES_PER_KM),
+    (HEDGEROWS, "Hedgerows Baseline", "Hedgerows Post-Intervention",
+     LENGTH, "Hedge Type", 1.0 / METRES_PER_KM),
+    (WATERCOURSES, "Watercourses Baseline", "Watercourses Post-Intervention",
+     LENGTH, "River Type", 1.0 / METRES_PER_KM),
 )
 
 # Individual trees go onto the area habitat sheets, after the area habitats.
@@ -277,11 +313,19 @@ TREE_AREA_HA = {
 }
 TREE_ADVANCE = "Habitat Created/Enhanced in advance/years"
 TREE_DELAY = "Delay in starting habitat creation/enhancement in years"
-TREE_BASELINE_NEEDS = ("Baseline Tree Size", "Baseline Rural or Urban Tree",
-                       "Baseline Condition", "Baseline Strategic Significance",
-                       "Irreplaceable Habitat")
-TREE_PROPOSED_NEEDS = ("Proposed Tree Size", "Proposed Rural or Urban Tree",
-                       "Proposed Condition", "Proposed Strategic Significance")
+# The names every module but trees uses. A tree row is copied onto these
+# before it is written, so the metric sees one pair of columns.
+ADVANCE_FIELD = "Habitat created in advance/years"
+DELAY_FIELD = "Delay in starting habitat creation/years"
+# Blank, 0 to 30 and 30+: the years the Statutory Metric's drop-down stores.
+# 30+ is the only text it holds. Anything else, such as N/A from an older
+# file, is not a year.
+METRIC_YEARS = {str(year) for year in range(31)} | {"30+"}
+TREE_BASELINE_NEEDS = (BASELINE_TREE_SIZE, "Baseline Rural or Urban Tree",
+                       BASELINE_CONDITION, BASELINE_SIGNIFICANCE,
+                       IRREPLACEABLE_COLUMN)
+TREE_PROPOSED_NEEDS = (PROPOSED_TREE_SIZE, "Proposed Rural or Urban Tree",
+                       PROPOSED_CONDITION, PROPOSED_SIGNIFICANCE)
 # The metric's condition scale for trees, worst first. An enhancement has to
 # move up it: the metric shows "Error - No enhancement" for the same
 # condition and "Error - Can not reduce condition" for a lower one.
@@ -299,7 +343,7 @@ POST_INTERVENTION_PREFIX = "Post-intervention: "
 # A cell that proves the workbook already holds a site.
 OCCUPIED_PROBE = ("A-1 On-Site Habitat Baseline", "E11")
 
-SIZE_FIELDS = ("size", "retained", "enhanced")
+SIZE_FIELDS = ("size", RETAINED_SIZE, ENHANCED_SIZE)
 
 # An enhanced baseline line carries its own enhancement under this key rather
 # than living in a parallel list. The enhancement sheet is positional against
@@ -358,16 +402,16 @@ def read_staged(path):
             name for _kind, base, pi, _size, _type, _scale in MODULES
             for name in (base, pi)])
         staged = {
-            kind: {"baseline": read_table(conn, base, present),
+            kind: {BASELINE: read_table(conn, base, present),
                    "pi": read_table(conn, pi, present)}
             for kind, base, pi, _size, _type, _scale in MODULES
         }
-        trees = {"baseline": read_table(conn, TREE_TABLES[0], present),
+        trees = {BASELINE: read_table(conn, TREE_TABLES[0], present),
                  "pi": read_table(conn, TREE_TABLES[1], present)}
     finally:
         conn.close()
     to_legacy_significance(staged)
-    staged["trees"] = trees
+    staged[TREES] = trees
     return staged
 
 
@@ -404,16 +448,15 @@ def tree_as_area_baseline(row):
     return {
         "fid": row.get("fid"),
         REF_FIELD: row.get(REF_FIELD),
-        "feature_uuid": row.get("feature_uuid"),
-        "Baseline Broad Habitat Type": TREES_BROAD,
+        FEATURE_UUID: row.get(FEATURE_UUID),
+        BASELINE_BROAD_HABITAT: TREES_BROAD,
         "Baseline Habitat Type": row.get("Baseline Rural or Urban Tree"),
-        "Baseline Condition": row.get("Baseline Condition"),
-        "Baseline Strategic Significance": row.get(
-            "Baseline Strategic Significance"),
+        BASELINE_CONDITION: row.get(BASELINE_CONDITION),
+        BASELINE_SIGNIFICANCE: row.get(BASELINE_SIGNIFICANCE),
         # Ancient and veteran trees are irreplaceable habitat. The metric
         # gives no units for their loss and refuses to enhance them.
-        "Irreplaceable Habitat": row.get("Irreplaceable Habitat"),
-        "Area": tree_area(row.get("Baseline Tree Size")),
+        IRREPLACEABLE_COLUMN: row.get(IRREPLACEABLE_COLUMN),
+        "Area": tree_area(row.get(BASELINE_TREE_SIZE)),
         COMMENT_FIELD: row.get(COMMENT_FIELD),
     }
 
@@ -421,21 +464,20 @@ def tree_as_area_baseline(row):
 def tree_as_area_part(row, parent):
     """A post-intervention tree. A kept tree keeps its parent's size class."""
     kept = parent is not None and retention_of(row) in (RETAINED, ENHANCED)
-    size = (parent.get("Baseline Tree Size") if kept
-            else row.get("Proposed Tree Size"))
+    size = (parent.get(BASELINE_TREE_SIZE) if kept
+            else row.get(PROPOSED_TREE_SIZE))
     return {
         "fid": row.get("fid"),
         REF_FIELD: row.get(REF_FIELD),
-        "parent_uuid": row.get("parent_uuid"),
+        PARENT_UUID: row.get(PARENT_UUID),
         RETENTION_FIELD: row.get(RETENTION_FIELD),
-        "Irreplaceable Habitat": row.get("Irreplaceable Habitat"),
-        "Proposed Broad Habitat Type": TREES_BROAD,
+        IRREPLACEABLE_COLUMN: row.get(IRREPLACEABLE_COLUMN),
+        PROPOSED_BROAD_HABITAT: TREES_BROAD,
         "Proposed Habitat Type": row.get("Proposed Rural or Urban Tree"),
-        "Proposed Condition": row.get("Proposed Condition"),
-        "Proposed Strategic Significance": row.get(
-            "Proposed Strategic Significance"),
-        "Habitat created in advance/years": row.get(TREE_ADVANCE),
-        "Delay in starting habitat creation/years": row.get(TREE_DELAY),
+        PROPOSED_CONDITION: row.get(PROPOSED_CONDITION),
+        PROPOSED_SIGNIFICANCE: row.get(PROPOSED_SIGNIFICANCE),
+        ADVANCE_FIELD: row.get(TREE_ADVANCE),
+        DELAY_FIELD: row.get(TREE_DELAY),
         "Area": tree_area(size),
         COMMENT_FIELD: row.get(COMMENT_FIELD),
     }
@@ -448,19 +490,19 @@ def trees_as_areas(trees):
     every other area habitat, so the tree wording of the legacy template is
     not used here.
     """
-    parents = {row.get("feature_uuid"): row for row in trees["baseline"]
-               if row.get("feature_uuid")}
+    parents = {row.get(FEATURE_UUID): row for row in trees[BASELINE]
+               if row.get(FEATURE_UUID)}
     tables = {
-        "baseline": [tree_as_area_baseline(row) for row in trees["baseline"]],
-        "pi": [tree_as_area_part(row, parents.get(row.get("parent_uuid")))
+        BASELINE: [tree_as_area_baseline(row) for row in trees[BASELINE]],
+        "pi": [tree_as_area_part(row, parents.get(row.get(PARENT_UUID)))
                for row in trees["pi"]],
     }
-    to_legacy_significance({"areas": tables})
+    to_legacy_significance({AREAS: tables})
     return tables
 
 
 def is_irreplaceable(row):
-    return plain_label(row.get("Irreplaceable Habitat")) == "Yes"
+    return plain_label(row.get(IRREPLACEABLE_COLUMN)) == "Yes"
 
 
 def retention_of(row):
@@ -471,37 +513,72 @@ def baseline_line(row, size, type_field):
     """A baseline feature's own values over `size`, with nothing kept."""
     return {
         "ref": row.get(REF_FIELD),
-        "number": row.get(REF_FIELD),
-        "broad": row.get("Baseline Broad Habitat Type"),
+        LINE_NUMBER: row.get(REF_FIELD),
+        "broad": row.get(BASELINE_BROAD_HABITAT),
         "habitat": row.get(f"Baseline {type_field}"),
         # Its own flag, not None: a wholly lost parcel is still
         # irreplaceable habitat, and consolidation groups on this.
-        "irreplaceable": row.get("Irreplaceable Habitat"),
+        "irreplaceable": row.get(IRREPLACEABLE_COLUMN),
         "size": size,
-        "condition": plain_label(row.get("Baseline Condition")),
-        "significance": row.get("Baseline Strategic Significance"),
+        "condition": plain_label(row.get(BASELINE_CONDITION)),
+        "significance": row.get(BASELINE_SIGNIFICANCE),
         "encroachment": plain_label(
             row.get("Baseline Encroachment into Watercourse")),
         "riparian": plain_label(
             row.get("Baseline Encroachment into riparian zone")),
-        "retained": 0,
-        "enhanced": 0,
-        "comment": comment_of(row),
+        RETAINED_SIZE: 0,
+        ENHANCED_SIZE: 0,
+        LINE_COMMENT: comment_of(row),
     }
 
 
-def proposed_values(row, type_field):
-    """What a post-intervention part will become."""
+def _timing_text(value):
+    """The timing value as text, or '' when it is blank."""
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _year_as_stored(value):
+    """A year the metric offers, as its drop-down stores it, or None.
+
+    None covers a blank and any text that is not a year, such as N/A from
+    an older file. A year is returned as text without spaces around it,
+    which is the form the metric's list holds.
+    """
+    text = _timing_text(value)
+    if text in METRIC_YEARS:
+        return text
+    return None
+
+
+def _is_text_timing(value):
+    """True when the value is text the metric's years list does not hold."""
+    text = _timing_text(value)
+    return bool(text) and text not in METRIC_YEARS
+
+
+def proposed_values(row, type_field, text_years=None):
+    """What a post-intervention part will become.
+
+    Advance and delay are written as the year the row holds, without spaces
+    around it. Text that is not a year the metric offers is left blank, and
+    the row is named in `text_years`.
+    """
+    if text_years is not None and (
+            _is_text_timing(row.get(ADVANCE_FIELD))
+            or _is_text_timing(row.get(DELAY_FIELD))):
+        text_years.append(row_label(row, REF_FIELD))
     return {
         "habitat": row.get(f"Proposed {type_field}"),
-        "condition": plain_label(row.get("Proposed Condition")),
-        "significance": row.get("Proposed Strategic Significance"),
+        "condition": plain_label(row.get(PROPOSED_CONDITION)),
+        "significance": row.get(PROPOSED_SIGNIFICANCE),
         "encroachment": plain_label(
             row.get("Proposed Encroachment into Watercourse")),
         "riparian": plain_label(
             row.get("Proposed Encroachment into riparian zone")),
-        "advance": row.get("Habitat created in advance/years"),
-        "delay": row.get("Delay in starting habitat creation/years"),
+        "advance": _year_as_stored(row.get(ADVANCE_FIELD)),
+        "delay": _year_as_stored(row.get(DELAY_FIELD)),
     }
 
 
@@ -519,84 +596,124 @@ def kept_sizes(parent, parts, size_field, rule):
     return [whole * size / drawn for size in sizes]
 
 
+def _parents_by_uuid(rows):
+    return {row.get(FEATURE_UUID): row
+            for row in rows if row.get(FEATURE_UUID)}
+
+
+def _creation_line(row, size_field, type_field, text_years):
+    line = proposed_values(row, type_field, text_years)
+    line.update({
+        "ref": row.get(REF_FIELD),
+        LINE_NUMBER: row.get(REF_FIELD),
+        "broad": row.get(PROPOSED_BROAD_HABITAT),
+        "size": numeric(row.get(size_field)) or 0.0,
+        LINE_COMMENT: comment_of(row),
+    })
+    return line
+
+
+def _sort_post_intervention(pi_rows, by_uuid, size_field, type_field,
+                            text_years):
+    """Kept parts by parent, and the creation lines.
+
+    A part with a parent and no retention the metric knows carries nothing
+    forward, so its share falls into the parent's lost line.
+    """
+    kept = defaultdict(list)
+    creation = []
+    for row in pi_rows:
+        retention = retention_of(row)
+        parent = by_uuid.get(row.get(PARENT_UUID))
+        if parent is not None and retention in (RETAINED, ENHANCED):
+            kept[row.get(PARENT_UUID)].append(row)
+        elif retention == CREATED or parent is None:
+            creation.append(_creation_line(
+                row, size_field, type_field, text_years))
+    return kept, creation
+
+
+def _kept_baseline_line(parent, part, size, type_field, text_years):
+    """One baseline row for a part that carries `size` of its parent forward."""
+    retention = retention_of(part)
+    line = baseline_line(parent, size, type_field)
+    line.update({
+        "ref": part.get(REF_FIELD),
+        LINE_NUMBER: part.get(REF_FIELD),
+        "irreplaceable": part.get(IRREPLACEABLE_COLUMN),
+        RETAINED_SIZE: size if retention == RETAINED else 0,
+        ENHANCED_SIZE: size if retention == ENHANCED else 0,
+    })
+    if retention == ENHANCED:
+        enhancement = proposed_values(part, type_field, text_years)
+        enhancement.update({"ref": part.get(REF_FIELD),
+                            LINE_COMMENT: comment_of(part)})
+        line[ENHANCEMENT_KEY] = enhancement
+    else:
+        line[LINE_COMMENT] = joined_comment(line[LINE_COMMENT],
+                                            comment_of(part))
+    return line
+
+
+def _append_kept_parts(parent, parts, sizes, baseline, type_field, text_years):
+    """Write each part that keeps some of the parent. Returns how much."""
+    carried = 0.0
+    for part, size in zip(parts, sizes):
+        # A part of no size keeps nothing, and an enhancement row with no
+        # enhanced size would sit against the wrong baseline row: the metric
+        # lists only the rows whose enhanced size is above zero.
+        if size <= 0:
+            continue
+        baseline.append(_kept_baseline_line(
+            parent, part, size, type_field, text_years))
+        carried += size
+    return carried
+
+
+def _record_loss(parent, whole, carried, tolerance, baseline, accounting,
+                 type_field):
+    lost = whole - carried
+    ref = parent.get(REF_FIELD) or parent.get("fid")
+    if lost > tolerance:
+        baseline.append(baseline_line(parent, lost, type_field))
+        accounting[PARTLY_LOST if carried else WHOLLY_LOST].append(ref)
+        if is_irreplaceable(parent):
+            accounting[IRREPLACEABLE_LOST].append(ref)
+    elif lost < -tolerance:
+        accounting[OVERSUBSCRIBED].append(ref)
+
+
+def _baseline_from_kept(baseline_rows, kept, size_field, type_field, rule,
+                        tolerance, text_years):
+    baseline = []
+    accounting = {WHOLLY_LOST: [], PARTLY_LOST: [], OVERSUBSCRIBED: [],
+                  IRREPLACEABLE_LOST: []}
+    for parent in baseline_rows:
+        # Only a parent with an identifier can have parts in `kept`.
+        parts = kept.get(parent.get(FEATURE_UUID), [])
+        whole = numeric(parent.get(size_field)) or 0.0
+        sizes = kept_sizes(parent, parts, size_field, rule)
+        carried = _append_kept_parts(
+            parent, parts, sizes, baseline, type_field, text_years)
+        _record_loss(parent, whole, carried, tolerance, baseline, accounting,
+                     type_field)
+    return baseline, accounting
+
+
 def build_lines(tables, size_field, type_field, consolidate,
-                rule=SHORTFALL, tolerance=0.0):
+                rule=SHORTFALL, tolerance=0.0, text_years=None):
     """Baseline, creation and enhancement lines for one module.
 
     Returns (baseline lines, creation lines, accounting), where accounting
     names the baseline features that were wholly lost, partly lost, and
     oversubscribed, for the report.
     """
-    baseline_rows = tables["baseline"]
-    pi_rows = tables["pi"]
-    by_uuid = {row.get("feature_uuid"): row
-               for row in baseline_rows if row.get("feature_uuid")}
-
-    kept = defaultdict(list)
-    creation = []
-    for row in pi_rows:
-        retention = retention_of(row)
-        parent = by_uuid.get(row.get("parent_uuid"))
-        if parent is not None and retention in (RETAINED, ENHANCED):
-            kept[row.get("parent_uuid")].append(row)
-        elif retention == CREATED or parent is None:
-            line = proposed_values(row, type_field)
-            line.update({
-                "ref": row.get(REF_FIELD),
-                "number": row.get(REF_FIELD),
-                "broad": row.get("Proposed Broad Habitat Type"),
-                "size": numeric(row.get(size_field)) or 0.0,
-                "comment": comment_of(row),
-            })
-            creation.append(line)
-        # A part with a parent and no retention the metric knows carries
-        # nothing forward, so its share falls into the parent's lost line.
-
-    baseline = []
-    accounting = {"wholly lost": [], "partly lost": [], "oversubscribed": [],
-                  "irreplaceable lost": []}
-    for parent in baseline_rows:
-        # Only a parent with an identifier can have parts in `kept`.
-        parts = kept.get(parent.get("feature_uuid"), [])
-        whole = numeric(parent.get(size_field)) or 0.0
-        sizes = kept_sizes(parent, parts, size_field, rule)
-        carried = 0.0
-        for part, size in zip(parts, sizes):
-            # A part of no size keeps nothing, and an enhancement row with
-            # no enhanced size would sit against the wrong baseline row: the
-            # metric lists only the rows whose enhanced size is above zero.
-            if size <= 0:
-                continue
-            retention = retention_of(part)
-            line = baseline_line(parent, size, type_field)
-            line.update({
-                "ref": part.get(REF_FIELD),
-                "number": part.get(REF_FIELD),
-                "irreplaceable": part.get("Irreplaceable Habitat"),
-                "retained": size if retention == RETAINED else 0,
-                "enhanced": size if retention == ENHANCED else 0,
-            })
-            if retention == ENHANCED:
-                enhancement = proposed_values(part, type_field)
-                enhancement.update({"ref": part.get(REF_FIELD),
-                                    "comment": comment_of(part)})
-                line[ENHANCEMENT_KEY] = enhancement
-            else:
-                line["comment"] = joined_comment(line["comment"],
-                                                 comment_of(part))
-            baseline.append(line)
-            carried += size
-
-        lost = whole - carried
-        ref = parent.get(REF_FIELD) or parent.get("fid")
-        if lost > tolerance:
-            baseline.append(baseline_line(parent, lost, type_field))
-            accounting["partly lost" if carried else "wholly lost"].append(ref)
-            if is_irreplaceable(parent):
-                accounting["irreplaceable lost"].append(ref)
-        elif lost < -tolerance:
-            accounting["oversubscribed"].append(ref)
-
+    kept, creation = _sort_post_intervention(
+        tables["pi"], _parents_by_uuid(tables[BASELINE]),
+        size_field, type_field, text_years)
+    baseline, accounting = _baseline_from_kept(
+        tables[BASELINE], kept, size_field, type_field, rule, tolerance,
+        text_years)
     if consolidate:
         baseline = consolidate_lines(baseline)
         creation = consolidate_lines(creation)
@@ -620,11 +737,11 @@ def row_label(row, ref_field):
 def needed_columns(kind, row, parents, size_field):
     """The columns a post-intervention part needs, given what it does."""
     retention = retention_of(row)
-    has_parent = row.get("parent_uuid") in parents
+    has_parent = row.get(PARENT_UUID) in parents
     needs = [RETENTION_FIELD, size_field]
     if retention in (ENHANCED, CREATED) or not has_parent:
         needs.extend(PROPOSED_NEEDS[kind])
-    if kind == "areas" and has_parent and retention in (RETAINED, ENHANCED):
+    if kind == AREAS and has_parent and retention in (RETAINED, ENHANCED):
         needs.extend(KEPT_AREA_NEEDS)
     return needs
 
@@ -656,6 +773,33 @@ def report_gaps(table, gaps, report, consequence=METRIC_GAP_CONSEQUENCE):
     report.warn(message)
 
 
+def _feature_uuids(rows):
+    return {row.get(FEATURE_UUID) for row in rows if row.get(FEATURE_UUID)}
+
+
+def _columns_of(columns):
+    """A row function that always names the same columns."""
+    def columns_for(_row):
+        return columns
+    return columns_for
+
+
+def _pi_columns(kind, parents, size_field):
+    def columns_for(row):
+        return needed_columns(kind, row, parents, size_field)
+    return columns_for
+
+
+def _column_gaps(rows, columns_for, skip):
+    """Blanks in the columns `columns_for` names for each row."""
+    gaps = OrderedDict()
+    for row in rows:
+        for column in columns_for(row):
+            if column not in skip and is_blank(row.get(column)):
+                gaps.setdefault(column, []).append(row_label(row, REF_FIELD))
+    return gaps
+
+
 def check_needed_values(staged, report, consequence=METRIC_GAP_CONSEQUENCE,
                         skip=()):
     """Warn, one summary per layer, about blanks the metric cannot score.
@@ -672,23 +816,13 @@ def check_needed_values(staged, report, consequence=METRIC_GAP_CONSEQUENCE,
     """
     for kind, base_table, pi_table, size_field, _type, _scale in MODULES:
         tables = staged[kind]
-        parents = {row.get("feature_uuid") for row in tables["baseline"]
-                   if row.get("feature_uuid")}
-
-        gaps = OrderedDict()
-        for row in tables["baseline"]:
-            for column in BASELINE_NEEDS[kind]:
-                if column not in skip and is_blank(row.get(column)):
-                    gaps.setdefault(column, []).append(
-                        row_label(row, REF_FIELD))
-        report_gaps(base_table, gaps, report, consequence)
-
-        gaps = OrderedDict()
-        for row in tables["pi"]:
-            for column in needed_columns(kind, row, parents, size_field):
-                if column not in skip and is_blank(row.get(column)):
-                    gaps.setdefault(column, []).append(row_label(row, REF_FIELD))
-        report_gaps(pi_table, gaps, report, consequence)
+        parents = _feature_uuids(tables[BASELINE])
+        report_gaps(base_table, _column_gaps(
+            tables[BASELINE], _columns_of(BASELINE_NEEDS[kind]), skip),
+            report, consequence)
+        report_gaps(pi_table, _column_gaps(
+            tables["pi"], _pi_columns(kind, parents, size_field), skip),
+            report, consequence)
 
 
 def check_post_intervention(staged, report):
@@ -700,14 +834,14 @@ def check_post_intervention(staged, report):
     which, so the report says what the numbers mean either way.
     """
     started = [(base, pi) for kind, base, pi, *_rest in MODULES
-               if staged[kind]["baseline"]]
+               if staged[kind][BASELINE]]
     empty = [(base, pi) for kind, base, pi, *_rest in MODULES
-             if staged[kind]["baseline"] and not staged[kind]["pi"]]
+             if staged[kind][BASELINE] and not staged[kind]["pi"]]
     if not empty:
         return
     if len(empty) == len(started):
         irreplaceable = any(is_irreplaceable(row)
-                            for row in staged["areas"]["baseline"])
+                            for row in staged[AREAS][BASELINE])
         report.warn(
             "Nothing has been drawn in post-intervention, so every baseline "
             "feature is written as lost. The baseline units are right"
@@ -729,6 +863,83 @@ def condition_rank(value):
     return TREE_CONDITIONS.index(words) if words in TREE_CONDITIONS else None
 
 
+def _report_tree_baseline(rows, table, report):
+    report_gaps(table, _column_gaps(rows, _columns_of(TREE_BASELINE_NEEDS), ()),
+                report)
+
+
+def _report_tree_counts(trees, report):
+    for table, rows in zip(TREE_TABLES, (trees[BASELINE], trees["pi"])):
+        many = trees_counted_above_one(rows, REF_FIELD)
+        if many:
+            report.warn(tree_count_warning(table, many))
+
+
+def _tree_part_needs(row, parent):
+    retention = retention_of(row)
+    needs = [RETENTION_FIELD]
+    if retention in (ENHANCED, CREATED) or parent is None:
+        needs.extend(TREE_PROPOSED_NEEDS)
+    if parent is not None and retention in (RETAINED, ENHANCED):
+        needs.extend(KEPT_AREA_NEEDS)
+    return needs
+
+
+def _note_enhanced_tree(row, parent, not_better, resized, irreplaceable):
+    """Name an Enhanced tree the metric will refuse or mis-score."""
+    label = row_label(row, REF_FIELD)
+    if is_irreplaceable(row) or is_irreplaceable(parent):
+        irreplaceable.append(label)
+    before = condition_rank(parent.get(BASELINE_CONDITION))
+    after = condition_rank(row.get(PROPOSED_CONDITION))
+    if before is not None and after is not None and after <= before:
+        not_better.append(label)
+    proposed_size = row.get(PROPOSED_TREE_SIZE)
+    if (not is_blank(proposed_size)
+            and proposed_size != parent.get(BASELINE_TREE_SIZE)):
+        resized.append(label)
+
+
+def _inspect_tree_parts(rows, parents):
+    gaps = OrderedDict()
+    not_better, resized, irreplaceable = [], [], []
+    for row in rows:
+        parent = parents.get(row.get(PARENT_UUID))
+        for column in _tree_part_needs(row, parent):
+            if is_blank(row.get(column)):
+                gaps.setdefault(column, []).append(row_label(row, REF_FIELD))
+        if retention_of(row) != ENHANCED or parent is None:
+            continue
+        _note_enhanced_tree(row, parent, not_better, resized, irreplaceable)
+    return gaps, not_better, resized, irreplaceable
+
+
+def _report_enhanced_tree_problems(table, not_better, resized, irreplaceable,
+                                   report):
+    if not_better:
+        report.warn(
+            f"{table}: {len(not_better)} Enhanced tree(s) do not move to a "
+            f"better condition ({summarise_refs(not_better)}). Enhancing a "
+            "tree means improving its condition, and the metric shows "
+            "'Error - No enhancement' or 'Error - Can not reduce condition' "
+            "on these rows and gives them no units. Record the tree as "
+            "Retained, or choose a better condition.")
+    if irreplaceable:
+        report.warn(
+            f"{table}: {len(irreplaceable)} Enhanced tree(s) are "
+            f"irreplaceable ({summarise_refs(irreplaceable)}). The metric "
+            "does not allow an irreplaceable tree to be enhanced: it shows "
+            "'Error - you cannot enhance irreplaceable individual trees' and "
+            "gives the row no units. Record the tree as Retained.")
+    if resized:
+        report.warn(
+            f"{table}: {len(resized)} Enhanced tree(s) have a proposed "
+            f"size class that is not their baseline one "
+            f"({summarise_refs(resized)}). The metric does not record the "
+            "growth of a kept tree (User Guide, page 64), so they are written "
+            "at their baseline size.")
+
+
 def check_trees(trees, report):
     """What the metric needs from the tree layers, and what it refuses.
 
@@ -739,84 +950,42 @@ def check_trees(trees, report):
     if not trees:
         return
     baseline_table, pi_table = TREE_TABLES
-    gaps = OrderedDict()
-    for row in trees["baseline"]:
-        for column in TREE_BASELINE_NEEDS:
-            if is_blank(row.get(column)):
-                gaps.setdefault(column, []).append(row_label(row, REF_FIELD))
-    report_gaps(baseline_table, gaps, report)
-    for table, rows in zip(TREE_TABLES, (trees["baseline"], trees["pi"])):
-        many = trees_counted_above_one(rows, REF_FIELD)
-        if many:
-            report.warn(tree_count_warning(table, many))
-
-    parents = {row.get("feature_uuid"): row for row in trees["baseline"]
-               if row.get("feature_uuid")}
-    gaps = OrderedDict()
-    not_better, resized, irreplaceable = [], [], []
-    for row in trees["pi"]:
-        retention = retention_of(row)
-        parent = parents.get(row.get("parent_uuid"))
-        needs = [RETENTION_FIELD]
-        if retention in (ENHANCED, CREATED) or parent is None:
-            needs.extend(TREE_PROPOSED_NEEDS)
-        if parent is not None and retention in (RETAINED, ENHANCED):
-            needs.extend(KEPT_AREA_NEEDS)
-        for column in needs:
-            if is_blank(row.get(column)):
-                gaps.setdefault(column, []).append(row_label(row, REF_FIELD))
-        if retention != ENHANCED or parent is None:
-            continue
-        if is_irreplaceable(row) or is_irreplaceable(parent):
-            irreplaceable.append(row_label(row, REF_FIELD))
-        before = condition_rank(parent.get("Baseline Condition"))
-        after = condition_rank(row.get("Proposed Condition"))
-        if before is not None and after is not None and after <= before:
-            not_better.append(row_label(row, REF_FIELD))
-        proposed_size = row.get("Proposed Tree Size")
-        if (not is_blank(proposed_size)
-                and proposed_size != parent.get("Baseline Tree Size")):
-            resized.append(row_label(row, REF_FIELD))
+    _report_tree_baseline(trees[BASELINE], baseline_table, report)
+    _report_tree_counts(trees, report)
+    gaps, not_better, resized, irreplaceable = _inspect_tree_parts(
+        trees["pi"], _parents_by_uuid(trees[BASELINE]))
     report_gaps(pi_table, gaps, report)
-    if not_better:
-        report.warn(
-            f"{pi_table}: {len(not_better)} Enhanced tree(s) do not move to a "
-            f"better condition ({summarise_refs(not_better)}). Enhancing a "
-            "tree means improving its condition, and the metric shows "
-            "'Error - No enhancement' or 'Error - Can not reduce condition' "
-            "on these rows and gives them no units. Record the tree as "
-            "Retained, or choose a better condition.")
-    if irreplaceable:
-        report.warn(
-            f"{pi_table}: {len(irreplaceable)} Enhanced tree(s) are "
-            f"irreplaceable ({summarise_refs(irreplaceable)}). The metric "
-            "does not allow an irreplaceable tree to be enhanced: it shows "
-            "'Error - you cannot enhance irreplaceable individual trees' and "
-            "gives the row no units. Record the tree as Retained.")
-    if resized:
-        report.warn(
-            f"{pi_table}: {len(resized)} Enhanced tree(s) have a proposed "
-            f"size class that is not their baseline one "
-            f"({summarise_refs(resized)}). The metric does not record the "
-            "growth of a kept tree (User Guide, page 64), so they are written "
-            "at their baseline size.")
-    if trees["baseline"] and not trees["pi"]:
+    _report_enhanced_tree_problems(
+        pi_table, not_better, resized, irreplaceable, report)
+    if trees[BASELINE] and not trees["pi"]:
         report.warn(
             f"{pi_table} is empty, so every tree in {baseline_table} is "
             "written as lost. If that layer has not been drawn yet, ignore "
             "its post-intervention units and net change for now.")
 
 
+def report_text_timing(table, refs, report):
+    """Name the rows whose advance or delay was text the metric cannot hold."""
+    if not refs:
+        return
+    report.warn(
+        f"{table}: {len(refs)} row(s) had a text value for years created "
+        f"in advance or years of delay ({summarise_refs(refs)}). The "
+        "Statutory Metric offers blank, 0 to 30 and 30+ only, so they "
+        "were left blank."
+    )
+
+
 def report_accounting(base_table, accounting, report):
     """What the baseline sheet counts as lost, and anything that cannot be."""
-    wholly, partly = accounting["wholly lost"], accounting["partly lost"]
+    wholly, partly = accounting[WHOLLY_LOST], accounting[PARTLY_LOST]
     if wholly or partly:
         report.note(
             f"{base_table}: {len(wholly)} feature(s) carry nothing forward "
             f"to post-intervention and {len(partly)} carry forward only part "
             "of their size. The metric counts the rest as lost.")
-    if accounting["irreplaceable lost"]:
-        refs = accounting["irreplaceable lost"]
+    if accounting[IRREPLACEABLE_LOST]:
+        refs = accounting[IRREPLACEABLE_LOST]
         report.warn(
             f"{base_table}: {len(refs)} irreplaceable parcel(s) are written "
             f"as wholly or partly lost ({summarise_refs(refs)}). The metric "
@@ -824,8 +993,8 @@ def report_accounting(base_table, accounting, report):
             "'Any Loss Unacceptable' and leaves the parcel out of the "
             "baseline total. If post-intervention is not finished, that is "
             "why. If the loss is real, it needs bespoke compensation.")
-    if accounting["oversubscribed"]:
-        refs = accounting["oversubscribed"]
+    if accounting[OVERSUBSCRIBED]:
+        refs = accounting[OVERSUBSCRIBED]
         report.warn(
             f"{base_table}: {len(refs)} feature(s) have Retained and Enhanced "
             f"parts adding up to more than the feature itself "
@@ -845,6 +1014,35 @@ def enhancements_for(baseline_lines):
     """
     return [line[ENHANCEMENT_KEY] for line in baseline_lines
             if ENHANCEMENT_KEY in line]
+
+
+def _merge_key(line):
+    """Everything but size, reference and comment: what makes two lines one."""
+    ignored = ("ref", LINE_NUMBER, LINE_COMMENT, ENHANCEMENT_KEY)
+    return tuple(sorted(
+        (k, v) for k, v in line.items()
+        if k not in SIZE_FIELDS and k not in ignored))
+
+
+def _merge_into(target, line):
+    """Add `line`'s sizes and comment onto a line it matches."""
+    for field in SIZE_FIELDS:
+        if field in line:
+            target[field] = target.get(field, 0) + line[field]
+    target["ref"] = f"{target['ref']} +"
+    target[LINE_NUMBER] = target["ref"]
+    # A comment does not stop two lines merging, and is not lost when they
+    # do: each distinct comment is kept, in order.
+    target[MERGED_COMMENTS].extend(
+        c for c in [line.get(LINE_COMMENT)]
+        if c and c not in target[MERGED_COMMENTS])
+
+
+def _new_merged(line):
+    copied = dict(line)
+    copied[MERGED_COMMENTS] = (
+        [line[LINE_COMMENT]] if line.get(LINE_COMMENT) else [])
+    return copied
 
 
 def consolidate_lines(lines):
@@ -874,32 +1072,18 @@ def consolidate_lines(lines):
     merged = OrderedDict()
     kept = []
     for line in lines:
-        if line.get("enhanced"):
+        if line.get(ENHANCED_SIZE):
             kept.append(line)
             continue
-        key = tuple(sorted(
-            (k, v) for k, v in line.items()
-            if k not in SIZE_FIELDS
-            and k not in ("ref", "number", "comment", ENHANCEMENT_KEY)))
+        key = _merge_key(line)
         if key in merged:
-            for field in SIZE_FIELDS:
-                if field in line:
-                    merged[key][field] = merged[key].get(field, 0) + line[field]
-            merged[key]["ref"] = f"{merged[key]['ref']} +"
-            merged[key]["number"] = merged[key]["ref"]
-            # A comment does not stop two lines merging, and is not lost
-            # when they do: each distinct comment is kept, in order.
-            merged[key]["_comments"].extend(
-                c for c in [line.get("comment")]
-                if c and c not in merged[key]["_comments"])
+            _merge_into(merged[key], line)
         else:
-            merged[key] = dict(line)
-            merged[key]["_comments"] = (
-                [line["comment"]] if line.get("comment") else [])
+            merged[key] = _new_merged(line)
     for line in merged.values():
-        comments = line.pop("_comments")
+        comments = line.pop(MERGED_COMMENTS)
         if comments:
-            line["comment"] = " | ".join(comments)
+            line[LINE_COMMENT] = " | ".join(comments)
     # enhanced lines keep their original position relative to each other
     return list(merged.values()) + kept
 
@@ -914,9 +1098,39 @@ def escape(text):
             .replace(">", "&gt;"))
 
 
+def _without_type(attributes):
+    """The attributes with each ``t="..."`` attribute removed.
+
+    The replacement cell sets its own type, so the original type goes,
+    along with the whitespace in front of it. A search for that whitespace
+    retries across a run of spaces when the attribute is absent, which is
+    super-linear. Each character is read once instead.
+    """
+    kept = []
+    start = 0
+    while True:
+        found = attributes.find('t="', start)
+        if found < 0:
+            kept.append(attributes[start:])
+            return "".join(kept)
+        space = found
+        while space > start and attributes[space - 1].isspace():
+            space -= 1
+        if space == found:
+            kept.append(attributes[start:found + 1])
+            start = found + 1
+            continue
+        closing = attributes.find('"', found + 3)
+        if closing < 0:
+            kept.append(attributes[start:])
+            return "".join(kept)
+        kept.append(attributes[start:space])
+        start = closing + 1
+
+
 def cell_xml(ref, attributes, value):
     """A replacement <c> keeping the original style, now holding a value."""
-    keep = re.sub(r'\s+t="[^"]*"', "", attributes)
+    keep = _without_type(attributes)
     if isinstance(value, (int, float)):
         return f'<c r="{ref}"{keep}><v>{value}</v></c>'
     return (f'<c r="{ref}"{keep} t="inlineStr"><is><t xml:space="preserve">'
@@ -954,9 +1168,9 @@ def set_cells(sheet_xml, values):
 
 def sheet_paths(archive):
     rels = {rel.get("Id"): rel.get("Target") for rel in
-            ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))}
+            ET.fromstring(archive.read(WORKBOOK_RELS))}
     paths = {}
-    for sheet in ET.fromstring(archive.read("xl/workbook.xml")).iter(f"{NS}sheet"):
+    for sheet in ET.fromstring(archive.read(WORKBOOK_XML)).iter(f"{NS}sheet"):
         target = rels[sheet.get(f"{REL}id")].lstrip("/")
         paths[sheet.get("name")] = (
             target if target.startswith("xl/") else "xl/" + target)
@@ -964,7 +1178,7 @@ def sheet_paths(archive):
 
 
 def cell_is_empty(archive, paths, sheet, ref):
-    xml = archive.read(paths[sheet]).decode("utf-8")
+    xml = archive.read(paths[sheet]).decode(UTF8)
     match = re.search(
         r'<c r="%s"(?:\s+[a-zA-Z:]+="[^"]*")*\s*(?:/>|>(.*?)</c>)' % ref, xml, re.S)
     return match is None or not (match.group(1) or "").strip()
@@ -994,6 +1208,35 @@ def drop_incomplete_rows(xml, values):
     return keep, dropped
 
 
+def _without_calc_chain(rels):
+    """The relationships with the calcChain entry removed.
+
+    That entry is the self-closing ``<Relationship>`` whose target is
+    ``calcChain.xml``. Finding it with two ``[^>]*`` retries every way of
+    splitting the tag between them, which is super-linear. Each character
+    is read once instead.
+    """
+    marker = 'Target="calcChain.xml"'
+    open_tag = "<Relationship"
+    kept = []
+    start = 0
+    while True:
+        found = rels.find(marker, start)
+        if found < 0:
+            kept.append(rels[start:])
+            return "".join(kept)
+        tag = rels.rfind(open_tag, start, found)
+        end = rels.find("/>", found + len(marker))
+        name_ends = tag + len(open_tag)
+        if (tag < 0 or end < 0 or rels[name_ends].isalnum()
+                or ">" in rels[name_ends:end]):
+            kept.append(rels[start:found + len(marker)])
+            start = found + len(marker)
+            continue
+        kept.append(rels[start:tag])
+        start = end + 2
+
+
 def write_workbook(template, out_path, edits):
     """Apply edits to a copy of the metric workbook. Everything else is kept."""
     with zipfile.ZipFile(template) as archive:
@@ -1004,32 +1247,30 @@ def write_workbook(template, out_path, edits):
     missing = {}
     for sheet, values in edits.items():
         path = paths[sheet]
-        xml = payload[path].decode("utf-8")
+        xml = payload[path].decode(UTF8)
         values, dropped = drop_incomplete_rows(xml, values)
         if dropped:
             missing[sheet] = dropped
         xml, gone = set_cells(xml, values)
         if gone:
             missing.setdefault(sheet, []).extend(gone)
-        payload[path] = xml.encode("utf-8")
+        payload[path] = xml.encode(UTF8)
 
-    workbook = payload["xl/workbook.xml"].decode("utf-8")
+    workbook = payload[WORKBOOK_XML].decode(UTF8)
     if "fullCalcOnLoad" in workbook:
         workbook = re.sub(r'fullCalcOnLoad="[^"]*"', 'fullCalcOnLoad="1"', workbook)
     else:
         workbook = workbook.replace("<calcPr ", '<calcPr fullCalcOnLoad="1" ', 1)
-    payload["xl/workbook.xml"] = workbook.encode("utf-8")
+    payload[WORKBOOK_XML] = workbook.encode(UTF8)
 
     # Drop the cached formula dependency chain so it cannot disagree with the
     # values just written; Excel rebuilds it on open.
-    content_types = payload["[Content_Types].xml"].decode("utf-8")
-    payload["[Content_Types].xml"] = re.sub(
+    content_types = payload[CONTENT_TYPES_XML].decode(UTF8)
+    payload[CONTENT_TYPES_XML] = re.sub(
         r'<Override PartName="/xl/calcChain\.xml"[^>]*/>', "",
-        content_types).encode("utf-8")
-    rels = payload["xl/_rels/workbook.xml.rels"].decode("utf-8")
-    payload["xl/_rels/workbook.xml.rels"] = re.sub(
-        r'<Relationship[^>]*Target="calcChain\.xml"[^>]*/>', "",
-        rels).encode("utf-8")
+        content_types).encode(UTF8)
+    rels = payload[WORKBOOK_RELS].decode(UTF8)
+    payload[WORKBOOK_RELS] = _without_calc_chain(rels).encode(UTF8)
 
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as out:
         for name in names:
@@ -1061,7 +1302,7 @@ def cells_for(row_number, columns, line, scale, cut=None):
             continue
         if field in SIZE_FIELDS:
             value = round(float(value) * scale, 6)
-        elif field == "comment":
+        elif field == LINE_COMMENT:
             value, shortened = cell_text(value)
             if shortened and cut is not None:
                 cut.append(str(line.get("ref")))
@@ -1088,13 +1329,15 @@ def plan_parts(staged, consolidate, report):
     parcel happened to take that position.
     """
     lines = {}
-    for kind, base_table, _pi, size_field, type_field, _scale in MODULES:
+    for kind, base_table, pi_table, size_field, type_field, _scale in MODULES:
         rule, tolerance = ACCOUNTING[kind]
+        text_years = []
         baseline, creation, accounting = build_lines(
             staged[kind], size_field, type_field, consolidate, rule,
-            tolerance)
+            tolerance, text_years)
         lines[kind] = (baseline, creation)
         report_accounting(base_table, accounting, report)
+        report_text_timing(pi_table, text_years, report)
         report.count(f"{kind} baseline", len(baseline))
         report.count(f"{kind} creation", len(creation))
         report.count(f"{kind} enhancement", len(enhancements_for(baseline)))
@@ -1102,15 +1345,17 @@ def plan_parts(staged, consolidate, report):
     # Trees share the area habitat sheets, after the area habitats. The
     # enhancement sheet takes the enhanced lines in the order the baseline
     # sheet holds them, so appending keeps the two in step.
-    trees = staged.get("trees")
-    if trees and (trees["baseline"] or trees["pi"]):
-        rule, tolerance = ACCOUNTING["areas"]
+    trees = staged.get(TREES)
+    if trees and (trees[BASELINE] or trees["pi"]):
+        rule, tolerance = ACCOUNTING[AREAS]
+        text_years = []
         baseline, creation, accounting = build_lines(
             trees_as_areas(trees), "Area", "Habitat Type", consolidate, rule,
-            tolerance)
-        area_baseline, area_creation = lines["areas"]
-        lines["areas"] = (area_baseline + baseline, area_creation + creation)
+            tolerance, text_years)
+        area_baseline, area_creation = lines[AREAS]
+        lines[AREAS] = (area_baseline + baseline, area_creation + creation)
         report_accounting(TREE_TABLES[0], accounting, report)
+        report_text_timing(TREE_TABLES[1], text_years, report)
         report.count("trees baseline", len(baseline))
         report.count("trees creation", len(creation))
         report.count("trees enhancement", len(enhancements_for(baseline)))
@@ -1119,10 +1364,10 @@ def plan_parts(staged, consolidate, report):
     for kind, (baseline, creation) in lines.items():
         parts = max(
             parts,
-            parts_needed(len(baseline), stage_capacity(kind, "baseline")),
-            parts_needed(len(creation), stage_capacity(kind, "creation")),
+            parts_needed(len(baseline), stage_capacity(kind, BASELINE)),
+            parts_needed(len(creation), stage_capacity(kind, CREATION)),
             parts_needed(len(enhancements_for(baseline)),
-                         stage_capacity(kind, "enhancement")),
+                         stage_capacity(kind, ENHANCEMENT)),
         )
     parts = widen_for_enhancements(lines, parts)
 
@@ -1147,7 +1392,7 @@ def widen_for_enhancements(lines, parts):
     while True:
         longest = 0
         for kind, (baseline, _creation) in lines.items():
-            capacity = stage_capacity(kind, "enhancement")
+            capacity = stage_capacity(kind, ENHANCEMENT)
             for run in split_into_parts(baseline, parts):
                 longest = max(longest, len(enhancements_for(run)) - capacity)
         if longest <= 0 or parts >= max(
@@ -1163,9 +1408,9 @@ def build_edits(runs, index, report):
         baseline_runs, creation_runs = runs[kind]
         baseline = baseline_runs[index]
         staged_lines = (
-            ("baseline", baseline),
-            ("creation", creation_runs[index]),
-            ("enhancement", enhancements_for(baseline)),
+            (BASELINE, baseline),
+            (CREATION, creation_runs[index]),
+            (ENHANCEMENT, enhancements_for(baseline)),
         )
         for stage, module_lines in staged_lines:
             sheet, first, last, columns = LAYOUT[kind][stage]
@@ -1197,7 +1442,7 @@ def build_edits(runs, index, report):
 
 def workbook_extension(archive):
     """.xlsm for the metric with macros, .xlsx for the one without."""
-    types = archive.read("[Content_Types].xml").decode("utf-8")
+    types = archive.read(CONTENT_TYPES_XML).decode(UTF8)
     return MACRO_EXTENSION if MACRO_WORKBOOK_TYPE in types else PLAIN_EXTENSION
 
 
@@ -1209,6 +1454,107 @@ def with_extension(path, extension):
     if current.lower() in (MACRO_EXTENSION, PLAIN_EXTENSION):
         return stem + extension
     return path + extension
+
+
+def _progress(progress, fraction, message):
+    """Report progress. False from the caller stops the run."""
+    if progress is None:
+        return True
+    return progress(fraction, message) is not False
+
+
+def _metric_sheet_names():
+    return {LAYOUT[k][s][0] for k in LAYOUT for s in LAYOUT[k]}
+
+
+def _check_metric(template_path):
+    """(extension, whether the workbook already holds habitats).
+
+    Raises ValueError when the file is not a Statutory Metric workbook.
+    """
+    with zipfile.ZipFile(template_path) as archive:
+        try:
+            paths = sheet_paths(archive)
+        except KeyError:
+            # .xlsb keeps its sheets as binary parts, and anything else is not
+            # a workbook at all.
+            raise ValueError(
+                f"{os.path.basename(template_path)} is not a readable "
+                "Statutory Metric workbook. Either version of the metric "
+                "will do, with macros (.xlsm) or without (.xlsx), but not the "
+                ".xlsb GIS import tool.")
+        extension = workbook_extension(archive)
+        for sheet in _metric_sheet_names():
+            if sheet not in paths:
+                raise ValueError(
+                    f"{os.path.basename(template_path)} has no '{sheet}' sheet, "
+                    "so it does not look like the Statutory Metric workbook.")
+        occupied = not cell_is_empty(archive, paths, *OCCUPIED_PROBE)
+    return extension, occupied
+
+
+def _note_extension(out_path, extension, report):
+    """`out_path` corrected to the blank metric's extension, with a note."""
+    matched = with_extension(out_path, extension)
+    if matched == out_path:
+        return out_path
+    form = "with" if extension == MACRO_EXTENSION else "without"
+    report.note(
+        f"The blank metric is the version {form} macros, so the filled "
+        f"copy is written as {os.path.basename(matched)}. Excel will not "
+        "open a workbook whose extension does not match its content.")
+    return matched
+
+
+def _has_habitat_edits(parts):
+    return any(any(edits.values()) for edits in parts)
+
+
+def _warn_missing_rows(target, missing, report):
+    for sheet, refs in missing.items():
+        rows = sorted({re.sub(r"^[A-Z]+", "", ref) for ref in refs}, key=int)
+        report.warn(
+            f"{os.path.basename(target)}, {sheet}: {len(rows)} row(s) "
+            "skipped because the sheet runs out of cells before the last "
+            f"row of its stated range (row(s) {', '.join(rows)}). Nothing "
+            "partial was written.")
+
+
+def _write_metric_parts(template_path, out_path, parts, report, progress):
+    """Write each workbook. Returns (cells written, whether the run stopped)."""
+    written = 0
+    for index, edits in enumerate(parts):
+        label = (f"Writing workbook {index + 1} of {len(parts)}..."
+                 if len(parts) > 1 else "Writing the workbook...")
+        if not _progress(progress, 0.05 + 0.95 * index / len(parts), label):
+            report.warn(
+                f"Stopped after {index} of {len(parts)} workbook(s). Those "
+                "already written are complete, but they hold only part of "
+                "the site.")
+            return written, True
+        target = part_path(out_path, index, len(parts))
+        _warn_missing_rows(
+            target, write_workbook(template_path, target, edits), report)
+        written += sum(len(values) for values in edits.values())
+        report.paths.append(target)
+        report.note(f"Metric workbook: {target}")
+    return written, False
+
+
+def _warn_split_site(parts, report):
+    report.warn(
+        "This site does not fit one workbook, so it was written as "
+        f"{len(parts)} of them. The metric holds "
+        f"{stage_capacity(AREAS, BASELINE)} rows per sheet, and "
+        f"{stage_capacity(AREAS, ENHANCEMENT)} on the enhancement "
+        "sheets. Each workbook is a "
+        "complete, valid metric for its own share of the site, and the "
+        "site's answer is the SUM of their unit columns. Do not read a "
+        "net gain percentage off one workbook: a percentage of part of a "
+        "site means nothing. Add the baseline units and the "
+        f"post-intervention units across all {len(parts)}, then take the "
+        "percentage of those two totals."
+    )
 
 
 def convert(input_path, template_path, out_path, consolidate=False,
@@ -1223,99 +1569,33 @@ def convert(input_path, template_path, out_path, consolidate=False,
     of text as each workbook is written, so a caller can show how far along
     it is. Returning False from it stops the run between workbooks.
     """
-    def step(fraction, message):
-        return True if progress is None else progress(fraction, message) is not False
-
     report = Report()
-    step(0.0, "Reading the habitats...")
+    _progress(progress, 0.0, "Reading the habitats...")
     staged = read_staged(input_path)
-
-    with zipfile.ZipFile(template_path) as archive:
-        try:
-            paths = sheet_paths(archive)
-        except KeyError:
-            # .xlsb keeps its sheets as binary parts, and anything else is not
-            # a workbook at all.
-            raise ValueError(
-                f"{os.path.basename(template_path)} is not a readable "
-                "Statutory Metric workbook. Either version of the metric "
-                "will do, with macros (.xlsm) or without (.xlsx), but not the "
-                ".xlsb GIS import tool.")
-        extension = workbook_extension(archive)
-        for sheet in {LAYOUT[k][s][0] for k in LAYOUT for s in LAYOUT[k]}:
-            if sheet not in paths:
-                raise ValueError(
-                    f"{os.path.basename(template_path)} has no '{sheet}' sheet, "
-                    "so it does not look like the Statutory Metric workbook.")
-        occupied = not cell_is_empty(archive, paths, *OCCUPIED_PROBE)
+    extension, occupied = _check_metric(template_path)
     if occupied and not allow_occupied:
         raise ValueError(
             f"{os.path.basename(template_path)} already holds habitat data. "
             "Point this at a blank copy of the metric so nothing is "
             "overwritten.")
+    out_path = _note_extension(out_path, extension, report)
 
-    matched = with_extension(out_path, extension)
-    if matched != out_path:
-        form = "with" if extension == MACRO_EXTENSION else "without"
-        report.note(
-            f"The blank metric is the version {form} macros, so the filled "
-            f"copy is written as {os.path.basename(matched)}. Excel will not "
-            "open a workbook whose extension does not match its content.")
-        out_path = matched
-
-    step(0.05, "Working out what goes where...")
+    _progress(progress, 0.05, "Working out what goes where...")
     check_post_intervention(staged, report)
     check_needed_values(staged, report)
-    check_trees(staged.get("trees"), report)
+    check_trees(staged.get(TREES), report)
     parts = plan_parts(staged, consolidate, report)
-    if not any(any(edits.values()) for edits in parts):
+    if not _has_habitat_edits(parts):
         report.warn("Nothing was written: the GeoPackage holds no habitats.")
 
-    written = 0
-    stopped = False
-    for index, edits in enumerate(parts):
-        label = (f"Writing workbook {index + 1} of {len(parts)}..."
-                 if len(parts) > 1 else "Writing the workbook...")
-        if not step(0.05 + 0.95 * index / len(parts), label):
-            report.warn(
-                f"Stopped after {index} of {len(parts)} workbook(s). Those "
-                "already written are complete, but they hold only part of "
-                "the site.")
-            stopped = True
-            break
-        target = part_path(out_path, index, len(parts))
-        missing = write_workbook(template_path, target, edits)
-        for sheet, refs in missing.items():
-            rows = sorted({re.sub(r"^[A-Z]+", "", ref) for ref in refs},
-                          key=int)
-            report.warn(
-                f"{os.path.basename(target)}, {sheet}: {len(rows)} row(s) "
-                "skipped because the sheet runs out of cells before the last "
-                f"row of its stated range (row(s) {', '.join(rows)}). Nothing "
-                "partial was written.")
-        written += sum(len(v) for v in edits.values())
-        report.paths.append(target)
-        report.note(f"Metric workbook: {target}")
-
-    step(1.0, "Done.")
+    written, stopped = _write_metric_parts(
+        template_path, out_path, parts, report, progress)
+    _progress(progress, 1.0, "Done.")
     report.count("cells written", written)
     report.count("workbooks written", len(report.paths))
     if len(parts) > 1 and not stopped:
-        report.warn(
-            "This site does not fit one workbook, so it was written as "
-            f"{len(parts)} of them. The metric holds "
-            f"{stage_capacity('areas', 'baseline')} rows per sheet, and "
-            f"{stage_capacity('areas', 'enhancement')} on the enhancement "
-            "sheets. Each workbook is a "
-            "complete, valid metric for its own share of the site, and the "
-            "site's answer is the SUM of their unit columns. Do not read a "
-            "net gain percentage off one workbook: a percentage of part of a "
-            "site means nothing. Add the baseline units and the "
-            f"post-intervention units across all {len(parts)}, then take the "
-            "percentage of those two totals."
-        )
+        _warn_split_site(parts, report)
     report.note("Open it in Excel and let it recalculate. On-site tabs only.")
-
     return report
 
 

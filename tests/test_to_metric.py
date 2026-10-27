@@ -13,6 +13,7 @@ from collections import defaultdict
 from tests import support
 
 # support puts the converter modules on sys.path.
+import gpkg_write
 import reference_lists as rl
 import to_metric
 
@@ -638,6 +639,120 @@ class OlderTemplateTreeCountTest(support.TempDirTestCase):
                          if w.startswith(f"{table}:") and "Count above 1" in w]
                 self.assertEqual(1, len(found))
                 self.assertIn(ref, found[0])
+
+
+AREA_PI_TABLE = "Area Habitats Post-Intervention"
+AREA_BASELINE_TABLE = "Area Habitats Baseline"
+ADVANCE = to_metric.ADVANCE_FIELD
+DELAY = to_metric.DELAY_FIELD
+TREE_ADVANCE = to_metric.TREE_ADVANCE
+TREE_DELAY = to_metric.TREE_DELAY
+TEXT_TIMING = "Habitat already in target condition"
+SQUARE = [(455900.0, 285300.0), (455920.0, 285300.0),
+          (455920.0, 285320.0), (455900.0, 285320.0),
+          (455900.0, 285300.0)]
+TREE_POINT = (455905.0, 285305.0)
+
+
+def _area(ref, **values):
+    return {"Habitat Ref": ref, "Area": 1.0, **values}
+
+
+class TextTimingExportTest(support.TempDirTestCase):
+    """A text advance or delay from an older file is a blank years cell.
+
+    A year the metric offers, including 0 and 30+, is written as the row
+    stores it. The log names each row whose text was left blank.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.gpkg = support.copy_to(support.SERVICE_GPKG, cls.tmp,
+                                   "timing.gpkg")
+        polygon = gpkg_write.polygon_blob(SQUARE)
+        kept = "aaaaaaaa-0000-4000-8000-000000000001"
+        enhanced = "aaaaaaaa-0000-4000-8000-000000000002"
+        support.insert_feature(
+            cls.gpkg, AREA_BASELINE_TABLE, polygon,
+            _area("A-ret", feature_uuid=kept,
+                  **{"Baseline Habitat Type": "Other neutral grassland"}))
+        support.insert_feature(
+            cls.gpkg, AREA_BASELINE_TABLE, polygon,
+            _area("A-enh", feature_uuid=enhanced,
+                  **{"Baseline Habitat Type": "Other neutral grassland"}))
+        rows = [
+            _area("A-text", **{"Retention Category": "Created",
+                               ADVANCE: TEXT_TIMING, DELAY: "0"}),
+            _area("A-na", **{"Retention Category": "Created",
+                             ADVANCE: "N/A", DELAY: "N/A"}),
+            _area("A-year", **{"Retention Category": "Created",
+                               ADVANCE: "30+", DELAY: None}),
+            _area("A-both", **{"Retention Category": "Created",
+                               ADVANCE: "4", DELAY: "6"}),
+            _area("A-pad", **{"Retention Category": "Created",
+                              ADVANCE: " 5", DELAY: "  "}),
+            _area("A-ret", **{"Retention Category": "Retained",
+                              "parent_uuid": kept, ADVANCE: "N/A"}),
+            _area("A-enh", **{"Retention Category": "Enhanced",
+                              "parent_uuid": enhanced,
+                              ADVANCE: "12", DELAY: TEXT_TIMING}),
+        ]
+        for values in rows:
+            support.insert_feature(cls.gpkg, AREA_PI_TABLE, polygon, values)
+        support.insert_feature(
+            cls.gpkg, TREE_PI, gpkg_write.point_blob(TREE_POINT),
+            {"Habitat Ref": "T-text", "Retention Category": "Created",
+             "Proposed Tree Size": "Small",
+             "Proposed Rural or Urban Tree": "Urban",
+             "Proposed Condition": "Poor",
+             "Proposed Strategic Significance": "Low",
+             TREE_ADVANCE: "N/A", TREE_DELAY: "1"})
+        cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
+        cls.out = cls.tmp / "timing.xlsx"
+        cls.report = to_metric.convert(cls.gpkg, cls.blank, cls.out)
+
+    def years(self, stage, ref):
+        sheet, _first, _last, columns = to_metric.LAYOUT["areas"][stage]
+        xml = sheet_xml(self.out, sheet)
+        return (cell_on_row_of(xml, columns["ref"], ref, columns["advance"]),
+                cell_on_row_of(xml, columns["ref"], ref, columns["delay"]))
+
+    def warnings_for(self, table):
+        return [w for w in self.report.warnings
+                if w.startswith(f"{table}:") and "left blank" in w]
+
+    def test_a_text_advance_is_blank_and_a_year_is_kept(self):
+        self.assertEqual((None, "0"), self.years("creation", "A-text"))
+
+    def test_text_on_both_cells_is_blank(self):
+        self.assertEqual((None, None), self.years("creation", "A-na"))
+
+    def test_thirty_plus_is_written_as_the_row_stores_it(self):
+        self.assertEqual(("30+", None), self.years("creation", "A-year"))
+
+    def test_years_above_zero_are_written_as_the_row_stores_them(self):
+        self.assertEqual(("4", "6"), self.years("creation", "A-both"))
+
+    def test_a_year_is_written_without_spaces_around_it(self):
+        self.assertEqual(("5", None), self.years("creation", "A-pad"))
+
+    def test_an_enhanced_row_blanks_its_text_and_keeps_its_year(self):
+        self.assertEqual(("12", None), self.years("enhancement", "A-enh"))
+
+    def test_a_created_tree_uses_its_own_timing_columns(self):
+        self.assertEqual((None, "1"), self.years("creation", "T-text"))
+
+    def test_the_log_names_the_rows_whose_text_was_left_blank(self):
+        areas = self.warnings_for(AREA_PI_TABLE)
+        self.assertEqual(1, len(areas))
+        for ref in ("A-text", "A-na", "A-enh"):
+            self.assertIn(ref, areas[0])
+        for ref in ("A-year", "A-both", "A-pad", "A-ret"):
+            self.assertNotIn(ref, areas[0])
+        trees = self.warnings_for(TREE_PI)
+        self.assertEqual(1, len(trees))
+        self.assertIn("T-text", trees[0])
 
 
 class OldTableNamesTest(support.TempDirTestCase):

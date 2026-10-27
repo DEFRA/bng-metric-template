@@ -19,6 +19,12 @@ The years created in advance and the years of delay cannot both be above 0.
 While one is above 0, the other drop-down is greyed out in the form, and a
 save blanks one if both are. Blank and `0` are both allowed.
 
+Each of those drop-downs offers blank, `0` to `30` and `30+`, which is what
+the Statutory Metric takes. A stored value the list does not offer, such as
+`N/A` or `Habitat already in target condition` from an earlier template, is
+cleared when the row is saved. It does not count as above 0, so it does not
+blank or grey out the other column.
+
 A blank years created in advance becomes `30+` on an area, vertical area or
 hedgerow row that records a habitat whose condition gets worse: `Created`,
 with a baseline type, the same type proposed, and a Proposed Condition
@@ -120,18 +126,20 @@ RETENTION = "Retention Category"
 RETAINED = "Retained"
 CREATED = "Created"
 
+# Area, vertical area, hedgerow and watercourse rows share these columns.
+ADVANCE_YEARS = "Habitat created in advance/years"
+DELAY_YEARS = "Delay in starting habitat creation/years"
+# Trees name both differently.
+TREE_ADVANCE_YEARS = "Habitat Created/Enhanced in advance/years"
+TREE_DELAY_YEARS = "Delay in starting habitat creation/enhancement in years"
+
 # Kind -> (years created in advance, years of delay). The metric allows one.
 TIMING = {
-    AREA: ("Habitat created in advance/years",
-           "Delay in starting habitat creation/years"),
-    VERTICAL: ("Habitat created in advance/years",
-               "Delay in starting habitat creation/years"),
-    HEDGE: ("Habitat created in advance/years",
-            "Delay in starting habitat creation/years"),
-    WATER: ("Habitat created in advance/years",
-            "Delay in starting habitat creation/years"),
-    TREE: ("Habitat Created/Enhanced in advance/years",
-           "Delay in starting habitat creation/enhancement in years"),
+    AREA: (ADVANCE_YEARS, DELAY_YEARS),
+    VERTICAL: (ADVANCE_YEARS, DELAY_YEARS),
+    HEDGE: (ADVANCE_YEARS, DELAY_YEARS),
+    WATER: (ADVANCE_YEARS, DELAY_YEARS),
+    TREE: (TREE_ADVANCE_YEARS, TREE_DELAY_YEARS),
 }
 
 # A default that any of the template tools wrote contains one of these, and
@@ -196,14 +204,40 @@ def proposed_significance():
             f'coalesce("{field}", {LOW}))')
 
 
-def only_one_timing(field, other):
-    """Blank this timing value while the other one is above 0.
+# The years the Statutory Metric takes, as the drop-down stores them. Blank
+# is the Value Map's own NULL entry, added by value_map().
+YEAR_VALUES = tuple(str(year) for year in range(31)) + ("30+",)
+YEARS_OFFERED = ", ".join(f"'{year}'" for year in YEAR_VALUES)
+YEARS_ABOVE_ZERO = ", ".join(f"'{year}'" for year in YEAR_VALUES if year != "0")
 
-    The values are the drop-down's text: blank, `0`, `1` and so on to `30+`.
-    A backstop for a table cell, where timing_editable does not apply: QGIS
-    evaluates the pair in its own order, so either one may be blanked.
+
+def other_above_zero(other):
+    """The other timing value is a year above 0.
+
+    A text value the drop-down no longer offers, such as `N/A`, is not a
+    year, so it does not count.
     """
-    return (f'if(coalesce("{other}", \'0\') <> \'0\', NULL, "{field}")')
+    return f'coalesce("{other}", \'0\') IN ({YEARS_ABOVE_ZERO})'
+
+
+def kept_year(field):
+    """The field when it is blank or a year the list offers, else NULL.
+
+    A blank is NULL. coalesce of NULL is `0`, which the list offers, so a
+    blank stays blank. Anything else the list does not offer is cleared.
+    """
+    return (f'if(coalesce("{field}", \'0\') IN ({YEARS_OFFERED}), '
+            f'"{field}", NULL)')
+
+
+def only_one_timing(field, other):
+    """Blank this timing value while the other one is a year above 0.
+
+    Also blank a value the drop-down does not offer. A backstop for a table
+    cell, where timing_editable does not apply: QGIS evaluates the pair in
+    its own order, so either one may be blanked.
+    """
+    return f'if({other_above_zero(other)}, NULL, {kept_year(field)})'
 
 
 # A row that records a habitat whose condition gets worse: Created, with a
@@ -250,20 +284,24 @@ def degraded(kind):
 
 
 def advance_default(kind, advance, delay):
-    """The years created in advance: blank while the delay is above 0, as
-    only_one_timing gives. On a row that records a habitat whose condition
+    """The years created in advance: blank while the delay is a year above 0,
+    as only_one_timing gives. On a row that records a habitat whose condition
     gets worse, a blank one becomes `30+`.
 
-    Only a blank value is filled, so the surveyor can pick another value,
+    Only a blank value is filled, so the surveyor can pick another year,
     including `0`, and it is kept. Picking blank fills `30+` again. A `30+`
     on any other row is kept too: the Metric allows creation in advance in
     general, so the template does not decide it. advance_warning() flags it.
+
+    A value the drop-down does not offer is cleared, including on a row whose
+    condition gets worse. That clear does not become `30+` on the same save:
+    the `30+` fill applies only to a value that was already blank.
     """
     if kind not in DEGRADED_KINDS:
         return only_one_timing(advance, delay)
     keep = (f'if("{advance}" IS NULL AND {degraded(kind)}, '
-            f'{DEGRADED_ADVANCE}, "{advance}")')
-    return f'if(coalesce("{delay}", \'0\') <> \'0\', NULL, {keep})'
+            f'{DEGRADED_ADVANCE}, {kept_year(advance)})')
+    return f'if({other_above_zero(delay)}, NULL, {keep})'
 
 
 def advance_warning(kind, advance):
@@ -287,16 +325,17 @@ ADVANCE_WARNING = ("30+ years created in advance is for a habitat whose "
 
 
 def timing_editable(other):
-    """A timing drop-down can be used only while the other is blank or 0.
+    """A timing drop-down can be used only while the other is not a year above 0.
 
-    The attribute table's form view saves the row the moment a value is
-    picked, before the form re-evaluates the other value, and the save cannot
-    tell which value was picked last. Greying out the other drop-down stops
-    both values reaching above 0 in any form, so the surveyor sets one back
-    to 0 or blank before picking the other. only_one_timing still blanks one
-    of them if a table cell sets both.
+    Blank, `0` and a text value the list no longer offers all leave this
+    drop-down usable. The attribute table's form view saves the row the
+    moment a value is picked, before the form re-evaluates the other value,
+    and the save cannot tell which value was picked last. Greying out the
+    other drop-down stops both values reaching above 0 in any form, so the
+    surveyor sets one back to 0 or blank before picking the other.
+    only_one_timing still blanks one of them if a table cell sets both.
     """
-    return f'coalesce("{other}", \'0\') = \'0\''
+    return f'coalesce("{other}", \'0\') NOT IN ({YEARS_ABOVE_ZERO})'
 
 
 # The Proposed Strategic Significance drop-down is greyed out on a Retained
@@ -324,10 +363,11 @@ def rules_for(kind, stage, ids):
                       proposed_significance(), "1"))
         rules.append((SPATIAL_RISK, None, True, NA, "1"))
         advance, delay = TIMING[kind]
-        rules.append((advance, None, False,
+        years = ("map", YEAR_VALUES)
+        rules.append((advance, years, False,
                       advance_default(kind, advance, delay), "1"))
-        rules.append((delay, None, False, only_one_timing(delay, advance),
-                      "1"))
+        rules.append((delay, years, False,
+                      only_one_timing(delay, advance), "1"))
     return rules
 
 
@@ -370,29 +410,49 @@ def relation_to_list(widget, list_id, list_name, errors, layer):
     return widget
 
 
+def element_span(block, name):
+    """Start, end, indent and text of the first `<name>` element.
+
+    The closing tag is found with a direct search. A `.*?` match backtracks
+    over the whole layer when the closing tag is missing, which is
+    super-linear.
+    """
+    open_tag = f"<{name}>"
+    close_tag = f"</{name}>"
+    open_at = block.find(open_tag)
+    if open_at < 0:
+        return None
+    close_at = block.find(close_tag, open_at + len(open_tag))
+    if close_at < 0:
+        return None
+    start = open_at
+    while start > 0 and block[start - 1] in " \t":
+        start -= 1
+    end = close_at + len(close_tag)
+    return start, end, block[start:open_at], block[start:end]
+
+
 def set_editable(block, field, locked):
     """Set the field's entry in the layer's <editable> list, adding it if
     the list has none."""
     value = "0" if locked else "1"
     wanted = f'<field name="{escape(field)}" editable="{value}"/>'
-    empty = re.search(r"(?P<pad>[ \t]*)<editable/>", block)
+    empty = re.search(r"^(?P<pad>[ \t]*)<editable/>", block, re.M)
     if empty is not None:
         pad = empty.group("pad")
         return (block[:empty.start()] + f"{pad}<editable>\n{pad}  {wanted}\n"
                 f"{pad}</editable>" + block[empty.end():])
-    section = re.search(r"(?P<pad>[ \t]*)<editable>.*?</editable>", block,
-                        re.S)
-    if section is None:
+    found = element_span(block, "editable")
+    if found is None:
         raise SystemExit("a data layer has no <editable> list")
-    text = section.group(0)
+    start, end, pad, text = found
     entry = re.compile(r'<field name="' + re.escape(escape(field))
                        + r'" editable="[01]"/>')
     if entry.search(text):
         text = entry.sub(wanted, text)
     else:
-        pad = section.group("pad")
         text = text.replace("<editable>", f"<editable>\n{pad}  {wanted}", 1)
-    return block[:section.start()] + text + block[section.end():]
+    return block[:start] + text + block[end:]
 
 
 def set_default(block, field, expression, on_update, errors, layer):
@@ -429,28 +489,70 @@ DD_FIELD = ('{p}  <field name="{name}">\n'
             '{p}  </field>\n')
 
 
+def empty_properties(block):
+    """Start, end and indent of a self-closing data-defined properties tag.
+
+    The tag is read from the start of its line. An unanchored `[ \t]*` before
+    the tag retries across a run of spaces when the tag is missing, which is
+    super-linear.
+    """
+    tag = "<dataDefinedFieldProperties/>"
+    line = 0
+    while line < len(block):
+        indent = line
+        while indent < len(block) and block[indent] in " \t":
+            indent += 1
+        if block.startswith(tag, indent):
+            return line, indent + len(tag), block[line:indent]
+        newline = block.find("\n", line)
+        if newline < 0:
+            return None
+        line = newline + 1
+    return None
+
+
+def without_field(text, field):
+    """Drop this field's `<field>` block, including the indent on its line.
+
+    The end tag is found with a direct search. A `.*?` match backtracks over
+    the section when the end tag is missing, which is super-linear.
+    """
+    open_tag = f'<field name="{escape(field)}">'
+    close_tag = "</field>\n"
+    at = 0
+    while True:
+        found = text.find(open_tag, at)
+        if found < 0:
+            return text
+        start = found
+        while start > 0 and text[start - 1] in " \t":
+            start -= 1
+        close_at = text.find(close_tag, found + len(open_tag))
+        if close_at < 0:
+            return text
+        text = text[:start] + text[close_at + len(close_tag):]
+        at = start
+
+
 def set_editable_when(block, field, expression):
     """Make the field editable in the form only while the expression holds."""
-    found = re.search(r"(?P<pad>[ \t]*)<dataDefinedFieldProperties/>", block)
+    found = empty_properties(block)
     entry = DD_FIELD.format(p="{p}", name=escape(field),
                             expression=escape(expression))
     if found is not None:
-        pad = found.group("pad")
-        return (block[:found.start()] + f"{pad}<dataDefinedFieldProperties>\n"
+        start, end, pad = found
+        return (block[:start] + f"{pad}<dataDefinedFieldProperties>\n"
                 + entry.format(p=pad) + f"{pad}</dataDefinedFieldProperties>"
-                + block[found.end():])
-    section = re.search(r"(?P<pad>[ \t]*)<dataDefinedFieldProperties>.*?"
-                        r"</dataDefinedFieldProperties>", block, re.S)
+                + block[end:])
+    section = element_span(block, "dataDefinedFieldProperties")
     if section is None:
         raise SystemExit("a data layer has no <dataDefinedFieldProperties>")
-    pad = section.group("pad")
-    mine = re.compile(r'[ \t]*<field name="' + re.escape(escape(field))
-                      + r'">.*?</field>\n', re.S)
-    text = mine.sub("", section.group(0))
+    start, end, pad, text = section
+    text = without_field(text, field)
     text = text.replace(f"{pad}</dataDefinedFieldProperties>",
                         entry.format(p=pad)
                         + f"{pad}</dataDefinedFieldProperties>", 1)
-    return block[:section.start()] + text + block[section.end():]
+    return block[:start] + text + block[end:]
 
 
 def set_soft_constraint(block, field, expression, description, errors,
@@ -475,40 +577,49 @@ def set_soft_constraint(block, field, expression, description, errors,
     return block[:start] + new_tag + block[end:]
 
 
+def set_post_rules(block, kind, layer, errors):
+    """Grey out significance and the timing pair, and warn on a stale 30+."""
+    block = set_editable_when(block, PROPOSED_SIGNIFICANCE,
+                              SIGNIFICANCE_EDITABLE)
+    advance, delay = TIMING[kind]
+    block = set_editable_when(block, advance, timing_editable(delay))
+    block = set_editable_when(block, delay, timing_editable(advance))
+    if kind in DEGRADED_KINDS:
+        block = set_soft_constraint(block, advance,
+                                    advance_warning(kind, advance),
+                                    ADVANCE_WARNING, errors, layer)
+    return block
+
+
+def rewrite_layer(block, ids, errors, changed):
+    """Return the layer block with its filled and locked columns set."""
+    name = paste_lineage.LAYER_NAME.search(block)
+    if name is None or name.group(1) not in LAYERS:
+        return block
+    layer = name.group(1)
+    kind, stage = LAYERS[layer]
+    before = block
+    for field, widget, locked, expression, on_update in rules_for(
+            kind, stage, ids):
+        if widget is not None:
+            block = set_widget(block, field, widget, ids, errors, layer)
+        block = set_editable(block, field, locked)
+        block = set_default(block, field, expression, on_update, errors,
+                            layer)
+    if stage == POST:
+        block = set_post_rules(block, kind, layer, errors)
+    if block != before:
+        changed.append(layer)
+    return block
+
+
 def rewrite(xml):
     known = paste_lineage.layers(xml)
     ids = {name: layer_id for name, (layer_id, _) in known.items()}
     errors, changed = [], []
 
     def layer(match):
-        block = match.group(0)
-        name = paste_lineage.LAYER_NAME.search(block)
-        if name is None or name.group(1) not in LAYERS:
-            return block
-        kind, stage = LAYERS[name.group(1)]
-        before = block
-        for field, widget, locked, expression, on_update in rules_for(
-                kind, stage, ids):
-            if widget is not None:
-                block = set_widget(block, field, widget, ids, errors,
-                                   name.group(1))
-            block = set_editable(block, field, locked)
-            block = set_default(block, field, expression, on_update, errors,
-                                name.group(1))
-        if stage == POST:
-            block = set_editable_when(block, PROPOSED_SIGNIFICANCE,
-                                      SIGNIFICANCE_EDITABLE)
-            advance, delay = TIMING[kind]
-            block = set_editable_when(block, advance, timing_editable(delay))
-            block = set_editable_when(block, delay, timing_editable(advance))
-            if kind in DEGRADED_KINDS:
-                block = set_soft_constraint(block, advance,
-                                            advance_warning(kind, advance),
-                                            ADVANCE_WARNING, errors,
-                                            name.group(1))
-        if block != before:
-            changed.append(name.group(1))
-        return block
+        return rewrite_layer(match.group(0), ids, errors, changed)
 
     try:
         new_xml = paste_lineage.MAPLAYER.sub(layer, xml)

@@ -83,6 +83,11 @@ whole baseline. A feature not yet in post-intervention counts as lost.
 by layer and column. The metric then leaves that row out of its totals, or
 shows *Check Data*.
 
+**Years created in advance and years of delay are written as the year the row
+holds:** blank, `0` to `30`, or `30+`, without spaces around it. A text value
+from an older file, such as `N/A` or `Habitat already in target condition`, is
+left blank, and the log names the rows.
+
 **The tool writes the irreplaceable Yes or No flag on each on-site baseline
 habitat row,** from the `Irreplaceable Habitat` column. Without the flag the
 metric shows *Confirm irreplaceable habitat status*. A flag that disagrees
@@ -248,6 +253,12 @@ shape with the baseline, and warns when a baseline feature has changed since.
 
 **Spatial risk category is `N/A` on every post-intervention row.** The log
 names each row whose legacy value was something else.
+
+**Years created in advance and years of delay are blank, `0` to `30`, or
+`30+`.** A text value from the legacy lists, such as `N/A` or `Habitat
+already in target condition`, is left blank, and the log names the rows. A
+row that has both above 0 is kept as it arrived and named, because the tool
+cannot tell which of the two to keep.
 
 **The tool fills the blanks that the template fills itself:** distinctiveness
 from the habitat type, a condition where the habitat allows only one, and
