@@ -62,7 +62,7 @@ WATERCOURSE_PI = {
     "Length": 51.0,
 }
 VERTICAL_ROW = {REF: "VA-T01", "Baseline Habitat Type": "Green wall",
-                "Baseline Strategic Significance": "Low", "Area": 0.001}
+                "Baseline Strategic Significance": "Low", "Area": 10.0}
 VERTICAL_LINE = [(455910.0, 285320.0), (455915.0, 285320.0)]
 
 

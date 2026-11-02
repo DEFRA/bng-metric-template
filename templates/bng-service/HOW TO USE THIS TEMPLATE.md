@@ -30,20 +30,22 @@ Post-Intervention layer, and all of them are in one GeoPackage:
 | Layer group | Drawn as | Size column | Unit | Filled in by |
 | --- | --- | --- | --- | --- |
 | **Area Habitats** | polygon | `Area (ha)` | hectares | QGIS |
-| **Vertical Area Habitats** | line | `Area (ha)` | hectares | you |
+| **Vertical Area Habitats** | line | `Area (m²)` | square metres | you |
 | **Hedgerows** | line | `Length (m)` | metres | QGIS |
 | **Watercourses** | line | `Length (m)` | metres | QGIS |
 | **Individual Trees** | point | none | one tree per point | |
 
-Areas are in hectares, the unit of the Statutory Metric. The measure tool also
-gives hectares. One hectare is 10,000 m², so a parcel of 100 m by 100 m shows
-`1`.
+Area habitats are in hectares, the unit of the Statutory Metric. The measure
+tool also gives hectares. One hectare is 10,000 m², so a parcel of 100 m by
+100 m shows `1`. A vertical area habitat's area is in square metres, because
+you estimate it on site.
 
 Two types need an explanation:
 
 - **Vertical Area Habitats** are green walls and intertidal hard structures.
   You draw the line along the base of the structure. The area that counts is
-  the vertical face, which QGIS cannot calculate from a line, so you type it.
+  the vertical face, which QGIS cannot calculate from a line, so you type the
+  area you estimated on site, in square metres.
 - **Individual Trees** are points and have no size to measure. Each point is
   one tree. The Statutory Metric gives a tree an area from its size class.
 
@@ -648,7 +650,7 @@ no baseline, so you draw it directly on the Post-Intervention layer.
 6. Check that **Parent Ref** is blank. It is locked. If it is filled, see
    *A new feature exactly on a baseline feature*, below.
 
-For a vertical area habitat, type the `Area (ha)`.
+For a vertical area habitat, type the `Area (m²)`.
 
 **The service accepts a `Created` row as it is.** It accepts one when the
 Baseline layer is empty, because a site with no hedges can gain new ones. A
@@ -719,11 +721,19 @@ A green roof is an area habitat. Draw it on the Area Habitats layers.
 
 1. Click **Add Line Feature**.
 2. Left-click along the route, then right-click to finish.
-3. Type the face area in **`Area (ha)`**.
+3. Type the area you estimated on site in **`Area (m²)`**.
 
-**The face area is length × height ÷ 10,000.** A wall 200 m long and 2 m high
-is 400 m², so type `0.04`. QGIS cannot get the height from a line, so this
-field is not locked.
+**Type the area in square metres, as you estimated it on site.** Do not work
+it out as length × height: windows, doors and other gaps in a wall mean the
+whole face is not habitat.
+
+- For a **green wall**, count the vegetated area only. For a created green
+  wall, use the area it is expected to grow to.
+- For an **intertidal hard structure**, enter its surface area, as a plane,
+  between mean low water and mean high water.
+
+QGIS cannot get this area from a line, so this field is not locked. It must be
+more than 0.
 
 The other fields work as for area habitats, except removal. **For a demolished
 structure, delete its copied row.** A new structure is drawn on the
