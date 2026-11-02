@@ -30,9 +30,10 @@ so that the code and the formats it targets have the same version history.
   `4. Lost`. A watercourse loss row that the conversion adds is written as
   `Lost`, which the legacy list offers only as `4. Lost`. A tree's proposed
   condition gets no number, because legacy stores it as words. The hedgerow lists have no numbers in either template.
-- **Area units.** `Area` is in hectares in the BNG Service template and in
-  whole square metres in legacy. `gpkg_common.py` converts in both directions.
-  `Length` is in metres in both.
+- **Area units.** An area habitat's `Area` is in hectares in the BNG Service
+  template and in whole square metres in legacy. `gpkg_common.py` converts in
+  both directions. A vertical area habitat's `Area` is in square metres, an
+  estimate the surveyor types in. `Length` is in metres in both.
 - **Vertical area habitats.** Only the BNG Service template has them, so
   conversion to legacy cannot carry them.
 - **Comments.** The BNG Service template has a `Comment` on every habitat

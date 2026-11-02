@@ -165,6 +165,8 @@ class Layer:
             if c.get("name")}
         self.alias_indexes = [int(a.get("index"))
                               for a in element.iterfind("aliases/alias")]
+        self.aliases = {a.get("field"): a.get("name")
+                        for a in element.iterfind("aliases/alias")}
         self.data_defined_editable = {}
         for field in element.iterfind("dataDefinedFieldProperties/field"):
             for option in field.iter("Option"):
@@ -287,6 +289,13 @@ class ProjectXmlTest(unittest.TestCase):
                     expression, on_update = layer.default(field)
                     self.assertIn("aggregate(layer:=", expression)
                     self.assertEqual(APPLY_ON_UPDATE, on_update)
+
+    def test_area_is_hectares_but_vertical_area_is_square_metres(self):
+        """QGIS measures an area habitat; the surveyor estimates a face."""
+        expected = {AREA: "Area (ha)", VERTICAL: "Area (m²)"}
+        for kind, stage, layer in self.each_stage(kinds=(AREA, VERTICAL)):
+            with self.subTest(layer=f"{kind} {stage}"):
+                self.assertEqual(expected[kind], layer.aliases["Area"])
 
     def test_trees_have_no_distinctiveness(self):
         for _kind, _stage, layer in self.each_stage(kinds=(TREE,)):

@@ -1924,8 +1924,8 @@ def _report_vertical_on_area(tables, report):
             f"template records on the Vertical Area Habitats layers "
             f"({summarise_refs(found)}). The area habitat drop-downs do not "
             "offer it. Draw it on Vertical Area Habitats, as a line with its "
-            "area in hectares, and give the area habitat row the habitat of "
-            "the ground it stands on."
+            "area in square metres, and give the area habitat row the habitat "
+            "of the ground it stands on."
         )
 
 
