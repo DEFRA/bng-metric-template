@@ -732,8 +732,8 @@ whole face is not habitat.
 - For an **intertidal hard structure**, enter its surface area, as a plane,
   between mean low water and mean high water.
 
-QGIS cannot get this area from a line, so this field is not locked. It must be
-more than 0.
+QGIS cannot get this area from a line, so this field is not locked. Enter a
+number above 0: the service refuses an area that is blank, 0 or negative.
 
 The other fields work as for area habitats, except removal. **For a demolished
 structure, delete its copied row.** A new structure is drawn on the
