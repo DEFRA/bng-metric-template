@@ -210,8 +210,7 @@ def tree_count_warning(where, refs):
 # Statutory Metric works in, and what the QGIS project's area setting produces).
 # The legacy template's Area column is whole SQUARE METRES. Every conversion
 # across that boundary has to go through these two. A vertical area habitat's
-# Area is square metres in the new template, but it is never converted: legacy
-# has no layer for it.
+# Area is hectares too, but it is never converted: legacy has no layer for it.
 SQ_METRES_PER_HECTARE = 10000
 
 

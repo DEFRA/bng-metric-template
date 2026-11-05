@@ -290,12 +290,12 @@ class ProjectXmlTest(unittest.TestCase):
                     self.assertIn("aggregate(layer:=", expression)
                     self.assertEqual(APPLY_ON_UPDATE, on_update)
 
-    def test_area_is_hectares_but_vertical_area_is_square_metres(self):
-        """QGIS measures an area habitat; the surveyor estimates a face."""
-        expected = {AREA: "Area (ha)", VERTICAL: "Area (m²)"}
+    def test_area_and_vertical_area_are_hectares(self):
+        """QGIS measures an area habitat; the surveyor estimates a face, in
+        the same unit, the Metric's."""
         for kind, stage, layer in self.each_stage(kinds=(AREA, VERTICAL)):
             with self.subTest(layer=f"{kind} {stage}"):
-                self.assertEqual(expected[kind], layer.aliases["Area"])
+                self.assertEqual("Area (ha)", layer.aliases["Area"])
 
     def test_trees_have_no_distinctiveness(self):
         for _kind, _stage, layer in self.each_stage(kinds=(TREE,)):
