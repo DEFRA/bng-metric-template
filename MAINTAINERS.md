@@ -113,11 +113,11 @@ Hedgerow lists have no numbers.
 **Template areas are in hectares**, as in the Metric. Legacy areas are whole
 square metres. The conversion changes the unit in both directions.
 
-**A vertical area habitat's `Area` is in square metres**, labelled
-`Area (m²)`. The surveyor estimates it on site and types it in: QGIS cannot
+**A vertical area habitat's `Area` is in hectares too**, labelled
+`Area (ha)`. The surveyor estimates it on site and types it in: QGIS cannot
 measure a face from a line, and a length × height leaves in windows, doors and
 other gaps. The conversion never carries vertical area habitats, so it never
-converts this unit.
+converts this area.
 
 ## The example site
 

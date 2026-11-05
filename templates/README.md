@@ -32,7 +32,7 @@ so that the code and the formats it targets have the same version history.
   condition gets no number, because legacy stores it as words. The hedgerow lists have no numbers in either template.
 - **Area units.** An area habitat's `Area` is in hectares in the BNG Service
   template and in whole square metres in legacy. `gpkg_common.py` converts in
-  both directions. A vertical area habitat's `Area` is in square metres, an
+  both directions. A vertical area habitat's `Area` is in hectares too, an
   estimate the surveyor types in. `Length` is in metres in both.
 - **Vertical area habitats.** Only the BNG Service template has them, so
   conversion to legacy cannot carry them.

@@ -30,22 +30,21 @@ Post-Intervention layer, and all of them are in one GeoPackage:
 | Layer group | Drawn as | Size column | Unit | Filled in by |
 | --- | --- | --- | --- | --- |
 | **Area Habitats** | polygon | `Area (ha)` | hectares | QGIS |
-| **Vertical Area Habitats** | line | `Area (m²)` | square metres | you |
+| **Vertical Area Habitats** | line | `Area (ha)` | hectares | you |
 | **Hedgerows** | line | `Length (m)` | metres | QGIS |
 | **Watercourses** | line | `Length (m)` | metres | QGIS |
 | **Individual Trees** | point | none | one tree per point | |
 
-Area habitats are in hectares, the unit of the Statutory Metric. The measure
-tool also gives hectares. One hectare is 10,000 m², so a parcel of 100 m by
-100 m shows `1`. A vertical area habitat's area is in square metres, because
-you estimate it on site.
+Areas are in hectares, the unit of the Statutory Metric. The measure tool also
+gives hectares. One hectare is 10,000 m², so a parcel of 100 m by 100 m shows
+`1`.
 
 Two types need an explanation:
 
 - **Vertical Area Habitats** are green walls and intertidal hard structures.
   You draw the line along the base of the structure. The area that counts is
   the vertical face, which QGIS cannot calculate from a line, so you type the
-  area you estimated on site, in square metres.
+  area you estimated on site, in hectares.
 - **Individual Trees** are points and have no size to measure. Each point is
   one tree. The Statutory Metric gives a tree an area from its size class.
 
@@ -650,7 +649,7 @@ no baseline, so you draw it directly on the Post-Intervention layer.
 6. Check that **Parent Ref** is blank. It is locked. If it is filled, see
    *A new feature exactly on a baseline feature*, below.
 
-For a vertical area habitat, type the `Area (m²)`.
+For a vertical area habitat, type the `Area (ha)`.
 
 **The service accepts a `Created` row as it is.** It accepts one when the
 Baseline layer is empty, because a site with no hedges can gain new ones. A
@@ -721,16 +720,22 @@ A green roof is an area habitat. Draw it on the Area Habitats layers.
 
 1. Click **Add Line Feature**.
 2. Left-click along the route, then right-click to finish.
-3. Type the area you estimated on site in **`Area (m²)`**.
+3. Type the area you estimated on site in **`Area (ha)`**.
 
-**Type the area in square metres, as you estimated it on site.** Do not work
-it out as length × height: windows, doors and other gaps in a wall mean the
-whole face is not habitat.
+**Type the area in hectares, as you estimated it on site.** Do not work it
+out as length × height: windows, doors and other gaps in a wall mean the whole
+face is not habitat.
 
 - For a **green wall**, count the vegetated area only. For a created green
   wall, use the area it is expected to grow to.
 - For an **intertidal hard structure**, enter its surface area, as a plane,
   between mean low water and mean high water.
+
+**To convert square metres to hectares, divide by 10,000.** A green wall of
+400 m² is `0.04` hectares, and one of 25 m² is `0.0025`. These are small
+numbers, so check the decimal places: `0.004` would be a tenth of that wall.
+The service shows the area in hectares and in square metres, so you can check
+it after you upload.
 
 QGIS cannot get this area from a line, so this field is not locked. Enter a
 number above 0: the service refuses an area that is blank, 0 or negative.
