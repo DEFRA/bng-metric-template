@@ -737,6 +737,9 @@ numbers, so check the decimal places: `0.004` would be a tenth of that wall.
 The service shows the area in hectares and in square metres, so you can check
 it after you upload.
 
+If you typed a vertical area in square metres in an earlier copy of this
+template, divide it by 10,000 before you upload: the column is in hectares.
+
 QGIS cannot get this area from a line, so this field is not locked. Enter a
 number above 0: the service refuses an area that is blank, 0 or negative.
 
