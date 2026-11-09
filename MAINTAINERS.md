@@ -179,7 +179,7 @@ generated: the first run of the generator copies the whole folder.
 | Change which habitats the Vertical Area Habitats layers offer | The lists in `CSV References/Vertical Area Habitats/`, then `limit_vertical_habitats.py`, then `reset_stale_dropdowns.py`. Keep those habitats out of the area habitat lists in `CSV References/Habitats/` (Options, Distinctiveness and Condition); the tests check it |
 | Change a reference list of either template | `plugin/build_plugin.py`, then send the new zip to the users of the plugin |
 | Test a button against a site | `run_actions_headless.py`, with the Python that comes with QGIS |
-| Change the most characters a text column holds, or add a text column | `TEXT_LIMITS` in `plugin/bng_template_convert/gpkg_common.py`, then `set_text_widths.py` |
+| Change the most characters a text column holds, or add a text column | `TEXT_LIMITS` in `plugin/bng_template_convert/gpkg_common.py`, then `set_text_widths.py`. Make the same change in bng-metric-backend `src/validation/geopackage/text-limits.js`, sync the schema into bng-library and pin it again (see [Text widths](#text-widths)) |
 
 **A paste gives a post-intervention row the same lineage as the Copy
 button.** The lineage comes from default value expressions on the
@@ -286,11 +286,18 @@ must hold every value of its list. `DropDownsFitTest` in
 `tests/test_text_widths.py` checks every value of every drop-down against the
 width of its column.
 
-**`TEXT_LIMITS` in `plugin/bng_template_convert/gpkg_common.py` is the one
-list of the limits.** `set_text_widths.py` writes it into the template. Convert
-from legacy declares it in each GeoPackage it creates, and warns about a value
-over it. A new text column must go into the list first: `set_text_widths.py`
-stops on a text column that is not in it.
+**`TEXT_LIMITS` in `plugin/bng_template_convert/gpkg_common.py` is the
+template's one list of the limits.** `set_text_widths.py` writes it into the
+template. Convert from legacy declares it in each GeoPackage it creates, and
+warns about a value over it. A new text column must go into the list first:
+`set_text_widths.py` stops on a text column that is not in it.
+
+**The BNG service enforces the same limits**, in bng-metric-backend
+`src/validation/geopackage/text-limits.js`, and refuses a file with a value
+over its limit. It reads the widths through bng-library's synced copy of the
+template schema. A backend test checks that the limit of each limited column
+equals the width the template declares. So make a change to a limit there
+too, then sync the schema into bng-library again and pin the new version.
 
 **SQLite does not enforce a declared width.** QGIS does it in the form: its
 text editor stops typing at the width, on a single-line field and on
@@ -298,7 +305,8 @@ text editor stops typing at the width, on a single-line field and on
 longer value from elsewhere, such as the field calculator, with a warning in
 the log. The form shows such a value whole, and cuts it to the width when an
 edit of the row is saved. Convert from legacy writes a longer legacy value
-whole, and names it, for the surveyor to shorten. `TextLimits` in
+whole, and names it, for the surveyor to shorten. Like the service, it does not
+count the spaces at the start and end of a value. `TextLimits` in
 `tests_qgis/test_template_behaviour.py` checks the form.
 
 The two ref buttons never write a ref over 99 characters. `Tidy PI refs after

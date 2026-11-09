@@ -265,8 +265,9 @@ cannot tell which of the two to keep.
 template declares the same limits, but a legacy file can hold more. The tool
 does not cut the value, and the log names it: the layer, the ref or row, the
 column, the limit and the length, with the value cut to 99 characters and
-marked `…`. Shorten it in QGIS. The form cuts it to the limit when you edit
-the row and save it.
+marked `…`. The BNG service refuses the file until the value is shortened.
+Like the service, the tool does not count the spaces at the start and end of
+a value.
 
 **The tool fills the blanks that the template fills itself:** distinctiveness
 from the habitat type, a condition where the habitat allows only one, and

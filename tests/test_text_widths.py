@@ -1,16 +1,20 @@
 """The width of each text column: declared in the template, wide enough for
 every value a drop-down offers, and written by set_text_widths.py.
 
-TEXT_LIMITS in gpkg_common.py is the one list of the limits. The template
+TEXT_LIMITS in gpkg_common.py is the template's one list of the limits. The template
 declares each as TEXT(n), which GDAL, and so QGIS, reads as the field width.
 """
 
+import contextlib
 import csv
+import io
 import re
 import sqlite3
+import sys
 import unittest
 import urllib.parse
 import xml.etree.ElementTree as ET
+from unittest import mock
 
 from tests import support
 from tests.test_project_xml import (NULL_VALUE, VALUE_MAP, VALUE_RELATION,
@@ -20,6 +24,11 @@ from tests.test_project_xml import (NULL_VALUE, VALUE_MAP, VALUE_RELATION,
 # support puts the converter modules on sys.path.
 import gpkg_common
 import old_to_new
+
+if str(support.TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(support.TOOLS_DIR))
+
+import set_text_widths  # noqa: E402
 
 TOOL = support.TOOLS_DIR / "set_text_widths.py"
 NO_CHANGE = "no change needed"
@@ -262,6 +271,101 @@ class SetTextWidthsTest(support.TempDirTestCase):
             return master, system, check
         finally:
             conn.close()
+
+
+class OverLimitTest(unittest.TestCase):
+    """over_limit counts characters as the BNG service does."""
+
+    def test_a_value_over_the_limit_is_named(self):
+        self.assertEqual(99, gpkg_common.over_limit("Habitat Ref", "R" * 100))
+
+    def test_a_value_at_the_limit_fits(self):
+        self.assertIsNone(gpkg_common.over_limit("Habitat Ref", "R" * 99))
+
+    def test_spaces_at_the_ends_do_not_count(self):
+        self.assertIsNone(
+            gpkg_common.over_limit("Habitat Ref", " " + "R" * 99 + "   "))
+        self.assertIsNone(
+            gpkg_common.over_limit("Comment", "c" * 999 + "\t\n "))
+
+    def test_spaces_inside_the_value_count(self):
+        self.assertEqual(
+            99, gpkg_common.over_limit("Habitat Ref", "R" * 50 + " " + "R" * 49))
+
+    def test_characters_not_bytes_are_counted(self):
+        self.assertIsNone(gpkg_common.over_limit("Habitat Ref", "é" * 99))
+
+    def test_a_column_with_no_limit_is_never_over(self):
+        self.assertIsNone(gpkg_common.over_limit("feature_uuid", "u" * 5000))
+
+
+class SetTextWidthsFailureTest(support.TempDirTestCase):
+    """A failure in set_text_widths.py leaves the GeoPackage as it was and
+    removes the temporary copy."""
+
+    def setUp(self):
+        super().setUp()
+        self.gpkg = SetTextWidthsTest.plain_copy(self, "failure.gpkg")
+        self.before = self.gpkg.read_bytes()
+
+    def assert_left_as_it_was(self):
+        self.assertEqual(self.before, self.gpkg.read_bytes())
+        self.assertEqual([], [p.name for p in self.tmp.glob(".set_text*")])
+
+    def test_an_error_during_the_rewrite_changes_nothing(self):
+        """The UPDATEs of sqlite_master are made, then the next statement
+        fails: the rewrite is rolled back and the copy is removed."""
+        real_connect = sqlite3.connect
+
+        class FailingConnection(sqlite3.Connection):
+            def execute(self, sql, *args):
+                if sql.startswith("PRAGMA schema_version ="):
+                    raise sqlite3.OperationalError("injected failure")
+                return super().execute(sql, *args)
+
+        def connect(path, *args, **kwargs):
+            return real_connect(path, *args, factory=FailingConnection,
+                                **kwargs)
+
+        with mock.patch.object(set_text_widths.sqlite3, "connect", connect), \
+                contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(sqlite3.OperationalError,
+                                        "injected failure"):
+                set_text_widths.main([str(self.gpkg)])
+        self.assert_left_as_it_was()
+
+    def test_a_failed_verification_changes_nothing(self):
+        """The rewritten copy fails its checks: the file is not replaced."""
+        failure = ["integrity check: injected failure"]
+        stderr = io.StringIO()
+        with mock.patch.object(set_text_widths, "verify",
+                               return_value=failure) as verify, \
+                contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(stderr):
+            self.assertEqual(1, set_text_widths.main([str(self.gpkg)]))
+        verify.assert_called_once()
+        self.assertIn("integrity check: injected failure", stderr.getvalue())
+        self.assertIn("nothing written", stderr.getvalue())
+        self.assert_left_as_it_was()
+
+    def test_a_width_not_declared_in_the_copy_changes_nothing(self):
+        """The real verify finds a width the rewrite did not write."""
+        real_rewrite = set_text_widths.rewrite_definitions
+
+        def rewrite_all_but_one(path, new_sql):
+            kept = dict(new_sql)
+            kept.pop(sorted(kept)[0])
+            real_rewrite(path, kept)
+
+        stderr = io.StringIO()
+        with mock.patch.object(set_text_widths, "rewrite_definitions",
+                               rewrite_all_but_one), \
+                contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(stderr):
+            self.assertEqual(1, set_text_widths.main([str(self.gpkg)]))
+        self.assertIn("not written: ", stderr.getvalue())
+        self.assertIn("nothing written", stderr.getvalue())
+        self.assert_left_as_it_was()
 
 
 if __name__ == "__main__":

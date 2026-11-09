@@ -402,6 +402,23 @@ class OldToNewTest(support.TempDirTestCase):
         self.assertIn(repr("é" * 99 + gpkg_common.CUT_MARK), comment)
         self.assertEqual([], self.warnings_mentioning("over the template's"))
 
+    def test_spaces_at_the_ends_of_a_value_do_not_count(self):
+        """The BNG service removes the spaces at the start and end of a value
+        before it counts the characters. A value over its limit only because
+        of those spaces is written as it is, and is not named."""
+        folder = self.tmp / "spaces-at-the-ends"
+        baseline = support.copy_to(self.baseline, folder)
+        pi = support.copy_to(self.pi, folder)
+        site_name = "  " + "S" * 999 + "   "
+        support.update(pi, old_to_new.LEGACY_REDLINE, {"Site Name": site_name},
+                       "fid", 1)
+        target = template_copy(folder)
+        report = fill(baseline, pi, target)
+
+        (red_line,) = support.read_rows(target, old_to_new.LEGACY_REDLINE)
+        self.assertEqual(site_name, red_line["Site Name"])
+        self.assertEqual([], self.warnings_in(report, "over the template's"))
+
     @staticmethod
     def warnings_in(report, text):
         return [w for w in report.warnings if text in w]

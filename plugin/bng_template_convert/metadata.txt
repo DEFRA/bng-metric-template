@@ -14,7 +14,7 @@ about=Moves a habitat map out of the BNG Service QGIS template without anyone ne
 
 changelog=1.8.4
     For the BNG Service template that declares the width of each text column: 99 characters for refs, drop-downs and Location, 255 for Spatial risk category, and 999 for Comment and the other site details.
-    Convert from legacy declares the same widths in each GeoPackage it creates. It writes a value longer than its column holds as it is, not cut, and names it in a warning: the layer, the ref or row, the column, the limit and the length. The value in the warning is cut to 99 characters and marked with "…".
+    Convert from legacy declares the same widths in each GeoPackage it creates. It writes a value longer than its column holds as it is, not cut, and names it in a warning: the layer, the ref or row, the column, the limit and the length. The BNG service refuses the file until the value is shortened. Like the service, the tool does not count the spaces at the start and end of a value. The value in the warning is cut to 99 characters and marked with "…".
   1.8.3
     Convert from legacy asks for a vertical area habitat's area in hectares, the unit the BNG Service template records it in, as it does every area.
     A vertical area typed in square metres under 1.8.2 must be divided by 10,000: the column is read as hectares again.

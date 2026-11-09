@@ -660,10 +660,17 @@ REFERENCE_SCOPE_GEOPACKAGE = "geopackage"
 # the lineage keys and the parent shape, which the buttons and defaults
 # write. The limits are those of the Natural England template.
 #
-# This is the one list of the limits. development/tools/set_text_widths.py
-# writes it into the template, Convert from legacy declares it in each file
-# it creates and warns about a value over it, and the tests read it. A text
-# column of the template that is not in this list stops set_text_widths.py.
+# This is the template's one list of the limits.
+# development/tools/set_text_widths.py writes it into the template, Convert
+# from legacy declares it in each file it creates and warns about a value over
+# it, and the tests read it. A text column of the template that is not in this
+# list stops set_text_widths.py.
+#
+# The BNG service enforces the same limits, in bng-metric-backend
+# src/validation/geopackage/text-limits.js. It reads the widths through
+# bng-library's synced copy of the template schema, and a backend test checks
+# that each limit equals the width the template declares. Make a change here
+# there too, then sync it into bng-library and pin the new version.
 REF_TEXT_LIMIT = 99
 COMMENT_TEXT_LIMIT = 999
 # Spatial risk category is wider than the other drop-downs: two of the
@@ -732,10 +739,19 @@ def text_type(column):
     return f"{TEXT_TYPE}({limit})" if limit else TEXT_TYPE
 
 
+def text_length(value):
+    """The characters of a text value that count against its limit.
+
+    The BNG service removes the spaces at the start and end of a value before
+    it counts the characters, so this does the same.
+    """
+    return len(value.strip())
+
+
 def over_limit(column, value):
     """The limit a text value is longer than, or None when it fits."""
     limit = TEXT_LIMITS.get(column)
-    if limit and isinstance(value, str) and len(value) > limit:
+    if limit and isinstance(value, str) and text_length(value) > limit:
         return limit
     return None
 

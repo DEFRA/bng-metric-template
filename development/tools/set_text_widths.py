@@ -4,9 +4,13 @@ Each text column of a feature table is declared TEXT(n), where n is the most
 characters it holds: 99 for references, drop-downs and Location, 999 for
 Comment and the other site details. Spatial risk category is the one
 drop-down at 255: two intertidal values of its Habitats list are 101 and 115
-characters long. GDAL, and so QGIS, reads n as the field width. The lineage keys and the parent shape stay TEXT, with no limit. The
-limits are TEXT_LIMITS in plugin/bng_template_convert/gpkg_common.py, the one
-list of them, which the plugin also reads.
+characters long. GDAL, and so QGIS, reads n as the field width. The lineage
+keys and the parent shape stay TEXT, with no limit. The limits are TEXT_LIMITS
+in plugin/bng_template_convert/gpkg_common.py, the template's one list of
+them, which the plugin also reads. The BNG service enforces the same limits in
+bng-metric-backend src/validation/geopackage/text-limits.js, and a backend
+test checks them against the widths the template declares: make a change
+there too, then sync it into bng-library and pin the new version.
 
     python3 development/tools/set_text_widths.py [--check] <gpkg>
 

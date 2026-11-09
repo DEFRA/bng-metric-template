@@ -47,6 +47,7 @@ try:
         line_blob_length_m,
         numeric,
         over_limit,
+        text_length,
         text_type,
         tree_count_warning,
         trees_counted_above_one,
@@ -79,6 +80,7 @@ except ImportError:  # pragma: no cover - running as a plain script
         line_blob_length_m,
         numeric,
         over_limit,
+        text_length,
         text_type,
         tree_count_warning,
         trees_counted_above_one,
@@ -1811,11 +1813,11 @@ def _report_values_over_limit(tables, report):
 
     The value is written as it is, not cut: the legacy template declares the
     same limits but SQLite does not enforce them, so a legacy file can hold
-    a longer value, and only the surveyor can say how to shorten it. QGIS
-    stops a value at the limit while it is typed, and cuts an existing value
-    to the limit when an edit of the row is saved from the form. The value in the
-    message is cut to 99 characters and marked, so that a long comment does
-    not fill the log.
+    a longer value, and only the surveyor can say how to shorten it. The BNG
+    service refuses a file with a value over its limit. Like the service, the
+    check counts the characters without the spaces at the start and end. The
+    value in the message is cut to 99 characters and marked, so that a long
+    comment does not fill the log.
     """
     for table, rows in tables.items():
         for position, (_geometry, values) in enumerate(rows, start=1):
@@ -1827,11 +1829,11 @@ def _report_values_over_limit(tables, report):
                 if limit is None:
                     continue
                 report.warn(
-                    f"{table}, {where}: {column} is {len(value)} characters "
-                    f"long, over the template's limit of {limit} "
+                    f"{table}, {where}: {column} is {text_length(value)} "
+                    f"characters long, over the template's limit of {limit} "
                     f"({cut_for_message(value)!r}). It was written as it is. "
-                    "Shorten it in QGIS: the form cuts it to the limit when "
-                    "an edit of the row is saved.")
+                    "The BNG service refuses the file until the value is "
+                    "shortened.")
 
 
 def _report_lineage_quality(tables, report):
