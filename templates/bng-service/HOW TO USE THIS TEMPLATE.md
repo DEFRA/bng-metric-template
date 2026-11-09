@@ -128,7 +128,10 @@ GeoPackage the first time you use a button on real data.
 
 **`Rename a ref (updates post-intervention)`** is the safe way to rename a
 parcel after the copy. It changes the baseline ref and every post-intervention
-row that points at it, including split suffixes such as `PR-1a`.
+row that points at it, including split suffixes such as `PR-1a`. It refuses a
+new ref longer than 99 characters. A new ref of 99 characters has no space for
+a split suffix: those rows keep their old `Habitat Ref`, and the button names
+them. Their `Parent Ref` changes to the new ref.
 
 **`Refresh from baseline`** applies later baseline edits to the
 Post-Intervention layer. For each row copied or pasted from a baseline
@@ -255,7 +258,7 @@ gaps and no overlaps.**
 
 | Field | What to enter |
 | --- | --- |
-| Habitat Ref | A label, for example `PR-1`. Each label must be different. |
+| Habitat Ref | A label, for example `PR-1`. Each label must be different. 99 characters at most. |
 | Baseline Broad Habitat Type | Select from the list, for example `Grassland` |
 | Baseline Habitat Type | Select from the habitats in that broad type, for example `Modified grassland` |
 | Baseline Distinctiveness | Do not enter. QGIS fills it in from the habitat type and locks it. |
@@ -263,7 +266,7 @@ gaps and no overlaps.**
 | Baseline Strategic Significance | Do not enter. It is always `Low`, and locked. |
 | Irreplaceable Habitat | QGIS fills it in when the habitat allows one answer only: `No` for most habitats, `Yes` for Blanket bog, Coastal sand dunes and Limestone pavement. Otherwise select `Yes` or `No`. |
 | Area (ha) | Do not enter. QGIS fills it in and locks it. |
-| Comment | Optional notes about this parcel |
+| Comment | Optional notes about this parcel. 999 characters at most. |
 
 **Every habitat layer has a Comment, baseline and post-intervention.** Use it
 for your own notes, in your own words. A note on the baseline is about the
@@ -272,6 +275,16 @@ proposal. The copy button leaves the post-intervention Comment blank. A paste
 copies the baseline Comment across, as it copies every column with the same
 name, so change or clear it. Both comments go into the Statutory Metric's
 *User comments* column when you export to it.
+
+**A field holds a limited number of characters.** A `Habitat Ref` holds 99
+characters, and a `Comment` holds 999. Each value that you select from a list
+fits. Of the site details on the Red Line Boundary, `Location` holds 99
+characters, and the other text fields hold 999. QGIS stops your typing at the
+limit. A longer value that comes from another file, for example a legacy file
+converted with the plugin, is cut to the limit when you edit that row in the
+form and save it. Shorten such a value yourself first, so that you choose what
+to keep. Keep a ref short enough for the letter that `Tidy PI refs after
+splitting` adds: 98 characters at most.
 
 **Each list shows only the values that your earlier choices allow.** If you
 change the habitat type, a condition that the new type does not allow is
@@ -590,7 +603,9 @@ A split leaves two rows with one `Habitat Ref`.
 2. Click **Actions**, then **`Tidy PI refs after splitting`**.
 
 The duplicates become `PR-1a`, `PR-1b` and so on. The order is left to right
-on the map, so each run gives the same labels.
+on the map, so each run gives the same labels. A ref of 99 characters has no
+space for the letter: the button does not change those rows, and names them.
+Give them shorter refs, then click the button again.
 
 ---
 

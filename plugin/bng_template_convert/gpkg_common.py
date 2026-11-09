@@ -648,6 +648,104 @@ METADATA_SCOPE_DATASET = "dataset"
 REFERENCE_SCOPE_GEOPACKAGE = "geopackage"
 
 
+# ---------------------------------------------------------------------------
+# Text widths
+# ---------------------------------------------------------------------------
+#
+# The maximum number of characters (Unicode code points, not bytes) each text
+# column of the template holds. The template's GeoPackage declares each as
+# TEXT(n), which GDAL, and so QGIS, reads as the field width. SQLite does not
+# enforce a declared width, and TEXT(n) has the same type affinity as TEXT,
+# so a file with plain TEXT reads the same. None is a column with no limit:
+# the lineage keys and the parent shape, which the buttons and defaults
+# write. The limits are those of the Natural England template.
+#
+# This is the one list of the limits. development/tools/set_text_widths.py
+# writes it into the template, Convert from legacy declares it in each file
+# it creates and warns about a value over it, and the tests read it. A text
+# column of the template that is not in this list stops set_text_widths.py.
+REF_TEXT_LIMIT = 99
+COMMENT_TEXT_LIMIT = 999
+# Spatial risk category is wider than the other drop-downs: two of the
+# Habitats Spatial Risk list's values are 101 and 115 characters long.
+SPATIAL_RISK_TEXT_LIMIT = 255
+TEXT_LIMITS = {
+    # References: every habitat table, and Parent Ref on post-intervention.
+    "Habitat Ref": REF_TEXT_LIMIT,
+    "Parent Ref": REF_TEXT_LIMIT,
+    # The drop-down and filled-in columns of the habitat tables.
+    "Baseline Broad Habitat Type": REF_TEXT_LIMIT,
+    "Baseline Habitat Type": REF_TEXT_LIMIT,
+    "Baseline Hedge Type": REF_TEXT_LIMIT,
+    "Baseline River Type": REF_TEXT_LIMIT,
+    "Baseline Tree Size": REF_TEXT_LIMIT,
+    "Baseline Tree Type": REF_TEXT_LIMIT,
+    "Baseline Rural or Urban Tree": REF_TEXT_LIMIT,
+    "Baseline Distinctiveness": REF_TEXT_LIMIT,
+    "Baseline Condition": REF_TEXT_LIMIT,
+    "Baseline Strategic Significance": REF_TEXT_LIMIT,
+    "Baseline Encroachment into Watercourse": REF_TEXT_LIMIT,
+    "Baseline Encroachment into riparian zone": REF_TEXT_LIMIT,
+    "Irreplaceable Habitat": REF_TEXT_LIMIT,
+    "Retention Category": REF_TEXT_LIMIT,
+    "Proposed Broad Habitat Type": REF_TEXT_LIMIT,
+    "Proposed Habitat Type": REF_TEXT_LIMIT,
+    "Proposed Hedge Type": REF_TEXT_LIMIT,
+    "Proposed River Type": REF_TEXT_LIMIT,
+    "Proposed Tree Size": REF_TEXT_LIMIT,
+    "Proposed Tree Type": REF_TEXT_LIMIT,
+    "Proposed Rural or Urban Tree": REF_TEXT_LIMIT,
+    "Proposed Distinctiveness": REF_TEXT_LIMIT,
+    "Proposed Condition": REF_TEXT_LIMIT,
+    "Proposed Strategic Significance": REF_TEXT_LIMIT,
+    "Proposed Encroachment into Watercourse": REF_TEXT_LIMIT,
+    "Proposed Encroachment into riparian zone": REF_TEXT_LIMIT,
+    "Enhancement Type": REF_TEXT_LIMIT,
+    "Category": REF_TEXT_LIMIT,
+    "Habitat created in advance/years": REF_TEXT_LIMIT,
+    "Delay in starting habitat creation/years": REF_TEXT_LIMIT,
+    "Habitat Created/Enhanced in advance/years": REF_TEXT_LIMIT,
+    "Delay in starting habitat creation/enhancement in years": REF_TEXT_LIMIT,
+    "Spatial risk category": SPATIAL_RISK_TEXT_LIMIT,
+    # The surveyor's own note, on every habitat table.
+    "Comment": COMMENT_TEXT_LIMIT,
+    # The site details, on the Red Line Boundary.
+    "Location": REF_TEXT_LIMIT,
+    "Site Name": COMMENT_TEXT_LIMIT,
+    "Survey Details": COMMENT_TEXT_LIMIT,
+    "Mapped by": COMMENT_TEXT_LIMIT,
+    "Company": COMMENT_TEXT_LIMIT,
+    "Base Map": COMMENT_TEXT_LIMIT,
+    # Written by the template, not typed: no limit.
+    "feature_uuid": None,
+    "parent_uuid": None,
+    "parent_geom": None,
+}
+TEXT_TYPE = "TEXT"
+# A value cut for a message is marked with this, so it is not read as whole.
+CUT_MARK = "…"
+
+
+def text_type(column):
+    """The declared type of a text column: TEXT(n), or TEXT with no limit."""
+    limit = TEXT_LIMITS.get(column)
+    return f"{TEXT_TYPE}({limit})" if limit else TEXT_TYPE
+
+
+def over_limit(column, value):
+    """The limit a text value is longer than, or None when it fits."""
+    limit = TEXT_LIMITS.get(column)
+    if limit and isinstance(value, str) and len(value) > limit:
+        return limit
+    return None
+
+
+def cut_for_message(value, limit=REF_TEXT_LIMIT):
+    """The value cut to `limit` characters for a message, marked when cut."""
+    text = str(value)
+    return text if len(text) <= limit else text[:limit] + CUT_MARK
+
+
 def template_version_record(version=TEMPLATE_VERSION):
     """The metadata text that names the format and its version."""
     return json.dumps({"format": FORMAT_NAME, "version": version})

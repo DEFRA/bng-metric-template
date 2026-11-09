@@ -21,6 +21,7 @@ needed to use the template or the plugin.
 | `require_shape.py` | Gives the ref column of each data layer a hard constraint that the row has a shape, so a paste of rows with no shape (what Copy Layer leaves on the clipboard) opens the Fix Pasted Features dialog instead of adding blank rows. Safe to run again |
 | `order_dropdowns.py` | Makes each drop-down show its items in the order of the `Order` column of its reference list. Safe to run again |
 | `limit_vertical_habitats.py` | Makes the Vertical Area Habitats layers offer only the broad habitats of the habitats the Metric counts by vertical area, Urban (green walls) and Intertidal hard structures: the Baseline Broad Habitat Type list on both layers, and the filter of Proposed Broad Habitat Type, whose list is shared with the area habitat layers. Takes Intertidal hard structures, whose every habitat is a vertical one, off both area habitat layers: their Baseline Broad Habitat Type list, and the filter of Proposed Broad Habitat Type. Run `reset_stale_dropdowns.py` after it. Safe to run again |
+| `set_text_widths.py` | Declares the most characters each text column of the template's GeoPackage holds, as `TEXT(n)`, from `TEXT_LIMITS` in `plugin/bng_template_convert/gpkg_common.py`: 99 for refs, drop-downs and `Location`, 255 for `Spatial risk category`, whose list holds two intertidal values of 101 and 115 characters, and 999 for `Comment` and the other site details. Changes only the text of each table definition in `sqlite_master`, on a copy that must pass `PRAGMA integrity_check` before it replaces the file. Stops on a text column that is not in the list. Safe to run again |
 | `set_template_version.py` | Records the template version in the template's GeoPackage: one row of the GeoPackage metadata extension, with the version in `TEMPLATE_VERSION` of `plugin/bng_template_convert/gpkg_common.py`. `MAINTAINERS.md` says when to raise it. Safe to run again |
 | `check_metric_lookups.py` | Checks each condition in a filled Metric workbook against the lookup rows of the same workbook |
 | `check_legacy_template.py` | Checks the recorded findings about the Natural England template against `templates/legacy-ne/`. Put a fresh download there to check them again |
@@ -69,6 +70,7 @@ python3 development/tools/rename_table.py "templates/bng-service/BNG Service Hab
 python3 development/tools/allow_blank.py "templates/bng-service/BNG Service Habitat Mapping.qgz"
 python3 development/tools/require_shape.py "templates/bng-service/BNG Service Habitat Mapping.qgz"
 python3 development/tools/limit_vertical_habitats.py "templates/bng-service/BNG Service Habitat Mapping.qgz"
+python3 development/tools/set_text_widths.py "templates/bng-service/Layers/BNG Service Layers.gpkg"
 python3 development/tools/set_template_version.py "templates/bng-service/Layers/BNG Service Layers.gpkg"
 python3 development/tools/check_metric_lookups.py "Filled metric.xlsm"
 python3 development/tools/check_legacy_template.py
@@ -88,7 +90,8 @@ element that still refers to the field, and does not remove it.
 `order_dropdowns.py`, `allow_blank.py` and `require_shape.py` take `--check`
 before the project. With `--check` they write nothing, list what they would
 change, and exit with 1 if a change is needed. A template that is in step
-gives "no change needed" from all six. Run them in that order:
+gives "no change needed" from all six. `set_text_widths.py` and
+`set_template_version.py` take `--check` too, before the GeoPackage. Run the six in that order:
 `reset_stale_dropdowns.py` manages only the filtered drop-downs that
 `set_field_rules.py` leaves.
 

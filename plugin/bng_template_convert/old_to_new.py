@@ -41,10 +41,13 @@ try:
         blob_wkt,
         create_feature_table,
         create_gpkg_system_tables,
+        cut_for_message,
         demote_multipolygon_blob_to_polygon,
         feature_table_names,
         line_blob_length_m,
         numeric,
+        over_limit,
+        text_type,
         tree_count_warning,
         trees_counted_above_one,
         plain_label,
@@ -70,10 +73,13 @@ except ImportError:  # pragma: no cover - running as a plain script
         blob_wkt,
         create_feature_table,
         create_gpkg_system_tables,
+        cut_for_message,
         demote_multipolygon_blob_to_polygon,
         feature_table_names,
         line_blob_length_m,
         numeric,
+        over_limit,
+        text_type,
         tree_count_warning,
         trees_counted_above_one,
         plain_label,
@@ -410,6 +416,13 @@ STAGED_LAYERS = {
         + PI_TAIL,
     },
 }
+
+# Each text column declares its width, as in the template: TEXT(n), with n
+# from TEXT_LIMITS in gpkg_common.py. SQLite does not enforce it.
+for _spec in STAGED_LAYERS.values():
+    _spec[COLUMNS] = [(name, text_type(name) if kind == "TEXT" else kind)
+                      for name, kind in _spec[COLUMNS]]
+del _spec
 
 # The layers holding area habitats. Named explicitly rather than matched on the
 # word "Habitats", which is also a substring of "Vertical Area Habitats *".
@@ -1392,6 +1405,7 @@ def convert(baseline_path, pi_path, out_dir, into_path, force, dry_run,
         report.count(table, len(rows))
 
     _fill_template_values(tables, report)
+    _report_values_over_limit(tables, report)
     _report_lineage_quality(tables, report)
     _report_manual_steps(tables, report)
     check_needed_values(_as_staged(tables), report, INCOMING_GAP_CONSEQUENCE,
@@ -1790,6 +1804,34 @@ def _as_staged(tables):
                "pi": [values for _, values in tables[pi]]}
         for kind, base, pi, *_rest in METRIC_MODULES
     }
+
+
+def _report_values_over_limit(tables, report):
+    """Name each value longer than its column holds in the template.
+
+    The value is written as it is, not cut: the legacy template declares the
+    same limits but SQLite does not enforce them, so a legacy file can hold
+    a longer value, and only the surveyor can say how to shorten it. QGIS
+    stops a value at the limit while it is typed, and cuts an existing value
+    to the limit when an edit of the row is saved from the form. The value in the
+    message is cut to 99 characters and marked, so that a long comment does
+    not fill the log.
+    """
+    for table, rows in tables.items():
+        for position, (_geometry, values) in enumerate(rows, start=1):
+            ref = values.get(REF_FIELD)
+            where = (f"{REF_FIELD} {cut_for_message(ref)!r}"
+                     if ref not in (None, "") else f"row {position}")
+            for column, value in values.items():
+                limit = over_limit(column, value)
+                if limit is None:
+                    continue
+                report.warn(
+                    f"{table}, {where}: {column} is {len(value)} characters "
+                    f"long, over the template's limit of {limit} "
+                    f"({cut_for_message(value)!r}). It was written as it is. "
+                    "Shorten it in QGIS: the form cuts it to the limit when "
+                    "an edit of the row is saved.")
 
 
 def _report_lineage_quality(tables, report):

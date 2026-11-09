@@ -2,7 +2,7 @@
 
 Tests of the template's behaviour **as QGIS applies it**: the default
 expressions, the locked and greyed-out fields, the shape constraint, the paste
-lineage and the Copy baseline button. They need PyQGIS, so they run inside the
+lineage, the text widths and the buttons. They need PyQGIS, so they run inside the
 official `qgis/qgis` Docker image, at QGIS 3.42.1, the version the template is
 built in. The standard-library tests in `tests/` cover everything that does
 not need QGIS.
@@ -39,4 +39,6 @@ the image pinned by digest.
 | `TheForm` | Picking one timing value greys out the other; Retained greys out proposed significance; distinctiveness and baseline significance are locked |
 | `EveryRowNeedsAShape` | A row with no shape breaks the hard constraint, so a mistaken paste is refused |
 | `PasteLineage` | A feature with exactly a baseline feature's shape gets its `Parent Ref` and `parent_uuid`; a new shape gets neither |
+| `TextLimits` | The fields have the declared widths; typing stops at 99 characters in `Habitat Ref` and at 999 in `Comment` on every habitat layer, and at the site detail widths; a longer value from outside the form is cut to the width when an edit of the row is saved |
+| `RefButtons` | `Tidy PI refs after splitting` adds a letter up to 99 characters and names a ref that has no space for it; `Rename a ref` refuses a new ref over 99 characters, and with one of 99 keeps the lettered refs, names them and updates `Parent Ref` |
 | `CopyBaselineButton` | The Copy baseline to post-intervention button, run headless, links every baseline hedge as Retained |
