@@ -197,7 +197,7 @@ also asks for it to be created 30 or more years in advance: record "the
 same area and habitat type as created in a lower condition" and "set the
 'habitat created in advance' function to 30 plus years". The rule covers
 the area and hedgerow modules. So `set_field_rules.py` fills a blank **Habitat created in advance/years** with
-`30+` on an area, vertical area or hedgerow row that is `Created`, has a
+`30+` on an area, vertical area, hedgerow or individual tree row that is `Created`, has a
 baseline type, keeps that type, and has a Proposed Condition ranked below
 its Baseline Condition (Good, Fairly Good, Moderate, Fairly Poor, Poor;
 hedgerows use three of these in the same order). The same or a better
@@ -229,6 +229,22 @@ count; a lost hedge is recorded by deleting its row. It is an edge case for
 the Metric calculation. Keep those rows: `DegradedHedgeListsTest` in
 `tests/test_reference_lists.py` checks them, and `DegradedHedgerowTest` in
 `tests/test_to_metric.py` checks what the Metric makes of such a hedge.
+
+**A tree whose condition gets worse is `Created` too.** A tree is an area
+habitat in the Metric, so the same rule applies: lost, and created again in
+the same size class and setting, in a lower condition, 30+ years in advance.
+The surveyor keeps the copied tree, which stays `Existing` and linked to its
+parent, and sets it to `Created`. So `Individual tree Retention.csv` offers
+`Existing,Created`; the condition options offer every condition, Good to
+Poor, for an existing tree that is `Created`; and the size, type and setting
+options offer each tree its own value when `Created`, not `N/A`, which the
+Metric cannot count. A newly planted tree (`N/A` at baseline) still offers
+every choice. `set_field_rules.py` fills `30+` on a tree that keeps its
+Urban or Rural setting, the Metric's habitat type for a tree, in a worse
+condition. `DegradedTreeListsTest` in `tests/test_reference_lists.py`
+checks the lists, `DegradedTreeTest` in `tests/test_to_metric.py` what the
+Metric makes of such a tree, and `DegradedTrees` in
+`tests_qgis/test_template_behaviour.py` the form.
 
 **An existing watercourse set to `Created` keeps its own type, too.** The
 Metric team asks for an existing watercourse to be recordable as `Created`,

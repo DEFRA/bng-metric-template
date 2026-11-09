@@ -55,11 +55,13 @@ TIMING[TREE] = ("Habitat Created/Enhanced in advance/years",
                 "Delay in starting habitat creation/enhancement in years")
 
 # Kind -> (baseline type, proposed type) of the layers whose blank years
-# created in advance become 30+ on a habitat whose condition gets worse.
+# created in advance become 30+ on a habitat whose condition gets worse. A
+# tree's habitat type is its Urban or Rural setting.
 DEGRADED_TYPES = {
     AREA: ("Baseline Habitat Type", "Proposed Habitat Type"),
     VERTICAL: ("Baseline Habitat Type", "Proposed Habitat Type"),
     HEDGE: ("Baseline Hedge Type", "Proposed Hedge Type"),
+    TREE: ("Baseline Rural or Urban Tree", "Proposed Rural or Urban Tree"),
 }
 
 

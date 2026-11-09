@@ -25,9 +25,10 @@ the Statutory Metric takes. A stored value the list does not offer, such as
 cleared when the row is saved. It does not count as above 0, so it does not
 blank or grey out the other column.
 
-A blank years created in advance becomes `30+` on an area, vertical area or
-hedgerow row that records a habitat whose condition gets worse: `Created`,
-with a baseline type, the same type proposed, and a Proposed Condition
+A blank years created in advance becomes `30+` on an area, vertical area,
+hedgerow or individual tree row that records a habitat whose condition gets
+worse: `Created`, with a baseline type (a tree's Urban or Rural setting), the
+same type proposed, and a Proposed Condition
 ranked below the Baseline Condition, as the Metric User Guide asks (section
 5, "Habitat retention"). The surveyor can pick another value. On any other
 row of those layers `30+` is kept, but a soft constraint shows a warning in
@@ -245,9 +246,19 @@ def only_one_timing(field, other):
 # condition. The Metric team asks for it to be created 30 or more years in
 # advance (User Guide, section 5, "Habitat retention": "the same area and
 # habitat type as created in a lower condition"). The rule is for the area
-# and hedgerow modules; watercourses follow the Metric's own creation rules,
-# which the surveyor applies.
-DEGRADED_KINDS = (AREA, VERTICAL, HEDGE)
+# and hedgerow modules, and an individual tree is an area habitat;
+# watercourses follow the Metric's own creation rules, which the surveyor
+# applies.
+DEGRADED_KINDS = (AREA, VERTICAL, HEDGE, TREE)
+
+# Kind -> the columns that hold its Metric habitat type, baseline and
+# proposed, where a row that gets worse must keep it. A tree's is its Urban or
+# Rural setting ("Urban tree", "Rural tree"), not its Native or Non-native
+# type.
+DEGRADED_TYPE_COLUMNS = {
+    **TYPE_COLUMNS,
+    TREE: ("Baseline Rural or Urban Tree", "Proposed Rural or Urban Tree"),
+}
 DEGRADED_ADVANCE = "'30+'"
 # QgsFieldConstraints.ConstraintStrengthSoft: the form warns, and saves.
 SOFT = "2"
@@ -276,7 +287,7 @@ def worse_condition():
 
 
 def degraded(kind):
-    base, proposed = TYPE_COLUMNS[kind]
+    base, proposed = DEGRADED_TYPE_COLUMNS[kind]
     blanks = ", ".join(f"'{v}'" for v in NO_BASELINE)
     return (f'"{RETENTION}" = \'{CREATED}\' AND "{base}" IS NOT NULL '
             f'AND "{base}" NOT IN ({blanks}) AND "{proposed}" = "{base}" '

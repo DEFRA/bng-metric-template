@@ -645,6 +645,46 @@ class EnhancedTrees(TemplateCase):
         self.assertTrue(is_null(row[RETENTION]))
 
 
+class DegradedTrees(TemplateCase):
+    """An existing tree whose condition gets worse is Created.
+
+    It stays Existing, keeps its size class, type and setting, may take any
+    condition, and is created 30+ years in advance when it is worse, as an
+    area habitat that gets worse is (DegradedAdvance).
+    """
+
+    def degrade(self, condition=WORSE):
+        layer = self.layer(TREE_PI)
+        fid = self.add(layer, TREE_POINT, **{**EXISTING_TREE,
+                                             RETENTION: "Retained"})
+        self.assertEqual(self.set(layer, fid, RETENTION, "Created")[RETENTION],
+                         "Created")
+        return layer, fid, self.set(layer, fid, PROPOSED_CONDITION, condition)
+
+    def test_a_worse_existing_tree_is_created_30_plus_years_in_advance(self):
+        _layer, _fid, row = self.degrade()
+        self.assertEqual(row["Category"], "Existing")
+        self.assertEqual(row[PROPOSED_CONDITION], WORSE)
+        self.assertEqual(row[TREE_ADVANCE], THIRTY_PLUS)
+
+    def test_a_created_existing_tree_keeps_its_size_type_and_setting(self):
+        layer, fid, _row = self.degrade()
+        for column, own, other in (
+                ("Proposed Tree Size", "Medium", "Large"),
+                ("Proposed Tree Type", "Native", "Non-native"),
+                ("Proposed Rural or Urban Tree", "Rural tree", "Urban tree")):
+            with self.subTest(column=column):
+                self.assertEqual(self.set(layer, fid, column, own)[column], own)
+                self.assertTrue(is_null(self.set(layer, fid, column,
+                                                 other)[column]))
+
+    def test_the_same_or_a_better_condition_gets_no_default(self):
+        for condition in ("Moderate", "Good"):
+            with self.subTest(condition=condition):
+                _layer, _fid, row = self.degrade(condition)
+                self.assertTrue(is_null(row[TREE_ADVANCE]))
+
+
 IRREPLACEABLE = "Irreplaceable Habitat"
 
 
