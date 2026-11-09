@@ -286,10 +286,17 @@ def worse_condition():
             f'AND array_find(@rank, "{base}") >= 0, false))')
 
 
+# A tree gets worse only as the baseline tree itself: an Existing one. A
+# Newly Planted tree is planting, however its columns compare, as the BNG
+# service reads it.
+EXISTING_TREE = "\"Category\" = 'Existing' AND "
+
+
 def degraded(kind):
     base, proposed = DEGRADED_TYPE_COLUMNS[kind]
     blanks = ", ".join(f"'{v}'" for v in NO_BASELINE)
-    return (f'"{RETENTION}" = \'{CREATED}\' AND "{base}" IS NOT NULL '
+    existing = EXISTING_TREE if kind == TREE else ""
+    return (f'"{RETENTION}" = \'{CREATED}\' AND {existing}"{base}" IS NOT NULL '
             f'AND "{base}" NOT IN ({blanks}) AND "{proposed}" = "{base}" '
             f'AND {worse_condition()}')
 

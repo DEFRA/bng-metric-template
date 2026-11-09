@@ -81,6 +81,10 @@ The converter gives a warning for each of these:
   differ.
 - **Enhanced trees keep `Enhanced`.** The Natural England tree list offers
   only `Retained` and `Lost`, so their template shows it in brackets.
+- **An existing tree that gets worse keeps `Created`,** and its baseline tree
+  gets a `Lost` row, as the Metric records it as lost and created again. The
+  Natural England list offers `Created` only for a newly planted tree, so
+  their template shows it in brackets.
 - **Baseline comments are not in the import tool CSVs,** which hold one row
   for each post-intervention feature. Merging CSV rows replaces their
   comments with a note.
@@ -239,9 +243,11 @@ parent, and sets it to `Created`. So `Individual tree Retention.csv` offers
 Poor, for an existing tree that is `Created`; and the size, type and setting
 options offer each tree its own value when `Created`, not `N/A`, which the
 Metric cannot count. A newly planted tree (`N/A` at baseline) still offers
-every choice. `set_field_rules.py` fills `30+` on a tree that keeps its
-Urban or Rural setting, the Metric's habitat type for a tree, in a worse
-condition. `DegradedTreeListsTest` in `tests/test_reference_lists.py`
+every choice. `set_field_rules.py` fills `30+` on an `Existing` tree that
+keeps its Urban or Rural setting, the Metric's habitat type for a tree, in a
+worse condition; a `Newly Planted` tree is planting, as the BNG service
+reads it. Convert to legacy writes the baseline tree as a `Lost` row and
+warns, as the Natural England list has no `Created` for an existing tree. `DegradedTreeListsTest` in `tests/test_reference_lists.py`
 checks the lists, `DegradedTreeTest` in `tests/test_to_metric.py` what the
 Metric makes of such a tree, and `DegradedTrees` in
 `tests_qgis/test_template_behaviour.py` the form.

@@ -78,7 +78,9 @@ def degraded(kind):
     """A row that is Created, keeps its baseline type and is in a worse
     condition."""
     base, proposed = DEGRADED_TYPES[kind]
-    return (f'"Retention Category" = \'Created\' AND "{base}" IS NOT NULL '
+    # A tree only as the baseline tree itself: Newly Planted is planting.
+    existing = "\"Category\" = 'Existing' AND " if kind == TREE else ""
+    return (f'"Retention Category" = \'Created\' AND {existing}"{base}" IS NOT NULL '
             f'AND "{base}" NOT IN (\'To be created\', \'N/A\') AND '
             f'"{proposed}" = "{base}" AND {WORSE_CONDITION}')
 

@@ -694,6 +694,23 @@ class DegradedTrees(TemplateCase):
                 _layer, _fid, row = self.degrade(condition)
                 self.assertTrue(is_null(row[TREE_ADVANCE]))
 
+    def test_a_newly_planted_copy_gets_no_default(self):
+        # A copy switched to Newly Planted keeps its Baseline columns, but the
+        # service prices it as planting, so it is no tree that gets worse,
+        # even in its baseline setting and a worse condition.
+        layer = self.layer(TREE_PI)
+        fid = self.add(layer, TREE_POINT, **{
+            **EXISTING_TREE, RETENTION: "Retained",
+            "Proposed Rural or Urban Tree": "Rural tree"})
+        self.set(layer, fid, "Category", "Newly Planted")
+        self.set(layer, fid, RETENTION, "Created")
+        self.set(layer, fid, "Proposed Rural or Urban Tree", "Rural tree")
+        row = self.set(layer, fid, PROPOSED_CONDITION, WORSE)
+        self.assertEqual(row["Baseline Rural or Urban Tree"], "Rural tree")
+        self.assertEqual(row["Proposed Rural or Urban Tree"], "Rural tree")
+        self.assertEqual(row[PROPOSED_CONDITION], WORSE)
+        self.assertTrue(is_null(row[TREE_ADVANCE]))
+
 
 IRREPLACEABLE = "Irreplaceable Habitat"
 
