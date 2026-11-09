@@ -654,8 +654,14 @@ class DegradedTrees(TemplateCase):
     """
 
     def degrade(self, condition=WORSE):
+        """A copied tree, its Proposed values the baseline's as the Copy
+        button writes them, set to Created and then to `condition`."""
         layer = self.layer(TREE_PI)
-        fid = self.add(layer, TREE_POINT, **{**EXISTING_TREE,
+        copied = {"Proposed Tree Size": EXISTING_TREE["Baseline Tree Size"],
+                  "Proposed Tree Type": EXISTING_TREE["Baseline Tree Type"],
+                  "Proposed Rural or Urban Tree":
+                      EXISTING_TREE["Baseline Rural or Urban Tree"]}
+        fid = self.add(layer, TREE_POINT, **{**EXISTING_TREE, **copied,
                                              RETENTION: "Retained"})
         self.assertEqual(self.set(layer, fid, RETENTION, "Created")[RETENTION],
                          "Created")
@@ -664,6 +670,10 @@ class DegradedTrees(TemplateCase):
     def test_a_worse_existing_tree_is_created_30_plus_years_in_advance(self):
         _layer, _fid, row = self.degrade()
         self.assertEqual(row["Category"], "Existing")
+        # Created keeps the copied size class and setting: the lists offer
+        # them.
+        self.assertEqual(row["Proposed Tree Size"], "Medium")
+        self.assertEqual(row["Proposed Rural or Urban Tree"], "Rural tree")
         self.assertEqual(row[PROPOSED_CONDITION], WORSE)
         self.assertEqual(row[TREE_ADVANCE], THIRTY_PLUS)
 
