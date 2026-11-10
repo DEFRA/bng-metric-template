@@ -355,6 +355,54 @@ class NewToOldTest(support.TempDirTestCase):
                          report.counts["Habitats (baseline)"])
 
 
+class DegradedTreeToLegacyTest(support.TempDirTestCase):
+    """An existing tree whose condition gets worse, converted to legacy.
+
+    The Metric records it as lost and created again, so the baseline tree
+    gets a Lost row as a felled one does, and the Created row is kept with a
+    warning: the Natural England list offers Created only for a Newly
+    Planted tree.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        gpkg = support.copy_to(support.site_gpkg(site), cls.tmp,
+                               "degraded.gpkg")
+        cls.part = first(support.read_rows(gpkg, TREE_PI),
+                         lambda row: row[RETENTION] == "Retained"
+                         and row["Parent Ref"])
+        support.update(gpkg, TREE_PI,
+                       {RETENTION: "Created", "Category": "Existing",
+                        "Proposed Condition": "Poor",
+                        "Habitat Created/Enhanced in advance/years": "30+"},
+                       "fid", cls.part["fid"])
+        out = cls.tmp / "out"
+        cls.report = new_to_old.convert(gpkg, out, carry_lineage=False,
+                                        dry_run=False)
+        cls.rows = support.read_rows(out / PI_FILE, "Urban Trees")
+
+    def test_the_baseline_tree_is_written_as_lost(self):
+        lost = [row for row in self.rows
+                if row["Tree Ref"] == self.part["Parent Ref"]
+                and row[RETENTION] == new_to_old.RETENTION_LOST]
+        self.assertEqual(1, len(lost))
+
+    def test_the_worse_tree_is_written_as_created(self):
+        created = [row for row in self.rows
+                   if row["Tree Ref"] == self.part["Parent Ref"]
+                   and row[RETENTION] == "Created"]
+        self.assertEqual(1, len(created))
+        self.assertEqual("Poor", created[0]["Proposed Condition"])
+
+    def test_the_report_warns_about_it(self):
+        warnings = [line for line in self.report.warnings
+                    if "Created in a worse condition" in line]
+        self.assertEqual(1, len(warnings))
+        self.assertIn(str(self.part[REF]), warnings[0])
+
+
 class OlderTemplateTreeCountTest(support.TempDirTestCase):
     """A file from the template before 1.7.0, whose trees have a Count."""
 

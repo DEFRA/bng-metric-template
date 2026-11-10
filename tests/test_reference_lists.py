@@ -164,6 +164,66 @@ CREATED = "Created"
 NOT_APPLICABLE = "N/A"
 
 
+class DegradedTreeListsTest(unittest.TestCase):
+    """An existing tree whose condition gets worse can be recorded as Created.
+
+    A retained habitat cannot get worse, so the Metric asks for it to be
+    recorded as lost and created again, the same area and habitat type, in a
+    lower condition and 30+ years in advance (User Guide, section 5, "Habitat
+    retention"). A tree is an area habitat, so the surveyor keeps the copied
+    tree, which stays Existing and linked to its parent, and sets it to
+    Created. It keeps its size class, type and setting: the same tree, in a
+    worse condition. See MAINTAINERS.md, "A tree whose condition gets worse".
+
+    The lists used to offer an existing tree nothing when Created: Existing
+    offered only Retained and Enhanced, and its Created condition, size, type
+    and setting were N/A.
+    """
+
+    def options(self, name):
+        found = defaultdict(list)
+        for row in csv_rows("bng-service", f"{TREES}/{name}"):
+            found[row["ID"]].append(row["New"])
+        return found
+
+    def test_an_existing_tree_can_be_created(self):
+        rows = csv_rows("bng-service", f"{TREES}/Individual tree Retention.csv")
+        self.assertIn({"Category": "Existing", "Retention": CREATED}, rows)
+
+    def test_a_created_existing_tree_offers_every_condition(self):
+        options = self.options("Individual tree Condition - options.csv")
+        for condition in TREE_CONDITIONS:
+            with self.subTest(baseline=condition):
+                self.assertEqual(TREE_CONDITIONS,
+                                 options[f"{condition}{CREATED}"])
+
+    def test_a_created_existing_tree_keeps_its_size_type_and_setting(self):
+        for name, values in (
+                ("Individual tree Size - options.csv",
+                 ("Small", "Medium", "Large", "Very large")),
+                ("Individual tree Type - options.csv",
+                 ("Native", "Non-native")),
+                ("Individual tree Rural or Urban - options.csv",
+                 ("Rural tree", "Urban tree"))):
+            options = self.options(name)
+            for value in values:
+                with self.subTest(list=name, baseline=value):
+                    self.assertEqual([value], options[f"{value}{CREATED}"])
+
+    def test_a_newly_planted_tree_still_offers_every_choice(self):
+        for name, values in (
+                ("Individual tree Size - options.csv",
+                 ["Small", "Medium", "Large", "Very large"]),
+                ("Individual tree Type - options.csv",
+                 ["Native", "Non-native"]),
+                ("Individual tree Rural or Urban - options.csv",
+                 ["Rural tree", "Urban tree"]),
+                ("Individual tree Condition - options.csv", TREE_CONDITIONS)):
+            with self.subTest(list=name):
+                self.assertEqual(values,
+                                 self.options(name)[f"{NOT_APPLICABLE}{CREATED}"])
+
+
 class DegradedHedgeListsTest(unittest.TestCase):
     """A hedge whose condition gets worse keeps its type when set to Created.
 

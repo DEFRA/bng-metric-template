@@ -9,11 +9,31 @@ Fairly PoorRetained,Fairly Poor,Fairly Poor,4
 N/ACreated,Fairly Poor,Fairly Poor,4
 PoorRetained,Poor,Poor,5
 N/ACreated,Poor,Poor,5
-GoodCreated,N/A,N/A,6
-Fairly GoodCreated,N/A,N/A,6
-ModerateCreated,N/A,N/A,6
-Fairly PoorCreated,N/A,N/A,6
-PoorCreated,N/A,N/A,6
+GoodCreated,Good,Good,1
+GoodCreated,Fairly Good,Fairly Good,2
+GoodCreated,Moderate,Moderate,3
+GoodCreated,Fairly Poor,Fairly Poor,4
+GoodCreated,Poor,Poor,5
+Fairly GoodCreated,Good,Good,1
+Fairly GoodCreated,Fairly Good,Fairly Good,2
+Fairly GoodCreated,Moderate,Moderate,3
+Fairly GoodCreated,Fairly Poor,Fairly Poor,4
+Fairly GoodCreated,Poor,Poor,5
+ModerateCreated,Good,Good,1
+ModerateCreated,Fairly Good,Fairly Good,2
+ModerateCreated,Moderate,Moderate,3
+ModerateCreated,Fairly Poor,Fairly Poor,4
+ModerateCreated,Poor,Poor,5
+Fairly PoorCreated,Good,Good,1
+Fairly PoorCreated,Fairly Good,Fairly Good,2
+Fairly PoorCreated,Moderate,Moderate,3
+Fairly PoorCreated,Fairly Poor,Fairly Poor,4
+Fairly PoorCreated,Poor,Poor,5
+PoorCreated,Good,Good,1
+PoorCreated,Fairly Good,Fairly Good,2
+PoorCreated,Moderate,Moderate,3
+PoorCreated,Fairly Poor,Fairly Poor,4
+PoorCreated,Poor,Poor,5
 Fairly GoodEnhanced,Good,Good,1
 ModerateEnhanced,Good,Good,1
 ModerateEnhanced,Fairly Good,Fairly Good,2

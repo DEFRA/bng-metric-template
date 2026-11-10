@@ -1119,6 +1119,7 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
     _report_losses(staged, report)
     _report_splits(staged, report)
     _report_enhanced_trees(staged, report)
+    _report_degraded_trees(staged, report)
     _report_irreplaceable_trees(staged, report)
     check_needed_values(staged, report, LEGACY_GAP_CONSEQUENCE)
     # Area habitats account for every square metre of the red line, so on a
@@ -1279,6 +1280,32 @@ def _report_irreplaceable_trees(staged, report):
         "it, so the flag is not in the legacy files. The older service and "
         "the metric treat them as ordinary trees unless the flag is entered "
         "by hand.")
+
+
+def is_degraded_tree(row):
+    """An existing tree whose condition gets worse: Existing, Created, and
+    linked to its parent. It is the parent recorded as lost and created again
+    (User Guide, section 5, "Habitat retention"), so it does not carry the
+    parent forward."""
+    return (row.get("Retention Category") == "Created"
+            and row.get("Category") == TREE_CATEGORY_EXISTING
+            and bool(row.get("Parent Ref")))
+
+
+def _report_degraded_trees(staged, report):
+    """The Natural England tree list has no Created for an Existing tree."""
+    refs = [str(row.get(REF_FIELD) or f"fid {row.get('fid')}")
+            for row in staged.get("trees", {}).get("pi", [])
+            if is_degraded_tree(row)]
+    if not refs:
+        return
+    report.warn(
+        f"{len(refs)} existing individual tree(s) are Created in a worse "
+        f"condition ({summarise_list(refs)}). The Statutory Metric records "
+        "such a tree as lost and created again, so each baseline tree is "
+        "written as a Lost row. The Natural England template's tree list "
+        "offers Created only for a Newly Planted tree, so the legacy QGIS "
+        "template shows the Created rows' Retention Category in brackets.")
 
 
 def _report_enhanced_trees(staged, report):
@@ -1528,9 +1555,13 @@ def _write_trees(baseline_conn, pi_conn, tables, site, carry_lineage, report):
         for row in tables["pi"]
     ]
 
-    # A tree is kept or felled: one with no post-intervention row is lost.
+    # A tree is kept or felled: one with no post-intervention row is lost,
+    # and so is one whose condition gets worse, which the Metric records as
+    # lost and created again: its Created row does not keep it.
     losses = synthesise_lost_rows(
-        tables["baseline"], tables["pi"], None, REMOVAL_RULE_PRESENCE, 0,
+        tables["baseline"],
+        [row for row in tables["pi"] if not is_degraded_tree(row)],
+        None, REMOVAL_RULE_PRESENCE, 0,
     )
     for parent, _size in losses:
         pi_rows.append((parent.get("_geom"), tree_lost_row(parent, site)))
