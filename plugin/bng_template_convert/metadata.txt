@@ -2,7 +2,7 @@
 name=BNG Template Convert
 qgisMinimumVersion=3.22
 description=Convert habitat mapping between the legacy Natural England template and the BNG Service template.
-version=1.8.4
+version=1.8.5
 author=Defra BNG Metric Service
 email=
 
@@ -12,9 +12,11 @@ about=Moves a habitat map out of the BNG Service QGIS template without anyone ne
     Export to the Statutory Metric fills a copy of the metric workbook directly, with no CSVs and no import tool in between.
     All three appear in the Processing Toolbox and under Plugins > BNG Template Convert. No dependencies beyond QGIS itself.
 
-changelog=1.8.4
+changelog=1.8.5
     For the BNG Service template that declares the width of each text column: 99 characters for refs, drop-downs and Location, 255 for Spatial risk category, and 999 for Comment and the other site details.
     Convert from legacy declares the same widths in each GeoPackage it creates. It writes a value longer than its column holds as it is, not cut, and names it in a warning: the layer, the ref or row, the column, the limit and the length. The BNG service refuses the file until the value is shortened. Like the service, the tool does not count the spaces at the start and end of a value. The value in the warning is cut to 99 characters and marked with "…".
+  1.8.4
+    The template lets an existing tree whose condition gets worse be Created, keeping its size class, type and setting, in any condition, and fills in 30+ years in advance when the condition is worse, as the Metric User Guide asks. Convert to legacy writes its baseline tree as Lost, and warns that the Natural England list has no Created for an existing tree.
   1.8.3
     Convert from legacy asks for a vertical area habitat's area in hectares, the unit the BNG Service template records it in, as it does every area.
     A vertical area typed in square metres under 1.8.2 must be divided by 10,000: the column is read as hectares again.

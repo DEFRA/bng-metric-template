@@ -531,6 +531,95 @@ class DegradedHedgerowTest(support.TempDirTestCase):
         self.assertRegex(lost[0], r"[1-9]\d* feature\(s\) carry nothing")
 
 
+class DegradedTreeTest(support.TempDirTestCase):
+    """An existing tree whose condition gets worse.
+
+    A retained habitat cannot get worse, so the Metric records the tree as
+    lost and created again, the same size class and setting, in a lower
+    condition and 30+ years in advance (User Guide, section 5, "Habitat
+    retention"). In the template the surveyor copies the baseline tree, which
+    links it to its parent and keeps it Existing, and sets it to Created. As
+    with a hedge (DegradedHedgerowTest), nothing is carried forward.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.gpkg = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                   "degraded-tree.gpkg")
+        pi_rows = support.read_rows(cls.gpkg, TREE_PI)
+        children = defaultdict(list)
+        for row in pi_rows:
+            children[row["parent_uuid"]].append(row)
+        cls.parent = next(
+            row for row in support.read_rows(cls.gpkg, TREE_BASELINE)
+            if len(children[row["feature_uuid"]]) == 1
+            and children[row["feature_uuid"]][0]["Retention Category"]
+            in KEPT)
+        part = children[cls.parent["feature_uuid"]][0]
+        support.update(cls.gpkg, TREE_BASELINE,
+                       {"Baseline Condition": "Good"},
+                       "fid", cls.parent["fid"])
+        support.update(cls.gpkg, TREE_PI,
+                       {"Retention Category": "Created",
+                        "Category": "Existing",
+                        "Proposed Tree Size": cls.parent["Baseline Tree Size"],
+                        "Proposed Rural or Urban Tree":
+                            cls.parent["Baseline Rural or Urban Tree"],
+                        "Proposed Condition": "Poor",
+                        "Habitat Created/Enhanced in advance/years": "30+",
+                        "Delay in starting habitat creation/enhancement "
+                        "in years": "0"},
+                       "fid", part["fid"])
+        cls.part = next(row for row in support.read_rows(cls.gpkg, TREE_PI)
+                        if row["fid"] == part["fid"])
+        cls.area = to_metric.tree_area(cls.parent["Baseline Tree Size"])
+        cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
+        cls.out = cls.tmp / "degraded-tree.xlsx"
+        cls.report = to_metric.convert(cls.gpkg, cls.blank, cls.out)
+
+    def rows_of(self, stage, ref):
+        xml = sheet_xml(self.out, (AREA_BASELINE_SHEET if stage == "baseline"
+                                   else AREA_CREATION_SHEET))
+        columns = AREA_COLUMNS[stage]
+        refs = cells_by_row(xml, columns["ref"])
+        return xml, columns, [row for row, text in refs.items()
+                              if text == ref]
+
+    def number(self, xml, column, row):
+        found = numbers_in_column(xml, column, row, row)
+        return found[0] if found else 0.0
+
+    def test_the_tree_keeps_its_link_to_the_baseline(self):
+        self.assertEqual(self.parent["feature_uuid"], self.part["parent_uuid"])
+
+    def test_the_baseline_tree_is_wholly_lost(self):
+        xml, columns, rows = self.rows_of("baseline",
+                                          self.parent["Habitat Ref"])
+        self.assertEqual(1, len(rows))
+        row = rows[0]
+        self.assertEqual("Good", cells_by_row(xml, columns["condition"])[row])
+        self.assertAlmostEqual(self.area,
+                               self.number(xml, columns["size"], row),
+                               delta=AREA_TOLERANCE_HA)
+        self.assertEqual(0.0, self.number(xml, columns["retained"], row))
+        self.assertEqual(0.0, self.number(xml, columns["enhanced"], row))
+
+    def test_the_worse_tree_is_created_in_its_place_30_plus_years_ahead(self):
+        xml, columns, rows = self.rows_of("creation",
+                                          self.part["Habitat Ref"])
+        self.assertEqual(1, len(rows))
+        row = rows[0]
+        self.assertEqual("Poor", cells_by_row(xml, columns["condition"])[row])
+        self.assertEqual(self.parent["Baseline Rural or Urban Tree"],
+                         cells_by_row(xml, columns["habitat"])[row])
+        self.assertAlmostEqual(self.area,
+                               self.number(xml, columns["size"], row),
+                               delta=AREA_TOLERANCE_HA)
+        self.assertEqual("30+", cells_by_row(xml, columns["advance"])[row])
+
+
 WATERCOURSE_BASELINE = "Watercourses Baseline"
 WATERCOURSE_PI = "Watercourses Post-Intervention"
 WATERCOURSE_BASELINE_SHEET = to_metric.LAYOUT["watercourses"]["baseline"][0]

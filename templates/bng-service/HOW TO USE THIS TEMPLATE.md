@@ -297,7 +297,7 @@ cleared. Select it again. A condition that still fits stays.
 | Baseline and Proposed Distinctiveness | Fills in the band of the habitat type, and locks the field. Blank until you choose a habitat type. |
 | Baseline Strategic Significance | Always `Low`, and locked. |
 | Proposed Strategic Significance | `Low` on a new or copied row, and never blank. Change it to `High` where the site is in an area formally identified in a local strategy. On a `Retained` row it is `Low`, as the baseline is, and you cannot change it. |
-| Habitat created in advance and Delay in starting habitat creation | The Metric allows one or the other. While one is above 0, the other is greyed out. To switch, set the first to `0` or blank, then pick the other. `0` and blank are both allowed. On a habitat whose condition gets worse (Part 5e, and Vertical Area Habitats and Hedgerows in Part 9), a blank years created in advance becomes `30+` once the Proposed Condition is worse than the Baseline Condition: set it to `0` to use a delay instead. On any other row of those layers, `30+` shows a warning, but you can save it. |
+| Habitat created in advance and Delay in starting habitat creation | The Metric allows one or the other. While one is above 0, the other is greyed out. To switch, set the first to `0` or blank, then pick the other. `0` and blank are both allowed. On a habitat whose condition gets worse (Part 5e, and Vertical Area Habitats, Hedgerows and Individual Trees in Part 9), a blank years created in advance becomes `30+` once the Proposed Condition is worse than the Baseline Condition: set it to `0` to use a delay instead. On any other row of those layers, `30+` shows a warning, but you can save it. |
 | Baseline and Proposed Condition | Fills in the condition when the habitat allows one only, for example `N/A - Other` for Developed land; sealed surface. You can still change it. |
 | Spatial risk category | Always `N/A` on the post-intervention layers, and locked. |
 
@@ -589,7 +589,8 @@ section 5, *Habitat retention*. Where the condition of a retained habitat
 cannot be maintained or enhanced, it says to record the habitat as lost,
 record the same area and habitat type as created in a lower condition, set
 the 'habitat created in advance' function to 30 plus years, and give your
-ecological reasons in the comments. The same rule applies to hedgerows.
+ecological reasons in the comments. The same rule applies to hedgerows, and
+to individual trees, which the Metric counts as area habitats.
 
 When you finish, click the **pencil**, then click **Save**.
 
@@ -859,6 +860,18 @@ Draw each tree as a **point**. A point cannot be split.
   rural or urban setting stay the baseline ones, because the Statutory Metric
   does not record the growth of a kept tree. Use the Comment to say what you
   will do, for example crown works or mulching.
+- **A tree whose condition gets worse:** a retained tree cannot get worse, so
+  the Statutory Metric records the old tree as lost and the same tree as
+  created in its place, in the worse condition (Part 5e). Keep the copied
+  row, which stays `Existing`, and set **Retention Category** to `Created`. It
+  keeps its **Proposed Tree Size**, **Proposed Tree Type** and **Proposed
+  Rural or Urban Tree**: the lists offer only the baseline ones. Then set the
+  worse **Proposed Condition**. The template fills in `30+` for **Habitat
+  Created/Enhanced in advance/years**, as the Metric User Guide asks; give
+  your reasons in the **Comment** if you change it. Its `Parent Ref` stays,
+  so the two records stay linked, but nothing is carried forward: the whole
+  baseline tree counts as lost. Do not set **Category** to `Newly Planted`:
+  the tree is not new.
 - **A planted tree:** add a point, set **Retention Category** to `Created`, and
   fill in only the Proposed fields. **Parent Ref** stays blank. The
   **Category** field fills in as `Newly Planted` by itself. A point exactly on
