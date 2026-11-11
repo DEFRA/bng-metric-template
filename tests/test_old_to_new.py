@@ -352,6 +352,77 @@ class OldToNewTest(support.TempDirTestCase):
         self.assertTrue(warnings[0].startswith("1 area habitat row(s)"),
                         warnings[0])
 
+    def test_a_value_over_its_limit_is_carried_whole_and_named(self):
+        """A legacy file can hold more than its declared width: SQLite does
+        not enforce it. The value is written whole, and named."""
+        folder = self.tmp / "over-limit"
+        baseline = support.copy_to(self.baseline, folder)
+        pi = support.copy_to(self.pi, folder)
+        hedge = support.read_rows(pi, old_to_new.HEDGEROWS)[0][PARCEL_REF]
+        long_ref = "H" * 120
+        long_comment = "é" * 1200    # characters, not bytes, are counted
+        support.update(baseline, old_to_new.HEDGEROWS, {PARCEL_REF: long_ref},
+                       PARCEL_REF, hedge)
+        support.update(pi, old_to_new.HEDGEROWS,
+                       {PARCEL_REF: long_ref, "Comments": long_comment},
+                       PARCEL_REF, hedge)
+        site_name = "S" * 1100
+        support.update(pi, old_to_new.LEGACY_REDLINE, {"Site Name": site_name},
+                       "fid", 1)
+        target = template_copy(folder)
+        report = fill(baseline, pi, target)
+
+        (red_line,) = support.read_rows(target, old_to_new.LEGACY_REDLINE)
+        self.assertEqual(site_name, red_line["Site Name"])
+        self.assertEqual(1, len(self.warnings_in(
+            report, f"{old_to_new.LEGACY_REDLINE}, row 1: Site Name is 1100 "
+            "characters long, over the template's limit of 999")))
+        (row,) = [r for r in support.read_rows(
+            target, old_to_new.HEDGEROWS_POST_INTERVENTION)
+            if r[REF] == long_ref]
+        self.assertEqual((long_ref, long_ref, long_comment),
+                         (row[REF], row[PARENT_REF], row[old_to_new.COMMENT]))
+        self.assertEqual(1, len([r for r in support.read_rows(
+            target, "Hedgerows Baseline") if r[REF] == long_ref]))
+
+        cut_ref = repr("H" * 99 + gpkg_common.CUT_MARK)
+        for table, column, limit, length in (
+                ("Hedgerows Baseline", REF, 99, 120),
+                (old_to_new.HEDGEROWS_POST_INTERVENTION, REF, 99, 120),
+                (old_to_new.HEDGEROWS_POST_INTERVENTION, PARENT_REF, 99, 120),
+                (old_to_new.HEDGEROWS_POST_INTERVENTION, old_to_new.COMMENT,
+                 999, 1200)):
+            with self.subTest(table=table, column=column):
+                found = [w for w in report.warnings if w.startswith(
+                    f"{table}, {REF} {cut_ref}: {column} is {length} "
+                    f"characters long, over the template's limit of {limit}")]
+                self.assertEqual(1, len(found), report.warnings)
+                self.assertNotIn("H" * 100, found[0])
+        (comment,) = self.warnings_in(report, "Comment is 1200")
+        self.assertIn(repr("é" * 99 + gpkg_common.CUT_MARK), comment)
+        self.assertEqual([], self.warnings_mentioning("over the template's"))
+
+    def test_spaces_at_the_ends_of_a_value_do_not_count(self):
+        """The BNG service removes the spaces at the start and end of a value
+        before it counts the characters. A value over its limit only because
+        of those spaces is written as it is, and is not named."""
+        folder = self.tmp / "spaces-at-the-ends"
+        baseline = support.copy_to(self.baseline, folder)
+        pi = support.copy_to(self.pi, folder)
+        site_name = "  " + "S" * 999 + "   "
+        support.update(pi, old_to_new.LEGACY_REDLINE, {"Site Name": site_name},
+                       "fid", 1)
+        target = template_copy(folder)
+        report = fill(baseline, pi, target)
+
+        (red_line,) = support.read_rows(target, old_to_new.LEGACY_REDLINE)
+        self.assertEqual(site_name, red_line["Site Name"])
+        self.assertEqual([], self.warnings_in(report, "over the template's"))
+
+    @staticmethod
+    def warnings_in(report, text):
+        return [w for w in report.warnings if text in w]
+
     def test_a_target_without_a_version_is_warned_about_and_left_alone(self):
         target = template_copy(self.tmp / "no-version")
         conn = support.open_for_writing(target)

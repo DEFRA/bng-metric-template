@@ -260,6 +260,15 @@ already in target condition`, is left blank, and the log names the rows. A
 row that has both above 0 is kept as it arrived and named, because the tool
 cannot tell which of the two to keep.
 
+**A value longer than its template column holds is written as it is.** A
+`Habitat Ref` or `Parent Ref` holds 99 characters, a `Comment` 999. The legacy
+template declares the same limits, but a legacy file can hold more. The tool
+does not cut the value, and the log names it: the layer, the ref or row, the
+column, the limit and the length, with the value cut to 99 characters and
+marked `…`. The BNG service refuses the file until the value is shortened.
+Like the service, the tool does not count the spaces at the start and end of
+a value.
+
 **The tool fills the blanks that the template fills itself:** distinctiveness
 from the habitat type, a condition where the habitat allows only one, and
 Irreplaceable Habitat where the habitat allows only one answer. It reads these

@@ -15,6 +15,7 @@ from qgis.core import (QgsApplication, QgsFeature, QgsFieldConstraints,
 from qgis.gui import (QgsAttributeEditorContext, QgsAttributeForm, QgsGui,
                       QgsEditorWidgetWrapper)
 from qgis.PyQt import QtWidgets
+from qgis.PyQt.QtTest import QTest
 from qgis.PyQt.QtWidgets import QComboBox
 import qgis.utils
 
@@ -805,6 +806,201 @@ class CopyBaselineButton(TemplateCase):
         self.assertEqual({r[RETENTION] for r in rows}, {"Retained"})
         uuids = {f["feature_uuid"] for f in base.getFeatures()}
         self.assertEqual({r["parent_uuid"] for r in rows}, uuids)
+
+
+REF_LIMIT = 99
+COMMENT_LIMIT = 999
+RED_LINE = "Red Line Boundary"
+TYPED = "abcdef"
+
+
+class TextLimits(TemplateCase):
+    """The form stops a typed value at the width its column declares.
+
+    QGIS reads TEXT(99) and TEXT(999) as the field length. Its text editor
+    stops at that length, on a single-line field and on Comment alike, so the
+    template needs no constraint for it. GDAL itself only warns about a
+    longer value, and writes it, so a value from outside the form (a
+    converted legacy file, the field calculator) can be longer. The form
+    shows it whole, and cuts it to the limit when an edit of the row is
+    saved.
+    """
+
+    def form_widgets(self, layer, fid):
+        form = QgsAttributeForm(layer, layer.getFeature(fid),
+                                QgsAttributeEditorContext())
+        form.setMode(QgsAttributeEditorContext.SingleEditMode)
+        self.addCleanup(form.deleteLater)
+        widgets = {w.field().name(): w
+                   for w in form.findChildren(QgsEditorWidgetWrapper)}
+        return form, widgets
+
+    def type_past(self, layer, fid, name, limit):
+        """Fill the field to near its limit, then type past it."""
+        form, widgets = self.form_widgets(layer, fid)
+        wrapper = widgets[name]
+        edit = wrapper.widget()
+        wrapper.setValues("x" * (limit - 2), [])
+        edit.setFocus()
+        edit.end(False)
+        QTest.keyClicks(edit, TYPED)
+        return form, edit
+
+    def test_the_fields_have_the_declared_lengths(self):
+        layer = self.layer(AREA_PI)
+        fields = layer.fields()
+        self.assertEqual(fields.field(REF).length(), REF_LIMIT)
+        self.assertEqual(fields.field("Parent Ref").length(), REF_LIMIT)
+        self.assertEqual(fields.field(COMMENT).length(), COMMENT_LIMIT)
+        self.assertEqual(fields.field("parent_uuid").length(), 0)
+
+    def test_a_habitat_ref_stops_at_99_characters(self):
+        for name, wkt in HABITAT_LAYERS.items():
+            with self.subTest(layer=name):
+                layer = self.layer(name)
+                fid = self.add(layer, wkt, **{REF: "R-1"})
+                form, edit = self.type_past(layer, fid, REF, REF_LIMIT)
+                self.assertEqual(len(edit.text()), REF_LIMIT)
+                self.assertTrue(form.save())
+                self.assertEqual(self.get(layer, fid)[REF],
+                                 "x" * (REF_LIMIT - 2) + TYPED[:2])
+
+    def test_a_comment_stops_at_999_characters(self):
+        for name, wkt in HABITAT_LAYERS.items():
+            with self.subTest(layer=name):
+                layer = self.layer(name)
+                fid = self.add(layer, wkt, **{REF: "C-1"})
+                form, edit = self.type_past(layer, fid, COMMENT,
+                                            COMMENT_LIMIT)
+                self.assertEqual(len(edit.text()), COMMENT_LIMIT)
+                self.assertTrue(form.save())
+                self.assertEqual(len(self.get(layer, fid)[COMMENT]),
+                                 COMMENT_LIMIT)
+
+    def test_the_site_details_stop_at_their_limits(self):
+        layer = self.layer(RED_LINE)
+        fid = self.add(layer, SQUARE)
+        for name, limit in (("Location", REF_LIMIT),
+                            ("Site Name", COMMENT_LIMIT)):
+            with self.subTest(field=name):
+                _form, edit = self.type_past(layer, fid, name, limit)
+                self.assertEqual(len(edit.text()), limit)
+
+    def test_a_longer_value_from_outside_the_form_is_cut_on_an_edit(self):
+        layer = self.layer(AREA_BASE)
+        self.add(layer, SQUARE, **{REF: "R" * 120, COMMENT: "c" * 1100})
+        self.assertTrue(layer.commitChanges(), layer.commitErrors())
+        (row,) = layer.getFeatures()
+        self.assertEqual(len(row[REF]), 120)
+        fid = row.id()
+        layer.startEditing()
+        form, widgets = self.form_widgets(layer, fid)
+        self.assertTrue(form.save())
+        self.assertEqual(len(self.get(layer, fid)[REF]), 120)
+        # An edit of any field, here the comment, saves every field.
+        edit = widgets[COMMENT].widget()
+        edit.setFocus()
+        edit.end(False)
+        QTest.keyClicks(edit, TYPED)
+        self.assertTrue(form.save())
+        row = self.get(layer, fid)
+        self.assertEqual((len(row[REF]), len(row[COMMENT])),
+                         (REF_LIMIT, COMMENT_LIMIT))
+
+
+class RefButtons(TemplateCase):
+    """The Tidy and Rename buttons never write a ref over 99 characters."""
+
+    def run_button(self, prefix, layer_name, item=None, text=None):
+        project_path = os.path.join(self.dir, PROJECT_NAME)
+        body = load_action(project_path, prefix, layer_name)
+
+        class Answers:
+            @staticmethod
+            def getItem(*_args, **_kwargs):
+                return item, True
+
+            @staticmethod
+            def getText(*_args, **_kwargs):
+                return text, True
+
+        iface = FakeIface()
+        originals = (QtWidgets.QInputDialog,
+                     getattr(qgis.utils, "iface", None))
+        QtWidgets.QInputDialog = Answers
+        qgis.utils.iface = iface
+        try:
+            exec(compile(body, "<action>", "exec"), {"__name__": "__action__"})
+        finally:
+            QtWidgets.QInputDialog, qgis.utils.iface = originals
+        return iface.bar.messages
+
+    def pi_refs(self, layer):
+        return sorted((f[REF], f["Parent Ref"]) for f in layer.getFeatures())
+
+    def split(self, ref):
+        """Two post-intervention halves that share one Habitat Ref."""
+        pi = self.layer(AREA_PI)
+        for wkt in (SQUARE, OTHER_SQUARE):
+            self.add(pi, wkt, **{REF: ref, "Parent Ref": ref,
+                                 RETENTION: "Retained"})
+        self.assertTrue(pi.commitChanges(), pi.commitErrors())
+        return pi
+
+    def test_tidy_gives_split_rows_a_letter_up_to_99_characters(self):
+        ref = "A" * (REF_LIMIT - 1)
+        pi = self.split(ref)
+        messages = self.run_button("Tidy PI refs", AREA_PI)
+        self.assertEqual(self.pi_refs(pi), [(ref + "a", ref), (ref + "b", ref)])
+        self.assertEqual(messages[-1][0], "success")
+
+    def test_tidy_does_not_take_a_ref_over_99_characters(self):
+        ref = "A" * REF_LIMIT
+        pi = self.split(ref)
+        messages = self.run_button("Tidy PI refs", AREA_PI)
+        self.assertEqual(self.pi_refs(pi), [(ref, ref), (ref, ref)])
+        kind, _title, text = messages[-1]
+        self.assertEqual(kind, "warning")
+        self.assertIn("Not renamed: " + ref, text)
+
+    def baseline_with_split_child(self, old="P-1"):
+        base = self.layer(AREA_BASE)
+        self.add(base, SQUARE, **{REF: old})
+        self.assertTrue(base.commitChanges(), base.commitErrors())
+        pi = self.split(old)
+        self.run_button("Tidy PI refs", AREA_PI)
+        self.assertEqual(self.pi_refs(pi), [(old + "a", old),
+                                            (old + "b", old)])
+        return base, pi
+
+    def test_rename_refuses_a_ref_over_99_characters(self):
+        base, pi = self.baseline_with_split_child()
+        messages = self.run_button("Rename a ref", AREA_BASE, item="P-1",
+                                   text="N" * (REF_LIMIT + 1))
+        self.assertEqual([f[REF] for f in base.getFeatures()], ["P-1"])
+        self.assertEqual(self.pi_refs(pi), [("P-1a", "P-1"), ("P-1b", "P-1")])
+        self.assertEqual(messages[-1][0], "warning")
+        self.assertIn("Not renamed", messages[-1][2])
+
+    def test_rename_to_99_characters_keeps_the_lettered_refs(self):
+        new = "N" * REF_LIMIT
+        base, pi = self.baseline_with_split_child()
+        messages = self.run_button("Rename a ref", AREA_BASE, item="P-1",
+                                   text=new)
+        self.assertEqual([f[REF] for f in base.getFeatures()], [new])
+        # The link to the parent follows; the lettered refs stay as they
+        # were, as a letter would take them over 99 characters.
+        self.assertEqual(self.pi_refs(pi), [("P-1a", new), ("P-1b", new)])
+        kind, _title, text = messages[-1]
+        self.assertEqual(kind, "warning")
+        self.assertIn("Habitat Ref not renamed: P-1a, P-1b", text)
+
+    def test_rename_to_a_shorter_ref_letters_the_split_rows(self):
+        base, pi = self.baseline_with_split_child()
+        messages = self.run_button("Rename a ref", AREA_BASE, item="P-1",
+                                   text="Q-7")
+        self.assertEqual(self.pi_refs(pi), [("Q-7a", "Q-7"), ("Q-7b", "Q-7")])
+        self.assertEqual(messages[-1][0], "success")
 
 
 if __name__ == "__main__":
