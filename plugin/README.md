@@ -81,7 +81,10 @@ drawn, up to the baseline length. The rest of the baseline length is shared
 between the Enhanced parts by their drawn lengths, and each is enhanced by
 its whole drawn length. For example, a 100 m ditch split into 40 m Retained
 and 90 m Enhanced gives a 40 m retained section and a 60 m section enhanced
-to 90 m. A shorter line records the difference as lost.
+to 90 m. A shorter line records the difference as lost. If the Retained
+parts are as long as the whole baseline watercourse, nothing is left for an
+Enhanced part: the export leaves it out and warns, and the service leaves it
+Incomplete. Draw each Retained part only as long as the stretch it keeps.
 
 **A part-finished site can be exported.** The baseline tabs always hold the
 whole baseline. A feature not yet in post-intervention counts as lost.

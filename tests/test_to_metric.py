@@ -723,11 +723,11 @@ def _watercourse_part(ref, retention, length):
             "Retention Category": retention}
 
 
-def _watercourse_lines(*parts):
+def _watercourse_lines(*parts, parent_length=REMEANDER_PARENT_M):
     """The baseline lines the export writes for R001 and these parts."""
     rule, tolerance = to_metric.ACCOUNTING[to_metric.WATERCOURSES]
     baseline, _creation, accounting = to_metric.build_lines(
-        {"baseline": [_watercourse_parent()], "pi": list(parts)},
+        {"baseline": [_watercourse_parent(parent_length)], "pi": list(parts)},
         "Length", "River Type", consolidate=False, rule=rule,
         tolerance=tolerance)
     return baseline, accounting
@@ -788,6 +788,65 @@ class RemeanderedWatercourseLinesTest(unittest.TestCase):
         baseline, _accounting = _watercourse_lines(
             _watercourse_part("R001", "Retained", 120.0))
         self.assertEqual([("R001", 100.0, 100.0, 0.0)], _sections(baseline))
+
+    def test_a_shorter_enhanced_line_is_reported_as_partly_lost(self):
+        # The Metric counts its 20 m as lost, so the export's note counts its
+        # parent among the features that carry forward only part of their size.
+        _baseline, accounting = _watercourse_lines(
+            _watercourse_part("R001", "Enhanced", 80.0))
+        self.assertEqual(["R001"], accounting[to_metric.PARTLY_LOST])
+        report = to_metric.Report()
+        to_metric.report_accounting("Watercourses Baseline", accounting, report)
+        self.assertTrue(any("1 carry forward only part" in line
+                            for line in report.lines), report.lines)
+
+    def test_a_longer_or_whole_enhanced_line_is_not_reported_as_partly_lost(self):
+        for length in (100.0, 130.0):
+            with self.subTest(length=length):
+                _baseline, accounting = _watercourse_lines(
+                    _watercourse_part("R001", "Enhanced", length))
+                self.assertEqual([], accounting[to_metric.PARTLY_LOST])
+
+    def test_an_enhanced_part_left_nothing_by_its_retained_part_is_warned_of(self):
+        for retained in (100.0, 110.0):
+            with self.subTest(retained=retained):
+                baseline, accounting = _watercourse_lines(
+                    _watercourse_part("R001a", "Retained", retained),
+                    _watercourse_part("R001b", "Enhanced", 30.0))
+                # Nothing of the parent is left for R001b, so no row is
+                # written for it, and the export says so.
+                self.assertEqual([("R001a", 100.0, 100.0, 0.0)],
+                                 _sections(baseline))
+                self.assertEqual(["R001b"],
+                                 accounting[to_metric.NOTHING_TO_ENHANCE])
+                report = to_metric.Report()
+                to_metric.report_accounting(
+                    "Watercourses Baseline", accounting, report)
+                self.assertEqual(1, len(report.warnings), report.warnings)
+                self.assertIn("1 Enhanced part(s) have nothing of their "
+                              "baseline feature left to enhance (R001b): "
+                              "their Retained siblings are as long as the "
+                              "whole feature.",
+                              report.warnings[0])
+
+    def test_a_parent_with_no_length_is_not_put_down_to_its_retained_parts(self):
+        # With no baseline Length every section is empty, Retained part or
+        # not, so the nothing-to-enhance warning, which blames the Retained
+        # parts, is not given.
+        for parts in ((_watercourse_part("R001", "Enhanced", 130.0),),
+                      (_watercourse_part("R001a", "Retained", 40.0),
+                       _watercourse_part("R001b", "Enhanced", 90.0))):
+            with self.subTest(parts=[p["Habitat Ref"] for p in parts]):
+                _baseline, accounting = _watercourse_lines(
+                    *parts, parent_length=0.0)
+                self.assertEqual([], accounting[to_metric.NOTHING_TO_ENHANCE])
+
+    def test_a_split_with_room_for_its_enhanced_part_warns_of_nothing(self):
+        _baseline, accounting = _watercourse_lines(
+            _watercourse_part("R001a", "Retained", 40.0),
+            _watercourse_part("R001b", "Enhanced", 90.0))
+        self.assertEqual([], accounting[to_metric.NOTHING_TO_ENHANCE])
+        self.assertEqual([], accounting[to_metric.PARTLY_LOST])
 
     def test_the_enhancement_type_does_not_change_the_lines(self):
         lines = []
