@@ -149,6 +149,7 @@ LINE_COMMENT, LINE_NUMBER = "comment", "number"
 RETAINED_SIZE, ENHANCED_SIZE = "retained", "enhanced"
 WHOLLY_LOST, PARTLY_LOST = "wholly lost", "partly lost"
 IRREPLACEABLE_LOST, OVERSUBSCRIBED = "irreplaceable lost", "oversubscribed"
+NOTHING_TO_ENHANCE = "nothing to enhance"
 MERGED_COMMENTS = "_comments"
 UTF8 = "utf-8"
 WORKBOOK_XML = "xl/workbook.xml"
@@ -724,11 +725,32 @@ def _record_loss(parent, whole, carried, tolerance, baseline, accounting,
         accounting[OVERSUBSCRIBED].append(ref)
 
 
+def _record_sections(parent, parts, sections, tolerance, accounting):
+    """What the sections leave out that the lost row does not show.
+
+    An Enhanced part whose section is empty, because its Retained siblings
+    take the whole parent, has a drawn length but nothing of the parent to
+    enhance, so no row is written for it: it is named, for a warning, as the
+    service leaves the same part Incomplete. An Enhanced part drawn shorter
+    than its section loses the rest within that section, which the metric
+    counts as lost though no lost row is written, so its parent is named as
+    partly lost, as a shorter Retained part's is.
+    """
+    ref = parent.get(REF_FIELD) or parent.get("fid")
+    for part, (size, kept) in zip(parts, sections):
+        if retention_of(part) != ENHANCED or kept <= 0:
+            continue
+        if size <= 0:
+            accounting[NOTHING_TO_ENHANCE].append(part.get(REF_FIELD) or ref)
+        elif kept < size - tolerance and ref not in accounting[PARTLY_LOST]:
+            accounting[PARTLY_LOST].append(ref)
+
+
 def _baseline_from_kept(baseline_rows, kept, size_field, type_field, rule,
                         tolerance, text_years):
     baseline = []
     accounting = {WHOLLY_LOST: [], PARTLY_LOST: [], OVERSUBSCRIBED: [],
-                  IRREPLACEABLE_LOST: []}
+                  IRREPLACEABLE_LOST: [], NOTHING_TO_ENHANCE: []}
     for parent in baseline_rows:
         # Only a parent with an identifier can have parts in `kept`.
         parts = kept.get(parent.get(FEATURE_UUID), [])
@@ -738,6 +760,7 @@ def _baseline_from_kept(baseline_rows, kept, size_field, type_field, rule,
             parent, parts, sections, baseline, type_field, text_years)
         _record_loss(parent, whole, carried, tolerance, baseline, accounting,
                      type_field)
+        _record_sections(parent, parts, sections, tolerance, accounting)
     return baseline, accounting
 
 
@@ -747,7 +770,8 @@ def build_lines(tables, size_field, type_field, consolidate,
 
     Returns (baseline lines, creation lines, accounting), where accounting
     names the baseline features that were wholly lost, partly lost, and
-    oversubscribed, for the report.
+    oversubscribed, and the Enhanced parts left nothing to enhance, for the
+    report.
     """
     kept, creation = _sort_post_intervention(
         tables["pi"], _parents_by_uuid(tables[BASELINE]),
@@ -1034,6 +1058,15 @@ def report_accounting(base_table, accounting, report):
             "'Any Loss Unacceptable' and leaves the parcel out of the "
             "baseline total. If post-intervention is not finished, that is "
             "why. If the loss is real, it needs bespoke compensation.")
+    if accounting.get(NOTHING_TO_ENHANCE):
+        refs = accounting[NOTHING_TO_ENHANCE]
+        report.warn(
+            f"{base_table}: {len(refs)} Enhanced part(s) have nothing of "
+            f"their baseline feature left to enhance ({summarise_refs(refs)})"
+            ": its Retained parts are as long as the whole feature. They are "
+            "left out of the workbook, and the service leaves them "
+            "Incomplete. Draw each Retained part only as long as the stretch "
+            "it keeps.")
     if accounting[OVERSUBSCRIBED]:
         refs = accounting[OVERSUBSCRIBED]
         report.warn(
