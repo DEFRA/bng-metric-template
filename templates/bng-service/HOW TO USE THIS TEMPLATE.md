@@ -814,7 +814,10 @@ re-meandered channel moves and gets longer. This is correct.
 - **A re-meandered channel:** move the copied line onto the new route with
   **Reshape Features** or the **Vertex Tool**, so that it keeps its link to
   the baseline. Set **Retention Category** to `Enhanced` and fill in
-  **Enhancement Type**.
+  **Enhancement Type** (`Enhanced by Realignment`). The service and the
+  export to the Statutory Metric count its whole new length as enhanced,
+  with no loss. If only part of the stretch is re-meandered, split the copied
+  line into a `Retained` part and an `Enhanced` part.
 - **Do not edit `Baseline Length (m)`.** The copy button and a paste write the
   original length there. The calculation needs it after the channel moves.
 - **A stretch is fully lost**, for example culverted or filled: delete its
