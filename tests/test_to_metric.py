@@ -723,11 +723,11 @@ def _watercourse_part(ref, retention, length):
             "Retention Category": retention}
 
 
-def _watercourse_lines(*parts):
+def _watercourse_lines(*parts, parent_length=REMEANDER_PARENT_M):
     """The baseline lines the export writes for R001 and these parts."""
     rule, tolerance = to_metric.ACCOUNTING[to_metric.WATERCOURSES]
     baseline, _creation, accounting = to_metric.build_lines(
-        {"baseline": [_watercourse_parent()], "pi": list(parts)},
+        {"baseline": [_watercourse_parent(parent_length)], "pi": list(parts)},
         "Length", "River Type", consolidate=False, rule=rule,
         tolerance=tolerance)
     return baseline, accounting
@@ -824,8 +824,22 @@ class RemeanderedWatercourseLinesTest(unittest.TestCase):
                     "Watercourses Baseline", accounting, report)
                 self.assertEqual(1, len(report.warnings), report.warnings)
                 self.assertIn("1 Enhanced part(s) have nothing of their "
-                              "baseline feature left to enhance (R001b)",
+                              "baseline feature left to enhance (R001b): "
+                              "their Retained siblings are as long as the "
+                              "whole feature.",
                               report.warnings[0])
+
+    def test_a_parent_with_no_length_is_not_put_down_to_its_retained_parts(self):
+        # With no baseline Length every section is empty, Retained part or
+        # not, so the nothing-to-enhance warning, which blames the Retained
+        # parts, is not given.
+        for parts in ((_watercourse_part("R001", "Enhanced", 130.0),),
+                      (_watercourse_part("R001a", "Retained", 40.0),
+                       _watercourse_part("R001b", "Enhanced", 90.0))):
+            with self.subTest(parts=[p["Habitat Ref"] for p in parts]):
+                _baseline, accounting = _watercourse_lines(
+                    *parts, parent_length=0.0)
+                self.assertEqual([], accounting[to_metric.NOTHING_TO_ENHANCE])
 
     def test_a_split_with_room_for_its_enhanced_part_warns_of_nothing(self):
         _baseline, accounting = _watercourse_lines(

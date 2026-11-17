@@ -725,7 +725,7 @@ def _record_loss(parent, whole, carried, tolerance, baseline, accounting,
         accounting[OVERSUBSCRIBED].append(ref)
 
 
-def _record_sections(parent, parts, sections, tolerance, accounting):
+def _record_sections(parent, whole, parts, sections, tolerance, accounting):
     """What the sections leave out that the lost row does not show.
 
     An Enhanced part whose section is empty, because its Retained siblings
@@ -734,14 +734,19 @@ def _record_sections(parent, parts, sections, tolerance, accounting):
     service leaves the same part Incomplete. An Enhanced part drawn shorter
     than its section loses the rest within that section, which the metric
     counts as lost though no lost row is written, so its parent is named as
-    partly lost, as a shorter Retained part's is.
+    partly lost, as a shorter Retained part's is. A parent with no length (a
+    blank Length, which check_needed_values reports, or an empty line)
+    leaves every section empty, whatever its parts, so that is not put down
+    to its Retained parts.
     """
     ref = parent.get(REF_FIELD) or parent.get("fid")
     for part, (size, kept) in zip(parts, sections):
         if retention_of(part) != ENHANCED or kept <= 0:
             continue
         if size <= 0:
-            accounting[NOTHING_TO_ENHANCE].append(part.get(REF_FIELD) or ref)
+            if whole > 0:
+                accounting[NOTHING_TO_ENHANCE].append(
+                    part.get(REF_FIELD) or ref)
         elif kept < size - tolerance and ref not in accounting[PARTLY_LOST]:
             accounting[PARTLY_LOST].append(ref)
 
@@ -760,7 +765,8 @@ def _baseline_from_kept(baseline_rows, kept, size_field, type_field, rule,
             parent, parts, sections, baseline, type_field, text_years)
         _record_loss(parent, whole, carried, tolerance, baseline, accounting,
                      type_field)
-        _record_sections(parent, parts, sections, tolerance, accounting)
+        _record_sections(parent, whole, parts, sections, tolerance,
+                         accounting)
     return baseline, accounting
 
 
@@ -1063,8 +1069,8 @@ def report_accounting(base_table, accounting, report):
         report.warn(
             f"{base_table}: {len(refs)} Enhanced part(s) have nothing of "
             f"their baseline feature left to enhance ({summarise_refs(refs)})"
-            ": its Retained parts are as long as the whole feature. They are "
-            "left out of the workbook, and the service leaves them "
+            ": their Retained siblings are as long as the whole feature. "
+            "They are left out of the workbook, and the service leaves them "
             "Incomplete. Draw each Retained part only as long as the stretch "
             "it keeps.")
     if accounting[OVERSUBSCRIBED]:
