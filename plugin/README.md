@@ -73,8 +73,15 @@ Enhanced part gets its own row. What does not continue into post-intervention
 gets one more row, which the metric counts as lost. The creation, enhancement
 and watercourse encroachment values are filled to match.
 
-**A watercourse that continues keeps its surveyed length.** Re-meandering
-makes a channel longer but does not add to the baseline.
+**A re-meandered watercourse is enhanced by its whole new length, with no
+loss**, as the Statutory Metric User Guide says (section 7, Watercourse
+enhancement). Each Retained or Enhanced part of a watercourse is its own
+section of the baseline watercourse. A Retained part is as long as it is
+drawn, up to the baseline length. The rest of the baseline length is shared
+between the Enhanced parts by their drawn lengths, and each is enhanced by
+its whole drawn length. For example, a 100 m ditch split into 40 m Retained
+and 90 m Enhanced gives a 40 m retained section and a 60 m section enhanced
+to 90 m. A shorter line records the difference as lost.
 
 **A part-finished site can be exported.** The baseline tabs always hold the
 whole baseline. A feature not yet in post-intervention counts as lost.

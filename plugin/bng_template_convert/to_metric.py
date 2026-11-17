@@ -171,19 +171,24 @@ MACRO_EXTENSION, PLAIN_EXTENSION = ".xlsm", ".xlsx"
 #              parcel, a feature deleted outright, the length taken out of a
 #              shortened hedge. It is also what an unfinished post-intervention
 #              layer looks like, which is why the report says how much.
-#   PRESENCE   Watercourses. Re-meandering moves a channel and lengthens it,
-#              so the length of the parts says nothing about how much was
-#              lost. A watercourse with any Retained or Enhanced part continues
-#              at its surveyed length; one with none is lost.
+#   SECTIONS   Watercourses. Re-meandering moves a channel and lengthens it,
+#              and the metric records the total enhanced length with no loss
+#              (user guide, section 7, Watercourse enhancement). So each part
+#              is its own baseline section: a Retained part as long as it is
+#              drawn, up to what is left of its parent; the rest of the parent
+#              shared between the Enhanced parts by their drawn lengths, each
+#              enhanced by its whole drawn length. A longer Enhanced line loses
+#              nothing; a shorter one loses the difference within its section.
+#              A parent with no Retained or Enhanced part is lost.
 #
 # A shortfall smaller than the tolerance is drawing noise, not a loss: half a
 # square metre is the service's own area tolerance, and the service rounds
 # linear sizes to whole metres.
-SHORTFALL, PRESENCE = "shortfall", "presence"
+SHORTFALL, SECTIONS = "shortfall", "sections"
 ACCOUNTING = {
     AREAS: (SHORTFALL, 0.5 / SQ_METRES_PER_HECTARE),
     HEDGEROWS: (SHORTFALL, 0.5),
-    WATERCOURSES: (PRESENCE, 0.5),
+    WATERCOURSES: (SECTIONS, 0.5),
 }
 
 # The columns the metric needs before it can score a row, on the layers they
@@ -583,17 +588,42 @@ def proposed_values(row, type_field, text_years=None):
 
 
 def kept_sizes(parent, parts, size_field, rule):
-    """How much of the parent each Retained or Enhanced part carries forward."""
+    """Each Retained or Enhanced part's baseline section, as (size, kept).
+
+    `size` is the length or area of the parent the part's baseline row stands
+    for, and `kept` how much of it the part retains or enhances. Under the
+    shortfall rule the two are the part's own size. Under the sections rule
+    (watercourses, see ACCOUNTING) an Enhanced part's section is its share of
+    what the Retained parts leave, and it keeps its whole drawn length.
+    """
     sizes = [numeric(part.get(size_field)) or 0.0 for part in parts]
-    if rule != PRESENCE or not parts:
-        return sizes
-    # A watercourse that continues at all continues at its surveyed length,
-    # shared between its parts in proportion to how long each one is drawn.
+    if rule != SECTIONS or not parts:
+        return [(size, size) for size in sizes]
     whole = numeric(parent.get(size_field)) or 0.0
-    drawn = sum(sizes)
-    if drawn <= 0:
-        return [whole / len(parts)] * len(parts)
-    return [whole * size / drawn for size in sizes]
+    if sum(sizes) <= 0:
+        # No part has a drawn length, as an empty shape leaves it: the
+        # watercourse continues at its surveyed length, shared equally.
+        return [(whole / len(parts), whole / len(parts))] * len(parts)
+    return _watercourse_sections(parts, sizes, whole)
+
+
+def _watercourse_sections(parts, sizes, whole):
+    """Retained parts as drawn, up to the parent; the rest to the Enhanced."""
+    sections = []
+    left = whole
+    for part, size in zip(parts, sizes):
+        retained = 0.0
+        if retention_of(part) == RETAINED:
+            retained = min(size, left)
+            left -= retained
+        sections.append((retained, retained))
+    enhanced_drawn = sum(
+        size for part, size in zip(parts, sizes)
+        if retention_of(part) == ENHANCED)
+    for i, (part, size) in enumerate(zip(parts, sizes)):
+        if retention_of(part) == ENHANCED and enhanced_drawn > 0:
+            sections[i] = (left * size / enhanced_drawn, size)
+    return sections
 
 
 def _parents_by_uuid(rows):
@@ -633,16 +663,22 @@ def _sort_post_intervention(pi_rows, by_uuid, size_field, type_field,
     return kept, creation
 
 
-def _kept_baseline_line(parent, part, size, type_field, text_years):
-    """One baseline row for a part that carries `size` of its parent forward."""
+def _kept_baseline_line(parent, part, section, type_field, text_years):
+    """One baseline row for a part's section of its parent.
+
+    `section` is (size, kept): the row stands for `size` of the parent, and
+    the part retains or enhances `kept` of it, which for a re-meandered
+    watercourse is more than `size` (see ACCOUNTING).
+    """
+    size, kept = section
     retention = retention_of(part)
     line = baseline_line(parent, size, type_field)
     line.update({
         "ref": part.get(REF_FIELD),
         LINE_NUMBER: part.get(REF_FIELD),
         "irreplaceable": part.get(IRREPLACEABLE_COLUMN),
-        RETAINED_SIZE: size if retention == RETAINED else 0,
-        ENHANCED_SIZE: size if retention == ENHANCED else 0,
+        RETAINED_SIZE: kept if retention == RETAINED else 0,
+        ENHANCED_SIZE: kept if retention == ENHANCED else 0,
     })
     if retention == ENHANCED:
         enhancement = proposed_values(part, type_field, text_years)
@@ -655,17 +691,22 @@ def _kept_baseline_line(parent, part, size, type_field, text_years):
     return line
 
 
-def _append_kept_parts(parent, parts, sizes, baseline, type_field, text_years):
-    """Write each part that keeps some of the parent. Returns how much."""
+def _append_kept_parts(parent, parts, sections, baseline, type_field,
+                       text_years):
+    """Write each part that keeps some of the parent. Returns how much.
+
+    How much is the size of the sections written, which is what the lost
+    row, if any, makes up to the parent's whole size.
+    """
     carried = 0.0
-    for part, size in zip(parts, sizes):
+    for part, (size, kept) in zip(parts, sections):
         # A part of no size keeps nothing, and an enhancement row with no
         # enhanced size would sit against the wrong baseline row: the metric
         # lists only the rows whose enhanced size is above zero.
-        if size <= 0:
+        if size <= 0 or kept <= 0:
             continue
         baseline.append(_kept_baseline_line(
-            parent, part, size, type_field, text_years))
+            parent, part, (size, kept), type_field, text_years))
         carried += size
     return carried
 
@@ -692,9 +733,9 @@ def _baseline_from_kept(baseline_rows, kept, size_field, type_field, rule,
         # Only a parent with an identifier can have parts in `kept`.
         parts = kept.get(parent.get(FEATURE_UUID), [])
         whole = numeric(parent.get(size_field)) or 0.0
-        sizes = kept_sizes(parent, parts, size_field, rule)
+        sections = kept_sizes(parent, parts, size_field, rule)
         carried = _append_kept_parts(
-            parent, parts, sizes, baseline, type_field, text_years)
+            parent, parts, sections, baseline, type_field, text_years)
         _record_loss(parent, whole, carried, tolerance, baseline, accounting,
                      type_field)
     return baseline, accounting

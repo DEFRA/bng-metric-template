@@ -707,6 +707,137 @@ class CreatedExistingWatercourseTest(support.TempDirTestCase):
                                delta=LENGTH_TOLERANCE_KM)
 
 
+PARENT_UUID_R001 = "c0ffee00-0000-4000-8000-000000001212"
+REMEANDER_PARENT_M = 100.0
+
+
+def _watercourse_parent(length=REMEANDER_PARENT_M):
+    return {"Habitat Ref": "R001", "Length": length,
+            "feature_uuid": PARENT_UUID_R001, **WATERCOURSE}
+
+
+def _watercourse_part(ref, retention, length):
+    return {"Habitat Ref": ref, "Parent Ref": "R001",
+            "parent_uuid": PARENT_UUID_R001, "Length": length,
+            **WATERCOURSE, **WATERCOURSE_PROPOSED,
+            "Retention Category": retention}
+
+
+def _watercourse_lines(*parts):
+    """The baseline lines the export writes for R001 and these parts."""
+    rule, tolerance = to_metric.ACCOUNTING[to_metric.WATERCOURSES]
+    baseline, _creation, accounting = to_metric.build_lines(
+        {"baseline": [_watercourse_parent()], "pi": list(parts)},
+        "Length", "River Type", consolidate=False, rule=rule,
+        tolerance=tolerance)
+    return baseline, accounting
+
+
+def _sections(baseline):
+    """Each baseline line as (ref, length, retained, enhanced), in metres."""
+    return [(line["ref"], round(line["size"], 6),
+             round(line[to_metric.RETAINED_SIZE], 6),
+             round(line[to_metric.ENHANCED_SIZE], 6)) for line in baseline]
+
+
+class RemeanderedWatercourseLinesTest(unittest.TestCase):
+    """BMD-1212: the Metric records a re-meandered watercourse's total
+    enhanced length, with no loss (user guide, section 7, Watercourse
+    enhancement), and splits a baseline stretch into a retained section and
+    an enhanced one."""
+
+    def test_a_longer_enhanced_line_is_enhanced_by_its_whole_length(self):
+        baseline, accounting = _watercourse_lines(
+            _watercourse_part("R001", "Enhanced", 130.0))
+        self.assertEqual([("R001", 100.0, 0.0, 130.0)], _sections(baseline))
+        self.assertEqual([], accounting[to_metric.PARTLY_LOST])
+        self.assertEqual([], accounting[to_metric.OVERSUBSCRIBED])
+
+    def test_a_split_has_a_retained_and_an_enhanced_section(self):
+        baseline, accounting = _watercourse_lines(
+            _watercourse_part("R001a", "Retained", 40.0),
+            _watercourse_part("R001b", "Enhanced", 90.0))
+        self.assertEqual([("R001a", 40.0, 40.0, 0.0),
+                          ("R001b", 60.0, 0.0, 90.0)], _sections(baseline))
+        self.assertEqual([], accounting[to_metric.PARTLY_LOST])
+
+    def test_enhanced_parts_share_the_rest_by_their_drawn_lengths(self):
+        baseline, _accounting = _watercourse_lines(
+            _watercourse_part("R001a", "Retained", 40.0),
+            _watercourse_part("R001b", "Enhanced", 50.0),
+            _watercourse_part("R001c", "Enhanced", 70.0))
+        self.assertEqual([("R001a", 40.0, 40.0, 0.0),
+                          ("R001b", 25.0, 0.0, 50.0),
+                          ("R001c", 35.0, 0.0, 70.0)], _sections(baseline))
+
+    def test_a_shorter_enhanced_line_loses_the_rest_in_its_section(self):
+        # The Metric counts a section's length less its retained and
+        # enhanced lengths as lost: 100 m less 80 m enhanced is 20 m.
+        baseline, _accounting = _watercourse_lines(
+            _watercourse_part("R001", "Enhanced", 80.0))
+        self.assertEqual([("R001", 100.0, 0.0, 80.0)], _sections(baseline))
+
+    def test_a_shorter_retained_line_loses_the_rest(self):
+        baseline, accounting = _watercourse_lines(
+            _watercourse_part("R001", "Retained", 75.0))
+        self.assertEqual([("R001", 75.0, 75.0, 0.0),
+                          ("R001", 25.0, 0.0, 0.0)], _sections(baseline))
+        self.assertEqual(["R001"], accounting[to_metric.PARTLY_LOST])
+
+    def test_a_retained_line_longer_than_its_parent_keeps_only_the_parent(self):
+        baseline, _accounting = _watercourse_lines(
+            _watercourse_part("R001", "Retained", 120.0))
+        self.assertEqual([("R001", 100.0, 100.0, 0.0)], _sections(baseline))
+
+    def test_the_enhancement_type_does_not_change_the_lines(self):
+        lines = []
+        for kind in ("Enhanced by Realignment", "Standard Enhancement"):
+            part = _watercourse_part("R001", "Enhanced", 130.0)
+            part["Enhancement Type"] = kind
+            lines.append(_sections(_watercourse_lines(part)[0]))
+        self.assertEqual(lines[0], lines[1])
+
+
+class RemeanderedWatercourseExportTest(support.TempDirTestCase):
+    """BMD-1212 AC8: a 100 m ditch re-meandered onto a 130 m route, exported
+    to the Statutory Metric."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.gpkg = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                   "remeandered.gpkg")
+        support.insert_feature(cls.gpkg, WATERCOURSE_BASELINE,
+                               support.line(WATERCOURSE_LINE),
+                               _watercourse_parent())
+        part = _watercourse_part("R001", "Enhanced", 130.0)
+        part["Enhancement Type"] = "Enhanced by Realignment"
+        support.insert_feature(cls.gpkg, WATERCOURSE_PI,
+                               support.line(WATERCOURSE_LINE), part)
+        cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
+        cls.out = cls.tmp / "remeandered.xlsx"
+        cls.report = to_metric.convert(cls.gpkg, cls.blank, cls.out)
+
+    def test_the_total_enhanced_length_is_recorded_with_no_loss(self):
+        xml = sheet_xml(self.out, WATERCOURSE_BASELINE_SHEET)
+        columns = WATERCOURSE_COLUMNS["baseline"]
+        rows = [row for row, text in cells_by_row(xml, columns["ref"]).items()
+                if text == "R001"]
+        # One row: a lost row would be a second one.
+        self.assertEqual(1, len(rows))
+        row = rows[0]
+
+        def number(column):
+            found = numbers_in_column(xml, columns[column], row, row)
+            return found[0] if found else 0.0
+
+        self.assertAlmostEqual(0.1, number("size"), delta=LENGTH_TOLERANCE_KM)
+        self.assertAlmostEqual(0.13, number("enhanced"),
+                               delta=LENGTH_TOLERANCE_KM)
+        self.assertEqual(0.0, number("retained"))
+
+
 class OlderTemplateTreeCountTest(support.TempDirTestCase):
     """A file from the template before 1.7.0, whose trees have a Count."""
 

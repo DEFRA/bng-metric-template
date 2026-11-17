@@ -182,7 +182,12 @@ INDIVIDUAL_TREES_BASELINE = "Individual Trees Baseline"
 INDIVIDUAL_TREES_POST_INTERVENTION = "Individual Trees Post-Intervention"
 LINESTRING = "LINESTRING"
 LENGTH = "Length"
-MEANDER_ENHANCEMENT_TYPE = "Meanders"
+# A legacy meanders row is a re-meandered watercourse: the BNG Service
+# template records it as Enhanced, by realignment (its Watercourse Enhancement
+# Options list). "Meanders" is not on that list, so the service would refuse it.
+MEANDER_ENHANCEMENT_TYPE = "Enhanced by Realignment"
+# How the legacy meanders layer reads in a message.
+MEANDERS_LABEL = "Meanders"
 POLYGON = "POLYGON"
 PARCEL_REF = "Parcel Ref"
 PARENT_REF = "Parent Ref"
@@ -1055,9 +1060,11 @@ def _report_tree_counts(rows, stage, report):
 def build_meander_rows(rows, index, report):
     """Carry the legacy meanders layer into Watercourses Post-Intervention.
 
-    The new template folds re-meandering into the watercourse itself via the
-    Enhancement Type column, so these become enhanced watercourse rows. That is
-    an interpretation, not a stated equivalence — hence the warning.
+    The new template folds re-meandering into the watercourse itself: a
+    re-meandered channel is the baseline watercourse Enhanced by Realignment
+    (template guide, Watercourses), so each row becomes one, linked to its
+    baseline watercourse. The Metric records its total enhanced length, with
+    no loss (user guide, section 7), so its own drawn length is kept.
     """
     if not rows:
         return []
@@ -1102,10 +1109,10 @@ def build_meander_rows(rows, index, report):
         f"{len(out)} row(s) from the legacy 'Water course enhancement through "
         "meanders' layer were carried into Watercourses Post-Intervention as "
         f"Enhanced, with Enhancement Type '{MEANDER_ENHANCEMENT_TYPE}'. The new "
-        "template has no separate meanders layer, so this is an interpretation — "
-        "check these rows."
+        "template has no separate meanders layer: check each row is linked to "
+        "the baseline watercourse it re-meanders."
     )
-    _report_unmatched(unmatched, MEANDER_ENHANCEMENT_TYPE, report)
+    _report_unmatched(unmatched, MEANDERS_LABEL, report)
     return out
 
 
@@ -1533,7 +1540,7 @@ LEGACY_REFS = {
     HEDGEROWS_KEY: (PARCEL_REF, HEDGEROWS),
     WATERCOURSES_KEY: (PARCEL_REF, WATERCOURSES),
     TREES_KEY: (TREE_REF, TREES),
-    MEANDERS: (BASELINE_PARCEL_REF, MEANDER_ENHANCEMENT_TYPE),
+    MEANDERS: (BASELINE_PARCEL_REF, MEANDERS_LABEL),
 }
 HABITAT_KEYS = (AREAS, HEDGEROWS_KEY, WATERCOURSES_KEY, TREES_KEY)
 

@@ -7,6 +7,7 @@ High on a Retained row, an off-site spatial risk, a blank distinctiveness,
 a text advance value), to check what the converter does with each.
 """
 
+import csv
 import unittest
 
 from tests import support
@@ -619,6 +620,30 @@ class TimingTextTest(unittest.TestCase):
         self.assertIn("M-2", both)
         self.assertNotIn("W-1", both[0])
         self.assertNotIn("H-1", both[0])
+
+
+    def test_a_meander_is_enhanced_by_realignment(self):
+        # BMD-1212 AC9: a legacy meanders row is a re-meandered watercourse,
+        # written with an Enhancement Type the template's list offers, so the
+        # service's text value checks accept it.
+        index = {"W-1": {"uuid": "u-1", "geom": None, "size": 100.0}}
+        rows = old_to_new.build_meander_rows(
+            [{old_to_new.BASELINE_PARCEL_REF: "W-1",
+              old_to_new.LENGTH: 130}], index, old_to_new.Report())
+        ((_blob, values),) = rows
+        self.assertEqual("Enhanced", values[old_to_new.RETENTION_CATEGORY])
+        self.assertEqual("Enhanced by Realignment",
+                         values[old_to_new.ENHANCEMENT_TYPE])
+        self.assertEqual(130, values[old_to_new.LENGTH])
+        self.assertEqual("W-1", values[old_to_new.PARENT_REF])
+        self.assertEqual(100.0, values[old_to_new.BASELINE_LENGTH])
+        options = support.SERVICE_TEMPLATE_DIR / "CSV References" / \
+            "Watercourses" / "Watercourse Enhancement Options.csv"
+        with open(options, newline="", encoding="utf-8-sig") as handle:
+            offered = {(row["Value"], row["Options"])
+                       for row in csv.DictReader(handle)}
+        self.assertIn(("Enhanced", values[old_to_new.ENHANCEMENT_TYPE]),
+                      offered)
 
 
 class BaselineCommentTest(unittest.TestCase):
