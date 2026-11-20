@@ -231,6 +231,102 @@ def make_a_tree_irreplaceable(gpkg):
     return row["Habitat Ref"]
 
 
+VERTICAL_BASELINE = "Vertical Area Habitats Baseline"
+VERTICAL_PI = "Vertical Area Habitats Post-Intervention"
+URBAN, INTERTIDAL = "Urban", "Intertidal hard structures"
+FACADE_WALL = "Facade-bound green wall"
+GROUND_WALL = "Ground based green wall"
+HARD_STRUCTURES = "Artificial hard structures"
+HARD_FEATURES = "Artificial features of hard structures"
+IGGI = ("Artificial hard structures with integrated greening of grey "
+        "infrastructure (IGGI)")
+# Ref -> (broad habitat, habitat type, area in hectares, what happens to it).
+# One of each of the 5 vertical area habitat types, and each outcome:
+# Retained, Enhanced, Lost, and a Created feature with no parent.
+VERTICAL_BASELINES = {
+    "VA-1": (URBAN, FACADE_WALL, 0.0050, "Retained"),
+    "VA-2": (URBAN, GROUND_WALL, 0.0040, "Lost"),
+    "VA-3": (INTERTIDAL, HARD_STRUCTURES, 0.0200, "Enhanced"),
+    "VA-4": (INTERTIDAL, HARD_FEATURES, 0.0010, "Retained"),
+    "VA-5": (INTERTIDAL, IGGI, 0.0020, "Retained"),
+}
+VERTICAL_CREATED = ("VA-6", URBAN, GROUND_WALL, 0.0030)
+VERTICAL_COMMENT = "North face of plant room"
+
+
+def _vertical_line(index):
+    return line([(455900.0 + 10 * index, 285400.0),
+                 (455905.0 + 10 * index, 285400.0)])
+
+
+def _vertical_baseline_values(ref, broad, habitat, area):
+    return {
+        "Habitat Ref": ref,
+        "Baseline Broad Habitat Type": broad,
+        "Baseline Habitat Type": habitat,
+        "Baseline Distinctiveness": "Medium" if habitat == IGGI else "Low",
+        "Baseline Condition": "Good",
+        "Baseline Strategic Significance": "Low",
+        "Irreplaceable Habitat": "No",
+        "Area": area,
+        "feature_uuid": f"{{vertical-{ref}}}",
+    }
+
+
+def _vertical_part(ref, baseline, retention):
+    """A post-intervention part of `baseline`, kept whole."""
+    values = {key: value for key, value in baseline.items()
+              if key != "feature_uuid"}
+    proposed = IGGI if retention == "Enhanced" else values[
+        "Baseline Habitat Type"]
+    values.update({
+        "Parent Ref": ref,
+        "parent_uuid": baseline["feature_uuid"],
+        "Retention Category": retention,
+        "Proposed Broad Habitat Type": values["Baseline Broad Habitat Type"],
+        "Proposed Habitat Type": proposed,
+        "Proposed Distinctiveness": "Medium" if proposed == IGGI else "Low",
+        "Proposed Condition": "Moderate" if retention == "Enhanced" else "Good",
+        "Proposed Strategic Significance": "Low",
+        "Spatial risk category": "N/A",
+    })
+    return values
+
+
+def add_vertical_habitats(gpkg):
+    """Add the vertical area habitat scenario above to a site's GeoPackage.
+
+    VA-1 is High strategic significance with a comment, to show both carry.
+    """
+    for index, (ref, (broad, habitat, area, outcome)) in enumerate(
+            VERTICAL_BASELINES.items()):
+        baseline = _vertical_baseline_values(ref, broad, habitat, area)
+        if ref == "VA-1":
+            baseline.update({"Baseline Strategic Significance": "High",
+                             "Comment": VERTICAL_COMMENT})
+        insert_feature(gpkg, VERTICAL_BASELINE, _vertical_line(index),
+                       baseline)
+        if outcome != "Lost":
+            part = _vertical_part(ref, baseline, outcome)
+            part.pop("Comment", None)
+            insert_feature(gpkg, VERTICAL_PI, _vertical_line(index), part)
+    ref, broad, habitat, area = VERTICAL_CREATED
+    insert_feature(gpkg, VERTICAL_PI, _vertical_line(9), {
+        "Habitat Ref": ref,
+        "Retention Category": "Created",
+        "Irreplaceable Habitat": "No",
+        "Proposed Broad Habitat Type": broad,
+        "Proposed Habitat Type": habitat,
+        "Proposed Distinctiveness": "Low",
+        "Proposed Condition": "Moderate",
+        "Proposed Strategic Significance": "Low",
+        "Habitat created in advance/years": "0",
+        "Delay in starting habitat creation/years": "0",
+        "Spatial risk category": "N/A",
+        "Area": area,
+    })
+
+
 def add_tree_counts(gpkg, count=3):
     """Give the tree tables the Count of the template before 1.7.0, with
     `count` on the first tree of each. Returns {table: that tree's ref}."""

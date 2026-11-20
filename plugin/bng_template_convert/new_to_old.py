@@ -1116,7 +1116,7 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
             "No Red Line Boundary feature found — the legacy service requires one."
         )
 
-    _report_losses(staged, report)
+    _report_losses(staged, report, formats)
     _report_splits(staged, report)
     _report_enhanced_trees(staged, report)
     _report_degraded_trees(staged, report)
@@ -1128,6 +1128,12 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
     area_losses = synthesise_lost_rows(
         staged["areas"]["baseline"], staged["areas"]["pi"], "Area",
         REMOVAL_RULE_SHORTFALL, AREA_TOLERANCE_HA)
+    # Vertical area habitats are area habitats to the metric, measured by
+    # their Area column, so they lose by the same rule. They go to the CSVs
+    # only: the legacy template has no layer for them.
+    vertical_losses = synthesise_lost_rows(
+        staged["verticalAreas"]["baseline"], staged["verticalAreas"]["pi"],
+        "Area", REMOVAL_RULE_SHORTFALL, AREA_TOLERANCE_HA)
 
     if dry_run:
         _plan_counts(staged, redline, report)
@@ -1199,10 +1205,38 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
         csv_rows["Habitats"] = pi_rows["Habitats"] + [
             (None, area_lost_row(parent, size, site))
             for parent, size in area_losses
-        ]
+        ] + _vertical_csv_rows(staged["verticalAreas"], vertical_losses,
+                               site, carry_lineage, report)
         _write_csvs(out_dir, csv_rows, report, consolidate, split_irreplaceable)
         _report_baseline_comments(staged, report)
     return report
+
+
+def _vertical_csv_rows(tables, losses, site, carry_lineage, report):
+    """Vertical area habitats as Habitats.csv rows, after the area habitats.
+
+    The metric holds them as area habitats, and the import tool reads them
+    from the habitats CSV like any other. Their size is the Area column, in
+    the square metres every other row of the file uses.
+    """
+    rows = [(None, map_area_pi(row, site, carry_lineage))
+            for row in tables["pi"]]
+    deduplicate_area_refs(rows, report)
+    rows += [(None, area_lost_row(parent, size, site))
+             for parent, size in losses]
+    report.count("Habitats.csv vertical area habitat rows", len(rows))
+    if losses:
+        detail = summarise_list(
+            f"{parent.get(REF_FIELD)} "
+            f"({int(round(hectares_to_sq_metres(size)))} m²)"
+            for parent, size in losses
+        )
+        report.note(
+            f"Habitats.csv: synthesised {len(losses)} 'Lost' row(s) for "
+            "vertical area habitat not carried forward to "
+            f"post-intervention — {detail}"
+        )
+    return rows
 
 
 def _report_area_losses(losses, want_gpkg, want_csv, report):
@@ -1601,14 +1635,18 @@ def _number_list_values(staged, report):
         )
 
 
-def _report_losses(staged, report):
+def _report_losses(staged, report, formats=("gpkg",)):
     vertical = staged["verticalAreas"]
     vertical_total = len(vertical["baseline"]) + len(vertical["pi"])
-    if vertical_total:
+    # Only the legacy GeoPackages lose them. The CSVs carry them in
+    # Habitats.csv, because the metric holds them as area habitats.
+    if vertical_total and "gpkg" in formats:
         report.warn(
-            f"{vertical_total} vertical area habitat feature(s) CANNOT be carried "
-            "over — the legacy template has no layer for them. Their biodiversity "
-            "units will be missing from the legacy calculation."
+            f"{vertical_total} vertical area habitat feature(s) are NOT in the "
+            "legacy GeoPackages — the legacy template has no layer for them. "
+            "Their biodiversity units will be missing from a legacy "
+            "calculation made from those files."
+            + (" They are in Habitats.csv." if "csv" in formats else "")
         )
 
     irreplaceable = 0
@@ -1690,8 +1728,9 @@ def print_report(report, dry_run):
 
     print(
         "\nAlways dropped: the lineage columns (feature_uuid, parent_uuid and "
-        "parent_geom),\nirreplaceable-habitat flags, and vertical area "
-        "habitats. Sizes are rounded to\nwhole units to match the legacy integer "
+        "parent_geom) and\nirreplaceable-habitat flags. Vertical area habitats "
+        "go to Habitats.csv only:\nthe legacy GeoPackages have no layer for "
+        "them. Sizes are rounded to\nwhole units to match the legacy integer "
         "columns.\n"
     )
 

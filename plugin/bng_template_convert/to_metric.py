@@ -65,6 +65,15 @@ INDIVIDUAL TREES
     (User Guide, page 64). Tree lines follow the area habitat lines on each
     sheet.
 
+VERTICAL AREA HABITATS
+    Green walls and intertidal hard structures are drawn as lines on their
+    own layers, but the metric holds them as area habitats, on the same
+    sheets. Their size is the "Area" column, which the surveyor types in
+    hectares (User Guide, "Calculating area of green walls" and
+    "Calculating area of artificial hard structures and IGGI"), not the
+    drawn length. They are retained, enhanced, created or lost by the area
+    habitat rules, and their lines follow the tree lines on each sheet.
+
 SCOPE
     On-site only. The off-site sheets (D, E and F) carry extra allocation
     columns and a different layout, so they are deliberately not written rather
@@ -136,6 +145,8 @@ RETAINED, ENHANCED, CREATED = "Retained", "Enhanced", "Created"
 # Layer keys, sheet stages, and the column and line-field names used below.
 AREAS, HEDGEROWS, WATERCOURSES, TREES = (
     "areas", "hedgerows", "watercourses", "trees")
+# The same key new_to_old.py and reference_lists.py use for these layers.
+VERTICALS = "verticalAreas"
 BASELINE, CREATION, ENHANCEMENT = "baseline", "creation", "enhancement"
 FEATURE_UUID, PARENT_UUID = "feature_uuid", "parent_uuid"
 BASELINE_CONDITION = "Baseline Condition"
@@ -308,6 +319,10 @@ MODULES = (
 # Individual trees go onto the area habitat sheets, after the area habitats.
 TREE_TABLES = ("Individual Trees Baseline",
                "Individual Trees Post-Intervention")
+# Vertical area habitats go onto the area habitat sheets too, after the trees.
+# Their columns are the area habitat ones, so they are read as they stand.
+VERTICAL_TABLES = ("Vertical Area Habitats Baseline",
+                   "Vertical Area Habitats Post-Intervention")
 TREES_BROAD = "Individual trees"
 # The tree helper's area for one tree of each size class, in hectares
 # (User Guide, Table 15). bng-library holds the same figures in square metres.
@@ -414,6 +429,10 @@ def read_staged(path):
         }
         trees = {BASELINE: read_table(conn, TREE_TABLES[0], present),
                  "pi": read_table(conn, TREE_TABLES[1], present)}
+        # A file from before the layers existed has none, so reads as empty.
+        staged[VERTICALS] = {
+            BASELINE: read_table(conn, VERTICAL_TABLES[0], present),
+            "pi": read_table(conn, VERTICAL_TABLES[1], present)}
     finally:
         conn.close()
     to_legacy_significance(staged)
@@ -871,6 +890,19 @@ def _column_gaps(rows, columns_for, skip):
     return gaps
 
 
+def _checked_layers(staged):
+    """(key, baseline table, PI table, size column, needs key) per layer.
+
+    Vertical area habitats need what area habitats need, and are checked
+    when the staged rows include them.
+    """
+    layers = [(kind, base, pi, size_field, kind)
+              for kind, base, pi, size_field, _type, _scale in MODULES]
+    if VERTICALS in staged:
+        layers.append((VERTICALS, *VERTICAL_TABLES, "Area", AREAS))
+    return layers
+
+
 def check_needed_values(staged, report, consequence=METRIC_GAP_CONSEQUENCE,
                         skip=()):
     """Warn, one summary per layer, about blanks the metric cannot score.
@@ -885,14 +917,15 @@ def check_needed_values(staged, report, consequence=METRIC_GAP_CONSEQUENCE,
     BNG Service template's column names. `skip` leaves out columns a caller
     has already warned about in its own terms.
     """
-    for kind, base_table, pi_table, size_field, _type, _scale in MODULES:
+    for kind, base_table, pi_table, size_field, needs in _checked_layers(
+            staged):
         tables = staged[kind]
         parents = _feature_uuids(tables[BASELINE])
         report_gaps(base_table, _column_gaps(
-            tables[BASELINE], _columns_of(BASELINE_NEEDS[kind]), skip),
+            tables[BASELINE], _columns_of(BASELINE_NEEDS[needs]), skip),
             report, consequence)
         report_gaps(pi_table, _column_gaps(
-            tables["pi"], _pi_columns(kind, parents, size_field), skip),
+            tables["pi"], _pi_columns(needs, parents, size_field), skip),
             report, consequence)
 
 
@@ -904,15 +937,18 @@ def check_post_intervention(staged, report):
     cleared and wrong for one not designed yet, and only the user knows
     which, so the report says what the numbers mean either way.
     """
-    started = [(base, pi) for kind, base, pi, *_rest in MODULES
+    layers = [(kind, base, pi) for kind, base, pi, *_rest
+              in _checked_layers(staged)]
+    started = [(base, pi) for kind, base, pi in layers
                if staged[kind][BASELINE]]
-    empty = [(base, pi) for kind, base, pi, *_rest in MODULES
+    empty = [(base, pi) for kind, base, pi in layers
              if staged[kind][BASELINE] and not staged[kind]["pi"]]
     if not empty:
         return
     if len(empty) == len(started):
-        irreplaceable = any(is_irreplaceable(row)
-                            for row in staged[AREAS][BASELINE])
+        irreplaceable = any(
+            is_irreplaceable(row) for kind in (AREAS, VERTICALS)
+            for row in staged.get(kind, {}).get(BASELINE, []))
         report.warn(
             "Nothing has been drawn in post-intervention, so every baseline "
             "feature is written as lost. The baseline units are right"
@@ -1422,23 +1458,20 @@ def plan_parts(staged, consolidate, report):
         report.count(f"{kind} creation", len(creation))
         report.count(f"{kind} enhancement", len(enhancements_for(baseline)))
 
-    # Trees share the area habitat sheets, after the area habitats. The
-    # enhancement sheet takes the enhanced lines in the order the baseline
-    # sheet holds them, so appending keeps the two in step.
+    # Trees, then vertical area habitats, share the area habitat sheets,
+    # after the area habitats. The enhancement sheet takes the enhanced lines
+    # in the order the baseline sheet holds them, so appending keeps the two
+    # in step. Each is built on its own, so "Merge rows with matching
+    # values" merges a tree only with trees, and a vertical area habitat
+    # only with vertical area habitats.
     trees = staged.get(TREES)
     if trees and (trees[BASELINE] or trees["pi"]):
-        rule, tolerance = ACCOUNTING[AREAS]
-        text_years = []
-        baseline, creation, accounting = build_lines(
-            trees_as_areas(trees), "Area", "Habitat Type", consolidate, rule,
-            tolerance, text_years)
-        area_baseline, area_creation = lines[AREAS]
-        lines[AREAS] = (area_baseline + baseline, area_creation + creation)
-        report_accounting(TREE_TABLES[0], accounting, report)
-        report_text_timing(TREE_TABLES[1], text_years, report)
-        report.count("trees baseline", len(baseline))
-        report.count("trees creation", len(creation))
-        report.count("trees enhancement", len(enhancements_for(baseline)))
+        _append_on_area_sheets(lines, trees_as_areas(trees), TREE_TABLES,
+                               TREES, consolidate, report)
+    verticals = staged.get(VERTICALS)
+    if verticals and (verticals[BASELINE] or verticals["pi"]):
+        _append_on_area_sheets(lines, verticals, VERTICAL_TABLES,
+                               "vertical areas", consolidate, report)
 
     parts = 1
     for kind, (baseline, creation) in lines.items():
@@ -1457,6 +1490,23 @@ def plan_parts(staged, consolidate, report):
         for kind, (baseline, creation) in lines.items()
     }
     return [build_edits(runs, index, report) for index in range(parts)]
+
+
+def _append_on_area_sheets(lines, tables, table_names, label, consolidate,
+                           report):
+    """Add a layer's lines after those already on the area habitat sheets."""
+    rule, tolerance = ACCOUNTING[AREAS]
+    text_years = []
+    baseline, creation, accounting = build_lines(
+        tables, "Area", "Habitat Type", consolidate, rule, tolerance,
+        text_years)
+    area_baseline, area_creation = lines[AREAS]
+    lines[AREAS] = (area_baseline + baseline, area_creation + creation)
+    report_accounting(table_names[0], accounting, report)
+    report_text_timing(table_names[1], text_years, report)
+    report.count(f"{label} baseline", len(baseline))
+    report.count(f"{label} creation", len(creation))
+    report.count(f"{label} enhancement", len(enhancements_for(baseline)))
 
 
 def widen_for_enhancements(lines, parts):
@@ -1695,7 +1745,8 @@ def print_report(report):
         "\nNot written: the off-site tabs and the Irreplaceable Habitats "
         "\nsheet. The irreplaceable flag itself IS written, on the on-site "
         "\nbaseline habitat sheet. Individual trees are written on the area "
-        "\nhabitat sheets, at the tree helper's area for their size class."
+        "\nhabitat sheets, at the tree helper's area for their size class, "
+        "\nand vertical area habitats after them, at their Area column."
     )
 
 

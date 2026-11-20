@@ -467,3 +467,60 @@ class OldTableNamesTest(support.TempDirTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class VerticalAreaHabitatsCsvTest(support.TempDirTestCase):
+    """BMD-1216: vertical area habitats go in Habitats.csv."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.input = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                    "vertical.gpkg")
+        support.add_vertical_habitats(cls.input)
+        cls.out = cls.tmp / "csv"
+        cls.report = new_to_old.convert(
+            cls.input, cls.out, carry_lineage=False, dry_run=False,
+            formats=("csv",))
+        path = cls.out / new_to_old.CSV_SUBFOLDER / "Habitats.csv"
+        with open(path, newline="", encoding="utf-8-sig") as handle:
+            cls.rows = list(csv.DictReader(handle))
+
+    def row(self, ref):
+        found = [row for row in self.rows if row["Parcel Ref"] == ref]
+        self.assertEqual(1, len(found), ref)
+        return found[0]
+
+    def test_each_kept_or_created_feature_has_a_row(self):
+        for ref in ("VA-1", "VA-3", "VA-4", "VA-5", "VA-6"):
+            with self.subTest(ref=ref):
+                self.row(ref)
+
+    def test_a_lost_feature_has_a_lost_row(self):
+        self.assertEqual(new_to_old.RETENTION_LOST,
+                         self.row("VA-2")[RETENTION])
+
+    def test_areas_are_in_square_metres_like_the_area_habitats(self):
+        expected = {"VA-1": 50, "VA-2": 40, "VA-3": 200, "VA-6": 30}
+        for ref, square_metres in expected.items():
+            with self.subTest(ref=ref):
+                self.assertAlmostEqual(square_metres,
+                                       float(self.row(ref)["Area"]))
+
+    def test_an_enhanced_structure_carries_its_proposed_habitat(self):
+        self.assertEqual(support.IGGI,
+                         self.row("VA-3")["Proposed Habitat Type"])
+
+    def test_the_csvs_alone_give_no_vertical_warning(self):
+        self.assertFalse([w for w in self.report.warnings
+                          if "vertical area habitat" in w.lower()])
+
+    def test_the_legacy_geopackages_still_warn(self):
+        report = new_to_old.convert(
+            self.input, self.tmp / "gpkg", carry_lineage=False,
+            dry_run=False, formats=("gpkg",))
+        found = [w for w in report.warnings
+                 if "vertical area habitat feature(s) are NOT in the legacy"
+                 in w]
+        self.assertEqual(1, len(found))
