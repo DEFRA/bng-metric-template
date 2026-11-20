@@ -55,5 +55,5 @@ so that the code and the formats it targets have the same version history.
 **Copy the folder and work in the copy.** A template that is opened and saved
 in place changes.
 
-`bng-service/HOW TO USE THIS TEMPLATE.md` is the surveyor's guide, including
-the four attribute-table buttons and the paste of baseline features.
+`bng-service/BNG Service template - User Guide.docx` is the user guide, including
+the four attribute-table buttons, the paste of baseline features and the plugin.
