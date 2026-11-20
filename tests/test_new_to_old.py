@@ -527,6 +527,20 @@ class VerticalAreaHabitatsCsvTest(support.TempDirTestCase):
                     if w.startswith("Vertical Area Habitats Baseline:")
                     and "missing values" in w]))
 
+    def test_a_vertical_ref_an_area_parcel_uses_is_renamed(self):
+        gpkg = support.copy_to(self.input, self.tmp / "clash")
+        area_ref = support.read_rows(gpkg, AREA_PI)[0][REF]
+        support.update(gpkg, support.VERTICAL_PI, {REF: area_ref},
+                       REF, "VA-6")
+        out = self.tmp / "clash-csv"
+        new_to_old.convert(gpkg, out, carry_lineage=False, dry_run=False,
+                           formats=("csv",))
+        with open(out / new_to_old.CSV_SUBFOLDER / "Habitats.csv",
+                  newline="", encoding="utf-8-sig") as handle:
+            refs = [row["Parcel Ref"] for row in csv.DictReader(handle)]
+        self.assertEqual(len(refs), len(set(refs)))
+        self.assertIn(area_ref, refs)
+
     def test_the_legacy_geopackages_still_warn(self):
         report = new_to_old.convert(
             self.input, self.tmp / "gpkg", carry_lineage=False,

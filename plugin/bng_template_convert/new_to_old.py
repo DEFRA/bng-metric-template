@@ -1212,13 +1212,16 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
             (None, area_lost_row(parent, size, site))
             for parent, size in area_losses
         ] + _vertical_csv_rows(staged["verticalAreas"], vertical_losses,
-                               site, carry_lineage, report)
+                               site, carry_lineage, report,
+                               {values.get("Parcel Ref")
+                                for _geometry, values in csv_rows["Habitats"]})
         _write_csvs(out_dir, csv_rows, report, consolidate, split_irreplaceable)
         _report_baseline_comments(staged, report)
     return report
 
 
-def _vertical_csv_rows(tables, losses, site, carry_lineage, report):
+def _vertical_csv_rows(tables, losses, site, carry_lineage, report,
+                       area_refs=frozenset()):
     """Vertical area habitats as Habitats.csv rows, after the area habitats.
 
     The metric holds them as area habitats, and the import tool reads them
@@ -1230,6 +1233,7 @@ def _vertical_csv_rows(tables, losses, site, carry_lineage, report):
     deduplicate_area_refs(rows, report)
     rows += [(None, area_lost_row(parent, size, site))
              for parent, size in losses]
+    _rename_refs_taken_by_areas(rows, area_refs, report)
     report.count("Habitats.csv vertical area habitat rows", len(rows))
     if losses:
         detail = summarise_list(
@@ -1243,6 +1247,31 @@ def _vertical_csv_rows(tables, losses, site, carry_lineage, report):
             f"post-intervention — {detail}"
         )
     return rows
+
+
+def _rename_refs_taken_by_areas(rows, area_refs, report):
+    """Give a vertical row whose ref an area habitat row holds a new one.
+
+    The two layers share Habitats.csv, which legacy reads with one Parcel
+    Ref per row. Only the vertical row is renamed, so the area refs stay as
+    they are in the legacy GeoPackages.
+    """
+    taken = {ref for ref in area_refs if ref not in (None, "")}
+    taken |= {values.get("Parcel Ref") for _geometry, values in rows}
+    renamed = []
+    for _geometry, values in rows:
+        ref = values.get("Parcel Ref")
+        if ref in (None, "") or ref not in area_refs:
+            continue
+        candidate = _next_free_ref(ref, 0, taken)
+        taken.add(candidate)
+        values["Parcel Ref"] = candidate
+        renamed.append(f"{ref} -> {candidate}")
+    if renamed:
+        report.note(
+            "Habitats.csv: vertical area habitat ref(s) also used by an area "
+            f"habitat were renamed, because legacy needs unique Parcel Refs: "
+            f"{summarise_list(renamed)}")
 
 
 def _report_area_losses(losses, want_gpkg, want_csv, report):
