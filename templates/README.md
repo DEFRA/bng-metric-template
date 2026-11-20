@@ -35,7 +35,8 @@ so that the code and the formats it targets have the same version history.
   both directions. A vertical area habitat's `Area` is in hectares too, an
   estimate the surveyor types in. `Length` is in metres in both.
 - **Vertical area habitats.** Only the BNG Service template has them, so
-  conversion to legacy cannot carry them.
+  the legacy GeoPackages cannot hold them. The GIS import tool CSVs can:
+  conversion to legacy writes them in `Habitats.csv`.
 - **Comments.** The BNG Service template has a `Comment` on every habitat
   layer, baseline and post-intervention. Legacy has one comment column on
   each layer of each file, `Comment` on habitats and trees and `Comments` on

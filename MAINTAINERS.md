@@ -85,8 +85,10 @@ python3 to_metric.py INPUT.gpkg --metric METRIC.xlsm|.xlsx -o OUT
 
 The converter gives a warning for each of these:
 
-- **Vertical area habitats are not carried.** Legacy has no layer for them,
-  so a legacy calculation leaves out their units.
+- **Vertical area habitats are not in the legacy GeoPackages.** Legacy has
+  no layer for them, so a calculation from those files leaves out their
+  units. `Habitats.csv` for the GIS import tool does hold them, in square
+  metres, after the area habitats.
 - **Irreplaceable habitat flags are dropped.** Legacy has no column for them,
   so the converter lists area habitats in `Irreplaceable habitats.csv` and
   names irreplaceable trees in a warning.
@@ -137,8 +139,9 @@ square metres. The conversion changes the unit in both directions.
 **A vertical area habitat's `Area` is in hectares too**, labelled
 `Area (ha)`. The surveyor estimates it on site and types it in: QGIS cannot
 measure a face from a line, and a length × height leaves in windows, doors and
-other gaps. The conversion never carries vertical area habitats, so it never
-converts this area.
+other gaps. The conversion to legacy writes it to `Habitats.csv` in square
+metres, like any area. The legacy GeoPackages do not hold vertical area
+habitats, so it is not converted for them.
 
 ## The example site
 

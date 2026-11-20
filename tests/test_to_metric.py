@@ -1072,9 +1072,6 @@ class OldTableNamesTest(support.TempDirTestCase):
         self.assertNotIn("Traceback", result.stderr)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 def number_on_row_of(xml, ref_column, ref, column):
     """The number in `column` on the row whose reference cell holds `ref`."""
@@ -1187,20 +1184,36 @@ class VerticalAreaHabitatsTest(support.TempDirTestCase):
         self.assertEqual(1, len(found))
         self.assertIn("Area on 1 (VA-4)", found[0])
 
-    def test_merging_keeps_vertical_lines_apart(self):
+    def test_merging_joins_matching_vertical_lines_only(self):
+        """Two lost walls differing only in area become one line.
+
+        A third lost wall of the same type is drawn on the area habitat
+        layer, as a surveyor might by mistake: it must stay its own line,
+        because merging keeps each layer's lines among themselves.
+        """
+        gpkg = support.copy_to(self.gpkg, self.tmp / "merge")
+        twin = support.read_rows(gpkg, support.VERTICAL_BASELINE)
+        va2 = next(row for row in twin if row["Habitat Ref"] == "VA-2")
+        values = {key: value for key, value in va2.items()
+                  if key not in ("fid", "geom")}
+        values.update({"Habitat Ref": "VA-2b", "Area": 0.001,
+                       "feature_uuid": "{vertical-VA-2b}"})
+        support.insert_feature(gpkg, support.VERTICAL_BASELINE,
+                               va2["geom"], values)
+        area = {key: value for key, value in values.items()
+                if key != "feature_uuid"}
+        area.update({"Habitat Ref": "AH-WALL", "Area": 0.002,
+                     "feature_uuid": "{area-wall}"})
+        support.insert_feature(gpkg, "Area Habitats Baseline",
+                               va2["geom"], area)
         out = self.tmp / "merged.xlsx"
-        to_metric.convert(self.gpkg, self.blank, out, consolidate=True)
+        to_metric.convert(gpkg, self.blank, out, consolidate=True)
         xml = sheet_xml(out, AREA_BASELINE_SHEET)
         columns = AREA_COLUMNS["baseline"]
-        vertical_types = {habitat for _broad, habitat, _area, _outcome
-                          in support.VERTICAL_BASELINES.values()}
-        habitats = cells_by_row(xml, columns["habitat"])
-        for row, ref in cells_by_row(xml, columns["ref"]).items():
-            merged_vertical = ref.startswith("VA-")
-            with self.subTest(ref=ref):
-                self.assertEqual(merged_vertical,
-                                 habitats.get(row) in vertical_types)
-
+        self.assertAlmostEqual(0.005, number_on_row_of(
+            xml, columns["ref"], "VA-2 +", columns["size"]))
+        self.assertAlmostEqual(0.002, number_on_row_of(
+            xml, columns["ref"], "AH-WALL", columns["size"]))
 
 class VerticalAreaHabitatsSplitTest(support.TempDirTestCase):
     """A site split across workbooks keeps each enhancement with its line."""
@@ -1249,3 +1262,7 @@ class VerticalAreaHabitatsSplitTest(support.TempDirTestCase):
 
         self.assertAlmostEqual(total(self.whole.paths),
                                total(self.split.paths), places=5)
+
+
+if __name__ == "__main__":
+    unittest.main()

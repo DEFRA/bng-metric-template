@@ -13,7 +13,8 @@ Usage:
     python3 new_to_old.py "BNG Service Layers.gpkg" -o output/
     python3 new_to_old.py "BNG Service Layers.gpkg" --dry-run
 
-See README.md for the full walkthrough and the list of known losses.
+How to use it is in the user guide, `BNG Service template - User Guide.docx`
+(section 4.3). MAINTAINERS.md lists what the conversion loses.
 """
 
 import argparse
@@ -1121,7 +1122,12 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
     _report_enhanced_trees(staged, report)
     _report_degraded_trees(staged, report)
     _report_irreplaceable_trees(staged, report)
-    check_needed_values(staged, report, LEGACY_GAP_CONSEQUENCE)
+    # Vertical area habitats reach the CSVs only, so their gaps matter only
+    # when the CSVs are written.
+    checked = (staged if "csv" in formats else
+               {key: rows for key, rows in staged.items()
+                if key != "verticalAreas"})
+    check_needed_values(checked, report, LEGACY_GAP_CONSEQUENCE)
     # Area habitats account for every square metre of the red line, so on a
     # finished site nothing falls short and this is empty. On a site part-way
     # through it names the parcels not yet carried forward.

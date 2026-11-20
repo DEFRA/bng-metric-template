@@ -465,9 +465,6 @@ class OldTableNamesTest(support.TempDirTestCase):
         self.assertNotIn("Traceback", result.stderr)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class VerticalAreaHabitatsCsvTest(support.TempDirTestCase):
     """BMD-1216: vertical area habitats go in Habitats.csv."""
@@ -516,6 +513,20 @@ class VerticalAreaHabitatsCsvTest(support.TempDirTestCase):
         self.assertFalse([w for w in self.report.warnings
                           if "vertical area habitat" in w.lower()])
 
+    def test_vertical_gaps_are_named_only_when_the_csvs_hold_them(self):
+        gpkg = support.copy_to(self.input, self.tmp / "gap")
+        support.update(gpkg, support.VERTICAL_BASELINE, {"Area": None},
+                       "Habitat Ref", "VA-4")
+        for formats, expected in ((("csv",), 1), (("gpkg",), 0)):
+            report = new_to_old.convert(
+                gpkg, self.tmp / f"gap-{formats[0]}", carry_lineage=False,
+                dry_run=False, formats=formats)
+            with self.subTest(formats=formats):
+                self.assertEqual(expected, len([
+                    w for w in report.warnings
+                    if w.startswith("Vertical Area Habitats Baseline:")
+                    and "missing values" in w]))
+
     def test_the_legacy_geopackages_still_warn(self):
         report = new_to_old.convert(
             self.input, self.tmp / "gpkg", carry_lineage=False,
@@ -524,3 +535,7 @@ class VerticalAreaHabitatsCsvTest(support.TempDirTestCase):
                  if "vertical area habitat feature(s) are NOT in the legacy"
                  in w]
         self.assertEqual(1, len(found))
+
+
+if __name__ == "__main__":
+    unittest.main()

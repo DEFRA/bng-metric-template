@@ -22,7 +22,8 @@ Usage:
     python3 old_to_new.py --baseline BASE.gpkg --post-intervention PI.gpkg -o out/
     python3 old_to_new.py --baseline BASE.gpkg --dry-run
 
-See README.md for the full walkthrough and what needs checking afterwards.
+How to use it, and what to check afterwards, is in the user guide,
+`BNG Service template - User Guide.docx` (section 4.2).
 """
 
 import argparse
