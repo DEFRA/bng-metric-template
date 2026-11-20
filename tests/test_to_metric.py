@@ -1154,6 +1154,32 @@ class VerticalAreaHabitatsTest(support.TempDirTestCase):
         self.assertEqual(support.VERTICAL_COMMENT,
                          self.baseline_text("VA-1", "comment"))
 
+    def test_the_metric_leaves_them_out_of_the_site_area(self):
+        """AC6: the metric's own site area formula excludes all 5 types.
+
+        A-1 H260 sums the area column except for the "Broad - Type" labels
+        it names from G-1. Each vertical line's broad habitat and type, as
+        written, must be one of those labels.
+        """
+        formula = html.unescape(re.search(
+            r'<c r="H260"[^>]*><f>(.*?)</f>', self.baseline, re.S).group(1))
+        excluded_cells = re.findall(r"'G-1 All Habitats'!B(\d+)", formula)
+        g1 = sheet_xml(self.out, "G-1 All Habitats")
+        with zipfile.ZipFile(self.out) as archive:
+            shared = [html.unescape(re.sub("<[^>]+>", "", text)) for text in
+                      re.findall(r"<si>(.*?)</si>",
+                                 archive.read("xl/sharedStrings.xml")
+                                 .decode("utf-8"), re.S)]
+        excluded = set()
+        for row in excluded_cells:
+            cell = re.search(rf'<c r="B{row}"[^>]*t="s"[^>]*><v>(\d+)</v>', g1)
+            excluded.add(shared[int(cell.group(1))])
+        for ref in support.VERTICAL_BASELINES:
+            label = (f"{self.baseline_text(ref, 'broad')} - "
+                     f"{self.baseline_text(ref, 'habitat')}")
+            with self.subTest(ref=ref):
+                self.assertIn(label, excluded)
+
     def test_vertical_lines_follow_the_area_and_tree_lines(self):
         ref_column = AREA_COLUMNS["baseline"]["ref"]
         vertical = rows_of(self.baseline, ref_column,

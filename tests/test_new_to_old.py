@@ -527,19 +527,40 @@ class VerticalAreaHabitatsCsvTest(support.TempDirTestCase):
                     if w.startswith("Vertical Area Habitats Baseline:")
                     and "missing values" in w]))
 
-    def test_a_vertical_ref_an_area_parcel_uses_is_renamed(self):
-        gpkg = support.copy_to(self.input, self.tmp / "clash")
-        area_ref = support.read_rows(gpkg, AREA_PI)[0][REF]
+    def clash(self, name, area_ref):
+        """Habitats.csv refs after VA-6 takes `area_ref`."""
+        gpkg = support.copy_to(self.input, self.tmp / name)
         support.update(gpkg, support.VERTICAL_PI, {REF: area_ref},
                        REF, "VA-6")
-        out = self.tmp / "clash-csv"
+        return gpkg
+
+    def habitats_refs(self, gpkg, name):
+        out = self.tmp / f"{name}-csv"
         new_to_old.convert(gpkg, out, carry_lineage=False, dry_run=False,
                            formats=("csv",))
         with open(out / new_to_old.CSV_SUBFOLDER / "Habitats.csv",
                   newline="", encoding="utf-8-sig") as handle:
-            refs = [row["Parcel Ref"] for row in csv.DictReader(handle)]
+            return [row["Parcel Ref"] for row in csv.DictReader(handle)]
+
+    def test_a_vertical_ref_an_area_parcel_uses_is_renamed(self):
+        area_ref = support.read_rows(self.input, AREA_PI)[0][REF]
+        refs = self.habitats_refs(self.clash("clash", area_ref), "clash")
         self.assertEqual(len(refs), len(set(refs)))
         self.assertIn(area_ref, refs)
+
+    def test_a_vertical_ref_a_lost_area_parcel_uses_is_renamed(self):
+        parent = support.read_rows(self.input, "Area Habitats Baseline")[0]
+        gpkg = self.clash("lost-clash", parent[REF])
+        conn = support.open_for_writing(gpkg)
+        try:
+            conn.execute(f'DELETE FROM "{AREA_PI}" WHERE parent_uuid = ?',
+                         (parent["feature_uuid"],))
+            conn.commit()
+        finally:
+            conn.close()
+        refs = self.habitats_refs(gpkg, "lost-clash")
+        self.assertEqual(len(refs), len(set(refs)))
+        self.assertIn(parent[REF], refs)
 
     def test_the_legacy_geopackages_still_warn(self):
         report = new_to_old.convert(

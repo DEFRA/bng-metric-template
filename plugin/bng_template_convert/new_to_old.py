@@ -1208,13 +1208,15 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
         # lost row in the post-intervention file would come back as a
         # created parcel with nothing proposed on it.
         csv_rows = dict(pi_rows)
-        csv_rows["Habitats"] = pi_rows["Habitats"] + [
+        area_rows = pi_rows["Habitats"] + [
             (None, area_lost_row(parent, size, site))
             for parent, size in area_losses
-        ] + _vertical_csv_rows(staged["verticalAreas"], vertical_losses,
-                               site, carry_lineage, report,
-                               {values.get("Parcel Ref")
-                                for _geometry, values in csv_rows["Habitats"]})
+        ]
+        # The area refs include the Lost rows', which repeat a baseline ref.
+        csv_rows["Habitats"] = area_rows + _vertical_csv_rows(
+            staged["verticalAreas"], vertical_losses, site, carry_lineage,
+            report,
+            {values.get("Parcel Ref") for _geometry, values in area_rows})
         _write_csvs(out_dir, csv_rows, report, consolidate, split_irreplaceable)
         _report_baseline_comments(staged, report)
     return report
