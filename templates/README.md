@@ -35,7 +35,8 @@ so that the code and the formats it targets have the same version history.
   both directions. A vertical area habitat's `Area` is in hectares too, an
   estimate the surveyor types in. `Length` is in metres in both.
 - **Vertical area habitats.** Only the BNG Service template has them, so
-  conversion to legacy cannot carry them.
+  the legacy GeoPackages cannot hold them. The GIS import tool CSVs can:
+  conversion to legacy writes them in `Habitats.csv`.
 - **Comments.** The BNG Service template has a `Comment` on every habitat
   layer, baseline and post-intervention. Legacy has one comment column on
   each layer of each file, `Comment` on habitats and trees and `Comments` on
@@ -55,5 +56,5 @@ so that the code and the formats it targets have the same version history.
 **Copy the folder and work in the copy.** A template that is opened and saved
 in place changes.
 
-`bng-service/HOW TO USE THIS TEMPLATE.md` is the surveyor's guide, including
-the four attribute-table buttons and the paste of baseline features.
+`bng-service/BNG Service template - User Guide.docx` is the user guide, including
+the four attribute-table buttons, the paste of baseline features and the plugin.

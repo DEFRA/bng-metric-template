@@ -48,7 +48,7 @@ PRISTINE = os.path.join(TEMPLATE_DIR, 'Layers', 'BNG Service Layers.gpkg')
 # on every run, so a change to the QGIS project or the reference lists reaches
 # an existing working copy instead of only a newly created one.
 TEMPLATE_ASSETS = ('BNG Service Habitat Mapping.qgz', 'CSV References',
-                   'HOW TO USE THIS TEMPLATE.md')
+                   'BNG Service template - User Guide.docx')
 
 
 def ensure_working_copy():

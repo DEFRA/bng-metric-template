@@ -2,7 +2,7 @@
 name=BNG Template Convert
 qgisMinimumVersion=3.22
 description=Convert habitat mapping between the legacy Natural England template and the BNG Service template.
-version=1.8.7
+version=1.8.8
 author=Defra BNG Metric Service
 email=
 
@@ -12,7 +12,10 @@ about=Moves a habitat map out of the BNG Service QGIS template without anyone ne
     Export to the Statutory Metric fills a copy of the metric workbook directly, with no CSVs and no import tool in between.
     All three appear in the Processing Toolbox and under Plugins > BNG Template Convert. No dependencies beyond QGIS itself.
 
-changelog=1.8.7
+changelog=1.8.8
+    Export to the Statutory Metric writes vertical area habitats (green walls and intertidal hard structures) on the on-site area habitat tabs, after the individual trees, at the hectares in their Area column. They are retained, enhanced, created or lost like any area habitat, and the log lists any value they are missing. The Metric leaves them out of the site area.
+    Convert to legacy writes vertical area habitats in Habitats.csv for the GIS import tool, in square metres like the other rows. The legacy GeoPackages still cannot hold them, and the log still says so.
+  1.8.7
     Export to the Statutory Metric warns of an Enhanced watercourse part that has nothing of its baseline watercourse left to enhance, because its Retained parts are as long as the whole watercourse. The part is left out of the workbook, as before, but the export now says so, where the service leaves the same part Incomplete.
     Export to the Statutory Metric counts an Enhanced watercourse drawn shorter than its baseline among the features that carry forward only part of their size. The Metric already counted the difference as lost; the export's note now does too.
   1.8.6

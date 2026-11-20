@@ -234,8 +234,8 @@ class DegradedHedgeListsTest(unittest.TestCase):
     as lost and a new one created in its place (DegradedHedgerowTest in
     test_to_metric.py).
 
-    The surveyor keeps the copied row and sets it to Created ("HOW TO USE THIS
-    TEMPLATE.md", Hedgerows), so the hedge keeps its link to its baseline
+    The surveyor keeps the copied row and sets it to Created (the user guide,
+    section 2.3, Hedgerows), so the hedge keeps its link to its baseline
     parent. Its Proposed Hedge Type offers the hedge's own type, and only
     that, and the type has a condition to choose. See MAINTAINERS.md, "A hedge
     whose condition gets worse".

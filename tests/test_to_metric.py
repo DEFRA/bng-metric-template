@@ -8,6 +8,7 @@ import html
 import re
 import unittest
 import zipfile
+from unittest import mock
 from collections import defaultdict
 
 from tests import support
@@ -1069,6 +1070,224 @@ class OldTableNamesTest(support.TempDirTestCase):
         self.assertNotEqual(0, result.returncode)
         self.assertIn("earlier version", result.stderr + result.stdout)
         self.assertNotIn("Traceback", result.stderr)
+
+
+
+def number_on_row_of(xml, ref_column, ref, column):
+    """The number in `column` on the row whose reference cell holds `ref`."""
+    rows = [number for number, text in cells_by_row(xml, ref_column).items()
+            if text == ref]
+    if len(rows) != 1:
+        raise AssertionError(f"{ref!r} is on {len(rows)} row(s)")
+    found = re.search(rf'<c r="{column}{rows[0]}"[^>]*><v>([^<]+)</v></c>',
+                      xml)
+    return float(found.group(1)) if found else None
+
+
+def rows_of(xml, ref_column, refs):
+    """The row numbers holding any of `refs` in the reference column."""
+    return [number for number, text in cells_by_row(xml, ref_column).items()
+            if text in refs]
+
+
+class VerticalAreaHabitatsTest(support.TempDirTestCase):
+    """BMD-1216: vertical area habitats go on the area habitat tabs."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.gpkg = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                   "vertical.gpkg")
+        support.add_vertical_habitats(cls.gpkg)
+        cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
+        cls.out = cls.tmp / "vertical.xlsx"
+        cls.report = to_metric.convert(cls.gpkg, cls.blank, cls.out)
+        cls.baseline = sheet_xml(cls.out, AREA_BASELINE_SHEET)
+
+    def baseline_value(self, ref, field):
+        return number_on_row_of(self.baseline, AREA_COLUMNS["baseline"]["ref"],
+                                ref, AREA_COLUMNS["baseline"][field])
+
+    def baseline_text(self, ref, field):
+        return cell_on_row_of(self.baseline, AREA_COLUMNS["baseline"]["ref"],
+                              ref, AREA_COLUMNS["baseline"][field])
+
+    def test_each_type_has_one_baseline_line_with_its_area(self):
+        for ref, (broad, habitat, area, _outcome) in (
+                support.VERTICAL_BASELINES.items()):
+            with self.subTest(ref=ref):
+                self.assertEqual(broad, self.baseline_text(ref, "broad"))
+                self.assertEqual(habitat, self.baseline_text(ref, "habitat"))
+                self.assertAlmostEqual(area, self.baseline_value(ref, "size"))
+
+    def test_a_retained_wall_is_all_retained(self):
+        self.assertAlmostEqual(0.005, self.baseline_value("VA-1", "retained"))
+        self.assertEqual(0, self.baseline_value("VA-1", "enhanced"))
+
+    def test_a_lost_wall_keeps_nothing(self):
+        self.assertAlmostEqual(0.004, self.baseline_value("VA-2", "size"))
+        self.assertEqual(0, self.baseline_value("VA-2", "retained"))
+        self.assertEqual(0, self.baseline_value("VA-2", "enhanced"))
+        self.assertTrue(any("Vertical Area Habitats Baseline: 1 feature(s) "
+                            "carry nothing forward" in line
+                            for line in self.report.lines))
+
+    def test_an_enhanced_structure_is_on_the_enhancement_tab(self):
+        self.assertAlmostEqual(0.02, self.baseline_value("VA-3", "enhanced"))
+        xml = sheet_xml(self.out, AREA_ENHANCEMENT_SHEET)
+        columns = AREA_COLUMNS["enhancement"]
+        self.assertEqual(support.IGGI, cell_on_row_of(
+            xml, columns["ref"], "VA-3", columns["habitat"]))
+
+    def test_a_created_wall_is_on_the_creation_tab(self):
+        xml = sheet_xml(self.out, AREA_CREATION_SHEET)
+        columns = AREA_COLUMNS["creation"]
+        self.assertEqual(support.GROUND_WALL, cell_on_row_of(
+            xml, columns["ref"], "VA-6", columns["habitat"]))
+        self.assertAlmostEqual(0.003, number_on_row_of(
+            xml, columns["ref"], "VA-6", columns["size"]))
+
+    def test_significance_and_comment_are_carried(self):
+        self.assertEqual(rl.NE_SIGNIFICANCE_HIGH,
+                         self.baseline_text("VA-1", "significance"))
+        self.assertEqual(support.VERTICAL_COMMENT,
+                         self.baseline_text("VA-1", "comment"))
+
+    def test_the_metric_leaves_them_out_of_the_site_area(self):
+        """AC6: the metric's own site area formula excludes all 5 types.
+
+        A-1 H260 sums the area column except for the "Broad - Type" labels
+        it names from G-1. Each vertical line's broad habitat and type, as
+        written, must be one of those labels.
+        """
+        formula = html.unescape(re.search(
+            r'<c r="H260"[^>]*><f>(.*?)</f>', self.baseline, re.S).group(1))
+        excluded_cells = re.findall(r"'G-1 All Habitats'!B(\d+)", formula)
+        g1 = sheet_xml(self.out, "G-1 All Habitats")
+        with zipfile.ZipFile(self.out) as archive:
+            shared = [html.unescape(re.sub("<[^>]+>", "", text)) for text in
+                      re.findall(r"<si>(.*?)</si>",
+                                 archive.read("xl/sharedStrings.xml")
+                                 .decode("utf-8"), re.S)]
+        excluded = set()
+        for row in excluded_cells:
+            cell = re.search(rf'<c r="B{row}"[^>]*t="s"[^>]*><v>(\d+)</v>', g1)
+            excluded.add(shared[int(cell.group(1))])
+        for ref in support.VERTICAL_BASELINES:
+            label = (f"{self.baseline_text(ref, 'broad')} - "
+                     f"{self.baseline_text(ref, 'habitat')}")
+            with self.subTest(ref=ref):
+                self.assertIn(label, excluded)
+
+    def test_vertical_lines_follow_the_area_and_tree_lines(self):
+        ref_column = AREA_COLUMNS["baseline"]["ref"]
+        vertical = rows_of(self.baseline, ref_column,
+                           set(support.VERTICAL_BASELINES))
+        earlier = [
+            row["Habitat Ref"] for table in (
+                "Area Habitats Post-Intervention", TREE_PI,
+                "Area Habitats Baseline", TREE_BASELINE)
+            for row in support.read_rows(self.gpkg, table)]
+        others = rows_of(self.baseline, ref_column, set(earlier))
+        self.assertTrue(others)
+        self.assertLess(max(others), min(vertical))
+
+    def test_the_counts_name_the_vertical_lines(self):
+        self.assertEqual(5, self.report.counts["vertical areas baseline"])
+        self.assertEqual(1, self.report.counts["vertical areas creation"])
+        self.assertEqual(1, self.report.counts["vertical areas enhancement"])
+
+    def test_a_blank_area_is_reported_under_the_vertical_layer(self):
+        gpkg = support.copy_to(self.gpkg, self.tmp / "blank-area")
+        support.update(gpkg, support.VERTICAL_BASELINE, {"Area": None},
+                       "Habitat Ref", "VA-4")
+        report = to_metric.convert(
+            gpkg, self.blank, self.tmp / "blank-area.xlsx")
+        found = [w for w in report.warnings
+                 if w.startswith("Vertical Area Habitats Baseline:")
+                 and "missing values the metric needs" in w]
+        self.assertEqual(1, len(found))
+        self.assertIn("Area on 1 (VA-4)", found[0])
+
+    def test_merging_joins_matching_vertical_lines_only(self):
+        """Two lost walls differing only in area become one line.
+
+        A third lost wall of the same type is drawn on the area habitat
+        layer, as a surveyor might by mistake: it must stay its own line,
+        because merging keeps each layer's lines among themselves.
+        """
+        gpkg = support.copy_to(self.gpkg, self.tmp / "merge")
+        twin = support.read_rows(gpkg, support.VERTICAL_BASELINE)
+        va2 = next(row for row in twin if row["Habitat Ref"] == "VA-2")
+        values = {key: value for key, value in va2.items()
+                  if key not in ("fid", "geom")}
+        values.update({"Habitat Ref": "VA-2b", "Area": 0.001,
+                       "feature_uuid": "{vertical-VA-2b}"})
+        support.insert_feature(gpkg, support.VERTICAL_BASELINE,
+                               va2["geom"], values)
+        area = {key: value for key, value in values.items()
+                if key != "feature_uuid"}
+        area.update({"Habitat Ref": "AH-WALL", "Area": 0.002,
+                     "feature_uuid": "{area-wall}"})
+        support.insert_feature(gpkg, "Area Habitats Baseline",
+                               va2["geom"], area)
+        out = self.tmp / "merged.xlsx"
+        to_metric.convert(gpkg, self.blank, out, consolidate=True)
+        xml = sheet_xml(out, AREA_BASELINE_SHEET)
+        columns = AREA_COLUMNS["baseline"]
+        self.assertAlmostEqual(0.005, number_on_row_of(
+            xml, columns["ref"], "VA-2 +", columns["size"]))
+        self.assertAlmostEqual(0.002, number_on_row_of(
+            xml, columns["ref"], "AH-WALL", columns["size"]))
+
+class VerticalAreaHabitatsSplitTest(support.TempDirTestCase):
+    """A site split across workbooks keeps each enhancement with its line."""
+
+    # Five rows a sheet, so the scenario site needs several workbooks.
+    SMALL = 5
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.gpkg = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                   "vertical.gpkg")
+        support.add_vertical_habitats(cls.gpkg)
+        cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
+        cls.whole = to_metric.convert(cls.gpkg, cls.blank,
+                                      cls.tmp / "whole.xlsx")
+        small = {stage: (sheet, first, first + cls.SMALL - 1, columns)
+                 for stage, (sheet, first, _last, columns)
+                 in to_metric.LAYOUT["areas"].items()}
+        with mock.patch.dict(to_metric.LAYOUT, {"areas": small}):
+            cls.split = to_metric.convert(cls.gpkg, cls.blank,
+                                          cls.tmp / "split.xlsx")
+
+    def refs_on(self, workbook, stage):
+        sheet = to_metric.LAYOUT["areas"][stage][0]
+        column = AREA_COLUMNS[stage]["ref"]
+        return set(cells_by_row(sheet_xml(workbook, sheet), column).values())
+
+    def test_the_site_is_split(self):
+        self.assertGreater(len(self.split.paths), 1)
+
+    def test_the_enhanced_structure_is_in_its_baselines_workbook(self):
+        holding = [path for path in self.split.paths
+                   if "VA-3" in self.refs_on(path, "enhancement")]
+        self.assertEqual(1, len(holding))
+        self.assertIn("VA-3", self.refs_on(holding[0], "baseline"))
+
+    def test_the_parts_add_up_to_the_whole(self):
+        column = AREA_COLUMNS["baseline"]["size"]
+
+        def total(paths):
+            return sum(sum(numbers_in_column(
+                sheet_xml(path, AREA_BASELINE_SHEET), column, 11, 258))
+                for path in paths)
+
+        self.assertAlmostEqual(total(self.whole.paths),
+                               total(self.split.paths), places=5)
 
 
 if __name__ == "__main__":

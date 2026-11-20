@@ -465,5 +465,112 @@ class OldTableNamesTest(support.TempDirTestCase):
         self.assertNotIn("Traceback", result.stderr)
 
 
+
+class VerticalAreaHabitatsCsvTest(support.TempDirTestCase):
+    """BMD-1216: vertical area habitats go in Habitats.csv."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.input = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                    "vertical.gpkg")
+        support.add_vertical_habitats(cls.input)
+        cls.out = cls.tmp / "csv"
+        cls.report = new_to_old.convert(
+            cls.input, cls.out, carry_lineage=False, dry_run=False,
+            formats=("csv",))
+        path = cls.out / new_to_old.CSV_SUBFOLDER / "Habitats.csv"
+        with open(path, newline="", encoding="utf-8-sig") as handle:
+            cls.rows = list(csv.DictReader(handle))
+
+    def row(self, ref):
+        found = [row for row in self.rows if row["Parcel Ref"] == ref]
+        self.assertEqual(1, len(found), ref)
+        return found[0]
+
+    def test_each_kept_or_created_feature_has_a_row(self):
+        for ref in ("VA-1", "VA-3", "VA-4", "VA-5", "VA-6"):
+            with self.subTest(ref=ref):
+                self.row(ref)
+
+    def test_a_lost_feature_has_a_lost_row(self):
+        self.assertEqual(new_to_old.RETENTION_LOST,
+                         self.row("VA-2")[RETENTION])
+
+    def test_areas_are_in_square_metres_like_the_area_habitats(self):
+        expected = {"VA-1": 50, "VA-2": 40, "VA-3": 200, "VA-6": 30}
+        for ref, square_metres in expected.items():
+            with self.subTest(ref=ref):
+                self.assertAlmostEqual(square_metres,
+                                       float(self.row(ref)["Area"]))
+
+    def test_an_enhanced_structure_carries_its_proposed_habitat(self):
+        self.assertEqual(support.IGGI,
+                         self.row("VA-3")["Proposed Habitat Type"])
+
+    def test_the_csvs_alone_give_no_vertical_warning(self):
+        self.assertFalse([w for w in self.report.warnings
+                          if "vertical area habitat" in w.lower()])
+
+    def test_vertical_gaps_are_named_only_when_the_csvs_hold_them(self):
+        gpkg = support.copy_to(self.input, self.tmp / "gap")
+        support.update(gpkg, support.VERTICAL_BASELINE, {"Area": None},
+                       "Habitat Ref", "VA-4")
+        for formats, expected in ((("csv",), 1), (("gpkg",), 0)):
+            report = new_to_old.convert(
+                gpkg, self.tmp / f"gap-{formats[0]}", carry_lineage=False,
+                dry_run=False, formats=formats)
+            with self.subTest(formats=formats):
+                self.assertEqual(expected, len([
+                    w for w in report.warnings
+                    if w.startswith("Vertical Area Habitats Baseline:")
+                    and "missing values" in w]))
+
+    def clash(self, name, area_ref):
+        """Habitats.csv refs after VA-6 takes `area_ref`."""
+        gpkg = support.copy_to(self.input, self.tmp / name)
+        support.update(gpkg, support.VERTICAL_PI, {REF: area_ref},
+                       REF, "VA-6")
+        return gpkg
+
+    def habitats_refs(self, gpkg, name):
+        out = self.tmp / f"{name}-csv"
+        new_to_old.convert(gpkg, out, carry_lineage=False, dry_run=False,
+                           formats=("csv",))
+        with open(out / new_to_old.CSV_SUBFOLDER / "Habitats.csv",
+                  newline="", encoding="utf-8-sig") as handle:
+            return [row["Parcel Ref"] for row in csv.DictReader(handle)]
+
+    def test_a_vertical_ref_an_area_parcel_uses_is_renamed(self):
+        area_ref = support.read_rows(self.input, AREA_PI)[0][REF]
+        refs = self.habitats_refs(self.clash("clash", area_ref), "clash")
+        self.assertEqual(len(refs), len(set(refs)))
+        self.assertIn(area_ref, refs)
+
+    def test_a_vertical_ref_a_lost_area_parcel_uses_is_renamed(self):
+        parent = support.read_rows(self.input, "Area Habitats Baseline")[0]
+        gpkg = self.clash("lost-clash", parent[REF])
+        conn = support.open_for_writing(gpkg)
+        try:
+            conn.execute(f'DELETE FROM "{AREA_PI}" WHERE parent_uuid = ?',
+                         (parent["feature_uuid"],))
+            conn.commit()
+        finally:
+            conn.close()
+        refs = self.habitats_refs(gpkg, "lost-clash")
+        self.assertEqual(len(refs), len(set(refs)))
+        self.assertIn(parent[REF], refs)
+
+    def test_the_legacy_geopackages_still_warn(self):
+        report = new_to_old.convert(
+            self.input, self.tmp / "gpkg", carry_lineage=False,
+            dry_run=False, formats=("gpkg",))
+        found = [w for w in report.warnings
+                 if "vertical area habitat feature(s) are NOT in the legacy"
+                 in w]
+        self.assertEqual(1, len(found))
+
+
 if __name__ == "__main__":
     unittest.main()

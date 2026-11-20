@@ -22,9 +22,9 @@ Only the plugin needs QGIS.
 
 | Folder | What it holds | Who it is for |
 | --- | --- | --- |
-| `templates/bng-service/` | **The template.** An empty QGIS project, its GeoPackage, its reference lists, and `HOW TO USE THIS TEMPLATE.md`, the step-by-step guide | Surveyors |
+| `templates/bng-service/` | **The template.** An empty QGIS project, its GeoPackage, its reference lists, and `BNG Service template - User Guide.docx`, the user guide | Surveyors |
 | `templates/legacy-ne/` | The Natural England template, as Natural England publishes it | Comparison and conversion |
-| `plugin/` | **The plugin.** Source, `build_plugin.py`, and `README.md`, the guide to install and use it | Surveyors and maintainers |
+| `plugin/` | **The plugin.** Source, `build_plugin.py`, and `README.md`, which tells you how to install it | Surveyors and maintainers |
 | `reference/` | The Statutory Metric workbooks, the Excel GIS import tool and the published guidance | Maintainers |
 | `scale-test-nsip/` | The NSIP-scale test site: generator, claim checks, `README.md` and `VERIFICATION.md`, the runbook | Maintainers and testers |
 | `site-generator/` | Builds small synthetic sites (1 to 50 parcels) from inputs such as the area and the location | Testers |
@@ -39,7 +39,7 @@ before changing the template, the plugin or the generators.
    GeoPackage and the reference lists are found by relative path, so the
    project needs the folder around it.
 2. Open `BNG Service Habitat Mapping.qgz` in QGIS. It was built in QGIS 3.42.
-3. Follow `HOW TO USE THIS TEMPLATE.md` in the same folder.
+3. Follow `BNG Service template - User Guide.docx` in the same folder.
 
 Keep `templates/bng-service/` itself unchanged. Work in copies.
 

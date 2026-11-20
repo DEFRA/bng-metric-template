@@ -12,23 +12,40 @@ needs QGIS.
 
 | Folder | What it holds |
 | --- | --- |
-| `templates/bng-service/` | **The template.** An empty QGIS project, its reference lists, and `HOW TO USE THIS TEMPLATE.md`, the surveyor's guide |
+| `templates/bng-service/` | **The template.** An empty QGIS project, its reference lists, and `BNG Service template - User Guide.docx`, the user guide |
 | `templates/legacy-ne/` | The Natural England template as it ships |
-| `plugin/` | **The plugin.** Source, `build_plugin.py`, and `plugin/README.md`, the installation and usage guide |
+| `plugin/` | **The plugin.** Source, `build_plugin.py`, and `plugin/README.md`, the installation page |
 | `reference/` | The Statutory Metric workbooks, the Excel GIS import tool and the user guide. Every reference list in the template is checked against these |
 | `scale-test-nsip/` | The example site: generator, claim checks, `README.md`, `VERIFICATION.md` and the generated output |
 | `site-generator/` | **The site generator.** Builds a small synthetic site from inputs such as the number of parcels, the area and the location. See its `README.md` |
 | `development/tools/` | Tools that maintain the template. Nothing here is needed to use it |
 
-**This file is for maintainers.** Users get `HOW TO USE THIS TEMPLATE.md`
-with the template and the example site, and `plugin/README.md` with the
-plugin.
+**This file is for maintainers.** Users get `BNG Service template - User Guide.docx`
+with the template and the example site, and `plugin/README.md`, which
+points to it, with the plugin.
+
+## The user guide
+
+**`templates/bng-service/BNG Service template - User Guide.docx` is the one source of the user
+guide.** It covers the template and the plugin, and it follows the sections of
+Natural England's guide JP039 (`reference/Biodiversity Metric and SSM - GIS
+tools User Guide.pdf`). Edit it in Word.
+
+When you change the template or the plugin in a way that a user sees, update
+the guide in the same pull request: a layer, a column, a list value, a button,
+a plugin tool or a step. Its Appendix A lists every column of every layer, so
+a new or renamed column always needs an edit there. Update the version table in
+section 1.2 when the plugin version or the template format version changes.
+
+After the merge, publish the guide to Confluence: replace the content of the
+page *DRAFT: Service Template User Guide* (BMD space) and attach the new
+`.docx`.
 
 ## The plugin
 
 **Edit the code only in `plugin/bng_template_convert/`.** It is the only
 copy. The build zips it with `plugin/README.md`, so the plugin carries its
-guide. The build also copies into the zip each drop-down list that the
+installation page. The build also copies into the zip each drop-down list that the
 converter reads from `templates/bng-service/CSV References` and
 `templates/legacy-ne/CSV References`, and fails if one is missing. A change to
 one of those lists therefore needs a new build, and the new zip must be sent
@@ -68,8 +85,10 @@ python3 to_metric.py INPUT.gpkg --metric METRIC.xlsm|.xlsx -o OUT
 
 The converter gives a warning for each of these:
 
-- **Vertical area habitats are not carried.** Legacy has no layer for them,
-  so a legacy calculation leaves out their units.
+- **Vertical area habitats are not in the legacy GeoPackages.** Legacy has
+  no layer for them, so a calculation from those files leaves out their
+  units. `Habitats.csv` for the GIS import tool does hold them, in square
+  metres, after the area habitats.
 - **Irreplaceable habitat flags are dropped.** Legacy has no column for them,
   so the converter lists area habitats in `Irreplaceable habitats.csv` and
   names irreplaceable trees in a warning.
@@ -120,8 +139,9 @@ square metres. The conversion changes the unit in both directions.
 **A vertical area habitat's `Area` is in hectares too**, labelled
 `Area (ha)`. The surveyor estimates it on site and types it in: QGIS cannot
 measure a face from a line, and a length × height leaves in windows, doors and
-other gaps. The conversion never carries vertical area habitats, so it never
-converts this area.
+other gaps. The conversion to legacy writes it to `Habitats.csv` in square
+metres, like any area. The legacy GeoPackages do not hold vertical area
+habitats, so it is not converted for them.
 
 ## The example site
 

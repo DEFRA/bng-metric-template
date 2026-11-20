@@ -36,7 +36,7 @@ import site_writers as writers                                      # noqa: E402
 
 TEMPLATE_DIR = os.path.join(ROOT, 'templates', 'bng-service')
 TEMPLATE_ASSETS = ('BNG Service Habitat Mapping.qgz', 'CSV References',
-                   'HOW TO USE THIS TEMPLATE.md')
+                   'BNG Service template - User Guide.docx')
 PRISTINE = os.path.join(TEMPLATE_DIR, 'Layers', 'BNG Service Layers.gpkg')
 GPKG_NAME = os.path.join('Layers', 'BNG Service Layers.gpkg')
 OUTPUT_DIR = os.path.join(HERE, 'output')
