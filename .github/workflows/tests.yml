@@ -34,6 +34,14 @@ jobs:
       - name: Run the tests
         run: python3 -m unittest discover -s tests -t . -v
 
+      # A template change cannot merge without its specification: this
+      # regenerates spec/ in memory and prints how the committed copy differs.
+      # It runs whether or not the tests pass, so a stale specification does
+      # not hide their results, nor they its diff.
+      - name: The GeoPackage specification is up to date
+        if: ${{ !cancelled() }}
+        run: python3 development/tools/gpkg_spec.py --check
+
   qgis:
     name: Template behaviour in QGIS 3.42.1
     runs-on: ubuntu-latest
