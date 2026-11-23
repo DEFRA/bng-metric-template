@@ -9,12 +9,18 @@ each label shows.
 
 import io
 import shutil
+import sys
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
 
 from tests import support
 from tests.test_project_xml import CHECK_TOOLS, NO_CHANGE
+
+if str(support.TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(support.TOOLS_DIR))
+
+import template_copy  # noqa: E402
 
 LABELS_DIR = support.TEMPLATES_DIR / "bng-service-labels"
 LABELS_PROJECT = LABELS_DIR / "BNG Service Habitat Mapping - Labels.qgz"
@@ -55,7 +61,7 @@ class LabelsTemplateTest(unittest.TestCase):
         for source in support.SERVICE_TEMPLATE_DIR.rglob("*"):
             relative = source.relative_to(support.SERVICE_TEMPLATE_DIR)
             if (not source.is_file() or source.suffix == ".qgz"
-                    or ".backup-" in source.name or source.name == ".DS_Store"):
+                    or template_copy.SKIP_RE.search(source.name)):
                 continue
             with self.subTest(file=str(relative)):
                 self.assertEqual(source.read_bytes(),

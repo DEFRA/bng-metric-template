@@ -162,7 +162,8 @@ python3 development/tools/build_labels_template.py --check  # is it in step?
 | Red Line Boundary | None | |
 
 **QGIS leaves out a label that would hide another, so each label may move:**
-anywhere inside its area, around its tree, or to either side of its line.
+anywhere inside its area, around its tree, or along its line: a baseline
+label above the line, a post-intervention label below it, or on the line.
 Where the two stages compete for room, the post-intervention label wins: it
 names the feature and says what happens to it. So on a kept tree, where the
 two labels would sit on the same point, the baseline label is often left

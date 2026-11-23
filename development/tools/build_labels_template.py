@@ -13,8 +13,8 @@ Build it again after every change to `templates/bng-service/`:
 
 Baseline labels are grey and italic, post-intervention labels black and
 bold. QGIS leaves out a label that would hide another, so each label may
-move: anywhere inside its area, around its tree, or to either side of its
-line. Where the two stages still compete for room, the post-intervention
+move: anywhere inside its area, around its tree, or along its line, on its
+own side of the line or on the line. Where the two stages still compete for room, the post-intervention
 label wins, as it also says what happens to the feature. Some labels show
 only when zoomed in.
 
@@ -46,8 +46,9 @@ POST_LABEL = ('if("Retention Category" IS NULL, "Habitat Ref", '
 # An area's label may go anywhere inside it (polygonPlacementFlags 2), and a
 # tree's anywhere around it, so QGIS can move a label clear of another
 # instead of leaving it out. A line's label runs above it on the baseline
-# (flags 2 above the line, 8 map orientation) and below it on the
-# post-intervention (4 below the line), with the other side to fall back on.
+# (flags 11: 2 above the line, 1 on the line, 8 map orientation) and below it
+# on the post-intervention (flags 13: 4 below the line, 1 on the line, 8), with
+# the line itself to fall back on. The stages never swap sides.
 PLACEMENT = {
     (POLYGON, BASELINE): 'placement="4" polygonPlacementFlags="2"',
     (POLYGON, POST): 'placement="4" polygonPlacementFlags="2"',

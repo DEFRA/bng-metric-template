@@ -312,7 +312,8 @@ def add_view_groups(xml, legacy):
             rf'    <layer-tree-group [^>]*name="{re.escape(group)}"[^>]*>', xml)
         if opening is None:
             fail(f"no layer group named {group!r}")
-        close = xml.index("    </layer-tree-group>", opening.end())
+        # The group's own closer starts its line; a subgroup's is deeper.
+        close = xml.index("\n    </layer-tree-group>", opening.end()) + 1
         xml = xml[:close] + group_xml + xml[close:]
     # The layers, in the project's layer list and its drawing order list.
     close = xml.index("  </projectlayers>")

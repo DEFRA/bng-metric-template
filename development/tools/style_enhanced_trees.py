@@ -75,16 +75,30 @@ def symbol_block(renderer, name):
     return match.group(0)
 
 
+def rule_filter(rule):
+    """A rule's filter, with its runs of spaces made one space."""
+    match = re.search(r'\bfilter="([^"]*)"', rule)
+    return " ".join(match.group(1).split()) if match else None
+
+
 def add_enhanced_rules(xml):
     """Return the project XML with the Enhanced rules, and whether it changed."""
     start, end = renderer_span(xml)
     renderer = xml[start:end]
     rules = [m for m in RULE_RE.finditer(renderer)]
-    if any(f"'{ENHANCED}'" in m.group(0) for m in rules):
-        return xml, False
     retained = [m for m in rules if f"'{RETAINED}'" in m.group(0)]
     if not retained:
         raise SystemExit(f"no {RETAINED} rule in layer {LAYER!r}")
+    # Each Retained rule needs its own Enhanced rule, for the same size and
+    # setting: one Enhanced rule alone leaves the other trees not drawn.
+    enhanced = {rule_filter(m.group(0)) for m in rules
+                if f"'{ENHANCED}'" in m.group(0)}
+    retained = [m for m in retained
+                if rule_filter(m.group(0)).replace(f"'{RETAINED}'",
+                                                   f"'{ENHANCED}'")
+                not in enhanced]
+    if not retained:
+        return xml, False
     names = [int(n) for n in re.findall(r'<symbol\b[^>]*\bname="(\d+)"', renderer)]
     next_name = max(names) + 1
     new_rules, new_symbols = [], []

@@ -24,7 +24,7 @@ SOURCE_DIR = TEMPLATES / "bng-service"
 SOURCE_PROJECT = "BNG Service Habitat Mapping.qgz"
 
 # Files of the source folder that are never part of the template.
-SKIP_RE = re.compile(r"\.backup-\d|^\.DS_Store$|^~\$")
+SKIP_RE = re.compile(r"\.backup-\d|^\.DS_Store$|^~\$|\.gpkg-(shm|wal)$")
 
 # A zip entry is dated, so a fixed date makes the build give the same bytes.
 ZIP_DATE = (2026, 1, 1, 0, 0, 0)

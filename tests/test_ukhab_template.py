@@ -11,12 +11,19 @@ import csv
 import io
 import re
 import shutil
+import sys
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
 
 from tests import support
 from tests.test_project_xml import CHECK_TOOLS, NO_CHANGE
+
+if str(support.TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(support.TOOLS_DIR))
+
+import style_enhanced_trees  # noqa: E402
+import template_copy  # noqa: E402
 
 UKHAB_DIR = support.TEMPLATES_DIR / "bng-service-ukhab"
 UKHAB_PROJECT = UKHAB_DIR / "BNG Service Habitat Mapping - UKHab symbology.qgz"
@@ -26,6 +33,10 @@ LISTS = UKHAB_DIR / support.CSV_REFERENCES
 # The parts of a layer that are its map style.
 STYLE_TAGS = {"renderer-v2", "labeling", "layerOpacity"}
 STYLE_ATTRIBUTES = {"labelsEnabled"}
+
+# The yellow of a Retained tree and its outline, and the purple of Enhanced.
+ENHANCED_COLOURS = {"251,243,83": "92,1,115", "178,172,58": "61,1,77"}
+COLOUR_RE = re.compile(r"^(\d+,\d+,\d+),(\d+)")
 
 # Each view-only layer, and the data layer whose table it reads.
 VIEW_LAYERS = {
@@ -78,6 +89,35 @@ def list_values(path, column):
         return {row[column] for row in csv.DictReader(handle) if row[column]}
 
 
+def mapped_values(path, key, column, keys):
+    """The values in `column` of the rows whose `key` is one of `keys`."""
+    with open(LISTS / path, encoding="utf-8-sig", newline="") as handle:
+        return {row[column] for row in csv.DictReader(handle)
+                if row[key] in keys and row[column]}
+
+
+def symbol_settings(symbol):
+    """Each setting of a symbol's layers as (key, value), colours without
+    their fractions part, so two symbols compare by shape, size and colour."""
+    settings = []
+    for element in symbol.iter():
+        key = element.get("k") if element.tag == "prop" else element.get("name")
+        value = element.get("v") if element.tag == "prop" else element.get("value")
+        if element.tag not in ("prop", "Option") or value is None:
+            continue
+        match = COLOUR_RE.match(value)
+        settings.append((key, match.group(0) if match else value))
+    return settings
+
+
+def as_enhanced(value):
+    """A Retained colour as its Enhanced colour; any other value as it is."""
+    match = COLOUR_RE.match(value)
+    if match is None or match.group(1) not in ENHANCED_COLOURS:
+        return value
+    return f"{ENHANCED_COLOURS[match.group(1)]},{match.group(2)}"
+
+
 def category_values(layer):
     return {c.get("value") for c in layer.find("renderer-v2").iter("category")}
 
@@ -100,7 +140,7 @@ class CommittedCopyTest(unittest.TestCase):
         for source in support.SERVICE_TEMPLATE_DIR.rglob("*"):
             relative = source.relative_to(support.SERVICE_TEMPLATE_DIR)
             if (not source.is_file() or source.suffix == ".qgz"
-                    or ".backup-" in source.name or source.name == ".DS_Store"):
+                    or template_copy.SKIP_RE.search(source.name)):
                 continue
             with self.subTest(file=str(relative)):
                 self.assertEqual(source.read_bytes(),
@@ -164,17 +204,36 @@ class ProjectTest(unittest.TestCase):
 
     def test_every_offered_value_has_a_symbol(self):
         area_types = list_values("Habitats/Habitat Options- pre.csv", "UKHAB")
+        area_post_types = list_values(
+            "Habitats/Habitat Options- post.csv", "UKHAB")
         area_conditions = list_values("Habitats/Habitat Condition.csv", "Label")
+        hedge_types = list_values(
+            "Hedgerows/Hedgerow Retention Options.csv", "Value") - {"To be created"}
+        hedge_post_types = list_values(
+            "Hedgerows/Hedgerow Habitat Options - post.csv", "Description")
+        water_types = list_values(
+            "Watercourses/Watercourse Retention Options.csv", "Value") - {"To be created"}
         expected = {
             "Area Habitats Baseline": area_types,
-            "Area Habitats Post-Intervention": list_values(
-                "Habitats/Habitat Options- post.csv", "UKHAB"),
-            "Hedgerows Baseline": list_values(
-                "Hedgerows/Hedgerow Retention Options.csv", "Value")
-            - {"To be created"},
-            "Watercourses Baseline": list_values(
-                "Watercourses/Watercourse Retention Options.csv", "Value")
-            - {"To be created"},
+            "Area Habitats Post-Intervention": area_post_types,
+            "Hedgerows Baseline": hedge_types,
+            "Hedgerows Post-Intervention": hedge_post_types,
+            "Watercourses Baseline": water_types,
+            "Baseline Habitat Distinctiveness": mapped_values(
+                "Habitats/Habitat Distinctiveness- pre.csv", "Habitat",
+                "Baseline Distinctivness", area_types),
+            "Proposed Habitats Distinctiveness": mapped_values(
+                "Habitats/Habitat Distinctiveness- post.csv", "Habitat",
+                "Proposed Distinctivness", area_post_types),
+            "Baseline Hedgerow Distinctiveness": mapped_values(
+                "Hedgerows/Hedgerow Distinctiveness- pre.csv", "Value",
+                "Distinctiveness", hedge_types),
+            "Proposed Hedgerow Distinctiveness": mapped_values(
+                "Hedgerows/Hedgerow Distinctiveness - post.csv", "Value",
+                "Distinctiveness", hedge_post_types),
+            "Baseline Watercourse Distinctiveness": mapped_values(
+                "Watercourses/Watercourse Distinctiveness- pre.csv", "Value",
+                "Distinctiveness", water_types),
             "Baseline Habitat Condition": area_conditions,
             "Proposed Habitats Condition": area_conditions,
             "Habitats Retention": list_values(
@@ -195,15 +254,47 @@ class ProjectTest(unittest.TestCase):
             with self.subTest(layer=name):
                 self.assertEqual(set(), offered - category_values(self.ukhab[name]))
 
+    def test_every_offered_value_has_a_rule(self):
+        """The rule renderers: a value with no rule is not drawn."""
+        water_post_types = list_values(
+            "Watercourses/Watercourse Habitat Options - post.csv", "Description")
+        sizes = list_values(
+            "Individual trees/Individual tree Size - pre.csv", "Retention") - {"N/A"}
+        settings = list_values(
+            "Individual trees/Individual tree Rural or Urban - pre.csv",
+            "Retention") - {"N/A"}
+        expected = {
+            "Watercourses Post-Intervention": {
+                f"\"Proposed River Type\" = '{t}'" for t in water_post_types},
+            "Proposed Watercourse Condition": {
+                f"\"Proposed Condition\" = '{c}'" for c in mapped_values(
+                    "Watercourses/Watercourse Condition.csv", "Habitat",
+                    "Label", water_post_types)},
+            "Proposed Watercourse Distinctiveness": {
+                f"\"Proposed Distinctiveness\" = '{d}'" for d in mapped_values(
+                    "Watercourses/Watercourse Distinctiveness- post.csv",
+                    "Value", "Distinctiveness", water_post_types)},
+            "Individual Trees Baseline": {
+                f"\"Baseline Tree Size\" = '{size}' AND "
+                f"\"Baseline Rural or Urban Tree\" = '{setting}'"
+                for size in sizes for setting in settings},
+        }
+        for name, conditions in expected.items():
+            filters = " ".join(rule_filters(self.ukhab[name]))
+            for condition in sorted(conditions):
+                with self.subTest(layer=name, condition=condition):
+                    self.assertIn(condition, filters)
+
     def test_tree_conditions_have_a_rule_each(self):
         conditions = list_values(
             "Individual trees/Individual tree Condition - options.csv", "Label")
-        for name in ("Baseline Individual tree Condition",
-                     "Proposed Individual tree Condition"):
+        for name, field in (
+                ("Baseline Individual tree Condition", "Baseline Condition"),
+                ("Proposed Individual tree Condition", "Proposed Condition")):
             filters = " ".join(rule_filters(self.ukhab[name]))
             for condition in conditions:
                 with self.subTest(layer=name, condition=condition):
-                    self.assertIn(f"Condition\" = '{condition}'", filters)
+                    self.assertIn(f"\"{field}\" = '{condition}'", filters)
 
     def test_no_layer_is_labelled(self):
         for name, layer in self.ukhab.items():
@@ -246,6 +337,106 @@ class ProjectTest(unittest.TestCase):
                 with self.subTest(template=name, retention=retention):
                     self.assertIn(f"\"Retention Category\" = '{retention}'",
                                   filters)
+
+
+    def test_each_retained_tree_rule_has_an_enhanced_one(self):
+        """For every size and setting: the same shape and size as Retained,
+        with the Retained yellow made purple."""
+        for name, layers in (("bng-service", self.service),
+                             ("bng-service-ukhab", self.ukhab)):
+            renderer = layers["Individual Trees Post-Intervention"].find(
+                "renderer-v2")
+            symbols = {s.get("name"): s
+                       for s in renderer.findall("symbols/symbol")}
+            rules = {" ".join(r.get("filter").split()): r
+                     for r in renderer.iter("rule")
+                     if r.get("filter") is not None}
+            for condition, rule in rules.items():
+                if "'Retained'" not in condition:
+                    continue
+                enhanced = condition.replace("'Retained'", "'Enhanced'")
+                with self.subTest(template=name, rule=enhanced):
+                    self.assertIn(enhanced, rules)
+                    want = [(k, as_enhanced(v)) for k, v in symbol_settings(
+                        symbols[rule.get("symbol")])]
+                    got = symbol_settings(
+                        symbols[rules[enhanced].get("symbol")])
+                    self.assertEqual(want, got)
+
+
+class EnhancedTreeRulesTest(unittest.TestCase):
+
+    def test_a_missing_enhanced_rule_is_added_again(self):
+        qgs, payload = style_enhanced_trees.qgz_actions.read_project(
+            support.SERVICE_PROJECT)
+        xml = payload[qgs].decode("utf-8")
+        start, end = style_enhanced_trees.renderer_span(xml)
+        renderer = xml[start:end]
+        enhanced = [m for m in style_enhanced_trees.RULE_RE.finditer(renderer)
+                    if "'Enhanced'" in m.group(0)]
+        self.assertTrue(enhanced)
+        gone = enhanced[0]
+        partial = (xml[:start] + renderer[:gone.start()]
+                   + renderer[gone.end():] + xml[end:])
+        rebuilt, changed = style_enhanced_trees.add_enhanced_rules(partial)
+        self.assertTrue(changed)
+        self.assertIn(style_enhanced_trees.rule_filter(gone.group(0)),
+                      [style_enhanced_trees.rule_filter(m.group(0))
+                       for m in style_enhanced_trees.RULE_RE.finditer(rebuilt)])
+        self.assertFalse(style_enhanced_trees.add_enhanced_rules(rebuilt)[1])
+
+
+class EnhancedTreeToolTest(support.TempDirTestCase):
+    """style_enhanced_trees.py on a project with one Enhanced rule gone."""
+
+    def test_check_finds_it_and_a_run_puts_it_back(self):
+        tool = support.TOOLS_DIR / "style_enhanced_trees.py"
+        project = self.tmp / support.SERVICE_PROJECT.name
+        qgs, payload = style_enhanced_trees.qgz_actions.read_project(
+            support.SERVICE_PROJECT)
+        xml = payload[qgs].decode("utf-8")
+        start, end = style_enhanced_trees.renderer_span(xml)
+        gone = next(m for m in style_enhanced_trees.RULE_RE.finditer(
+            xml, start, end) if "'Enhanced'" in m.group(0))
+        with zipfile.ZipFile(project, "w", zipfile.ZIP_DEFLATED) as out:
+            for name, data in payload.items():
+                out.writestr(name, data if name != qgs else
+                             (xml[:gone.start()] + xml[gone.end():])
+                             .encode("utf-8"))
+        before = project.read_bytes()
+
+        result = support.run_python(tool, "--check", project)
+        self.assertEqual(1, result.returncode, support.describe(result))
+        self.assertEqual(before, project.read_bytes())
+
+        result = support.run_python(tool, project)
+        self.assertEqual(0, result.returncode, support.describe(result))
+        self.assertNotEqual(before, project.read_bytes())
+        backups = list(self.tmp.glob(f"{project.name}.backup-*"))
+        self.assertEqual(1, len(backups))
+        self.assertEqual(before, backups[0].read_bytes())
+
+        result = support.run_python(tool, "--check", project)
+        self.assertEqual(0, result.returncode, support.describe(result))
+        self.assertIn(NO_CHANGE, result.stdout)
+
+
+class DifferencesTest(support.TempDirTestCase):
+    """template_copy.differences, which --check reports."""
+
+    def test_finds_a_changed_a_missing_and_an_extra_file(self):
+        built, committed = self.tmp / "built", self.tmp / "committed"
+        for folder in (built, committed):
+            (folder / "Layers").mkdir(parents=True)
+            (folder / "same.csv").write_text("a\n")
+            (folder / "Layers" / "changed.gpkg").write_text(folder.name)
+        (built / "missing.csv").write_text("b\n")
+        (committed / "extra.csv").write_text("c\n")
+        (committed / "Layers" / "changed.gpkg-wal").write_text("side file")
+        self.assertEqual(
+            ([str(support.Path("Layers") / "changed.gpkg")],
+             ["missing.csv"], ["extra.csv"]),
+            template_copy.differences(built, committed))
 
 
 class MaintenanceToolCheckTest(support.TempDirTestCase):

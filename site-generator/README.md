@@ -165,7 +165,8 @@ number source and no clock, so a run can always be repeated.
 built without them is the same, to the byte, as before they existed.
 
 - **A watercourse** runs along the edges between cells, as a hedgerow does,
-  but further, and never on a hedgerow's edge. Ditches and other rivers and
+  but further, and never on a hedgerow's edge. Ditches and canals, both
+  Medium: the service refuses a High watercourse, such as other rivers and
   streams. A stretch in a development that clears its hedgerows is filled
   in, and the stretches either side kept, as `WC-01-1`, `WC-01-2`. A kept
   stretch is retained, or enhanced one condition with no encroachment. A new

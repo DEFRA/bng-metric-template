@@ -349,8 +349,10 @@ def write_trees(conn, site):
 
 # --------------------------------------------------------------- watercourses
 
-WATER_TYPES = [('Ditches', 0.6), ('Other rivers and streams', 0.4)]
-WATER_DISTINCTIVENESS = {'Ditches': 'Medium', 'Other rivers and streams': 'High'}
+# Medium only: the service refuses a High or V.High watercourse
+# (HABITAT_DISTINCTIVENESS_NOT_IN_SCOPE), so Other rivers and streams is left out.
+WATER_TYPES = [('Ditches', 0.6), ('Canals', 0.4)]
+WATER_DISTINCTIVENESS = {'Ditches': 'Medium', 'Canals': 'Medium'}
 WATER_ENHANCED_SHARE = 0.4
 
 
