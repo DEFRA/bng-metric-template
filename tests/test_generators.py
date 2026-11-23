@@ -302,5 +302,61 @@ class SiteGeneratorTest(support.TempDirTestCase):
         self.assertEqual(0, result.returncode, support.describe(result))
 
 
+# Every layer of the template, with each retention category the layer can
+# hold: seed 8 of this site shows them all.
+FULL_SITE_ARGS = ("--habitats", "30", "--area-ha", "8", "--hedgerows", "5",
+                  "--trees", "12", "--watercourses", "2", "--vertical", "4",
+                  "--seed", "8", "--no-legacy", "--no-metric")
+KINDS = ("Area Habitats", "Vertical Area Habitats", "Hedgerows",
+         "Watercourses", "Individual Trees")
+
+
+class SiteGeneratorAllLayersTest(support.TempDirTestCase):
+    """--watercourses and --vertical add the two layers a site did not have."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.first = support.generate_site(cls.tmp / "first", *FULL_SITE_ARGS)
+        cls.second = support.generate_site(cls.tmp / "second", *FULL_SITE_ARGS)
+        cls.gpkg = support.site_gpkg(cls.first)
+
+    def test_same_inputs_give_the_same_geopackage(self):
+        self.assertEqual(self.gpkg.read_bytes(),
+                         support.site_gpkg(self.second).read_bytes())
+
+    def test_site_has_what_was_asked_for(self):
+        for table, expected in (("Watercourses Baseline", 2),
+                                ("Vertical Area Habitats Baseline", 4)):
+            with self.subTest(table=table):
+                self.assertEqual(expected,
+                                 len(support.read_rows(self.gpkg, table)))
+
+    def test_every_layer_shows_each_retention_category(self):
+        for kind in KINDS:
+            rows = support.read_rows(self.gpkg, f"{kind} Post-Intervention")
+            found = {row["Retention Category"] for row in rows}
+            with self.subTest(layer=kind):
+                self.assertEqual({"Retained", "Enhanced", "Created"}, found)
+
+    def test_linear_and_point_layers_lose_a_feature(self):
+        for kind in KINDS[1:]:
+            baseline = {row["feature_uuid"] for row in support.read_rows(
+                self.gpkg, f"{kind} Baseline")}
+            kept = {row["parent_uuid"] for row in support.read_rows(
+                self.gpkg, f"{kind} Post-Intervention")}
+            with self.subTest(layer=kind):
+                self.assertTrue(baseline - kept)
+
+    def test_without_them_a_site_has_neither(self):
+        site = support.generate_site(self.tmp / "without", *SITE_ARGS,
+                                     "--no-legacy", "--no-metric")
+        gpkg = support.site_gpkg(site)
+        for table in ("Watercourses Baseline",
+                      "Vertical Area Habitats Baseline"):
+            with self.subTest(table=table):
+                self.assertEqual([], support.read_rows(gpkg, table))
+
+
 if __name__ == "__main__":
     unittest.main()

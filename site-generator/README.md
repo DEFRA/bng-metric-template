@@ -45,6 +45,8 @@ individual trees.
 | `--centre` | 455920.7,285323.1 | Site centre, as a British National Grid easting and northing |
 | `--hedgerows` | 1 | Baseline hedgerows, from 0 to 10 |
 | `--trees` | 3 | Baseline individual trees, from 0 to 50 |
+| `--watercourses` | 0 | Baseline watercourses, from 0 to 5. With any, the green margin also gets a new ditch |
+| `--vertical` | 0 | Baseline green walls, from 0 to 10. With any, the development's new buildings get green walls too |
 | `--landscape` | pastoral | The land now: `pastoral`, `arable`, `wooded` or `urban-fringe` |
 | `--scheme` | housing | The development: `housing`, `commercial` or `solar` |
 | `--seed` | 1 | A different seed gives a different layout and different choices |
@@ -159,4 +161,24 @@ area. Scaling keeps every shared edge shared.
 **Every choice comes from a hash of the seed.** The generator uses no random
 number source and no clock, so a run can always be repeated.
 
-Watercourses are not generated.
+**Watercourses and green walls are added only when asked for,** so a site
+built without them is the same, to the byte, as before they existed.
+
+- **A watercourse** runs along the edges between cells, as a hedgerow does,
+  but further, and never on a hedgerow's edge. Ditches and other rivers and
+  streams. A stretch in a development that clears its hedgerows is filled
+  in, and the stretches either side kept, as `WC-01-1`, `WC-01-2`. A kept
+  stretch is retained, or enhanced one condition with no encroachment. A new
+  ditch, `WN-01`, is dug through the green margin.
+- **A vertical area habitat** is a facade-bound or ground based green wall,
+  drawn as a short line on a cell edge. Its area is its length by a height
+  of 2 to 6 m, as a surveyor would estimate it. A wall in a development that
+  clears its trees is demolished; the others are retained or enhanced one
+  condition. The new buildings get one or two new green walls, `VN-01`.
+
+To show every retention category on every layer:
+
+```sh
+python3 site-generator/generate_site.py --habitats 30 --area-ha 8 \
+    --hedgerows 5 --trees 12 --watercourses 2 --vertical 4 --seed 8
+```
