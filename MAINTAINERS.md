@@ -19,6 +19,7 @@ needs QGIS.
 | `scale-test-nsip/` | The example site: generator, claim checks, `README.md`, `VERIFICATION.md` and the generated output |
 | `site-generator/` | **The site generator.** Builds a small synthetic site from inputs such as the number of parcels, the area and the location. See its `README.md` |
 | `development/tools/` | Tools that maintain the template. Nothing here is needed to use it |
+| `spec/` | **The GeoPackage specification**, generated from the template: `gpkg-spec.md` for people, `gpkg-spec.json` for tools. See [The GeoPackage specification](#the-geopackage-specification) |
 
 **This file is for maintainers.** Users get `BNG Service template - User Guide.docx`
 with the template and the example site, and `plugin/README.md`, which
@@ -421,5 +422,57 @@ To raise it:
    ```
 
 3. Raise the plugin version, with a changelog line, and rebuild the plugin.
-4. Tell the BNG service team. The service refuses the new version until it
+4. Regenerate the GeoPackage specification (below), which records the
+   version.
+5. Tell the BNG service team. The service refuses the new version until it
    supports it.
+
+## The GeoPackage specification
+
+**Third parties that write BNG plans in the template's format read
+`spec/gpkg-spec.md`, or `spec/gpkg-spec.json` in a tool.** It is generated
+from the template, so it says what the template holds:
+
+- every table, with its geometry type and coordinate system;
+- every column, with its type, its width, whether it may be blank, its
+  default, the rule the form holds it to, and its drop-down;
+- the rows of each drop-down list, in the columns the drop-downs store, show
+  or filter on, so a list that depends on another column can be followed;
+- the lineage columns, and the version record with the template version.
+
+**Regenerate it with every change to the template**, of the GeoPackage or
+the project, and commit `spec/` with the change:
+
+```sh
+python3 development/tools/gpkg_spec.py
+```
+
+It reads no clock, so an unchanged template gives the same bytes. The
+Converters, generators and template files job of `tests.yml` runs it with
+`--check`, which writes nothing and prints how the committed copy differs.
+A pull request whose specification is out of date fails it.
+
+**Publishing.** On a merge to `main` that changes `spec/gpkg-spec.md`,
+`.github/workflows/publish-spec.yml` publishes it to its Confluence page,
+with `development/tools/publish_spec.py`, as the backend publishes its data
+dictionary. An unchanged specification is not republished. The job is
+skipped until these repository settings are set, under Settings → Secrets
+and variables → Actions:
+
+| Setting | Kind | Meaning |
+| --- | --- | --- |
+| `CONFLUENCE_BASE_URL` | Variable | The wiki, e.g. `https://example.atlassian.net/wiki` |
+| `CONFLUENCE_GPKG_SPEC_PAGE_ID` | Variable | The numeric ID of the page to update |
+| `CONFLUENCE_USER_EMAIL` | Secret | The Atlassian account's email |
+| `CONFLUENCE_API_TOKEN` | Secret | An Atlassian API token for that account |
+
+To see the page it would publish, without Confluence:
+
+```sh
+python3 development/tools/publish_spec.py --dry-run
+```
+
+**A change the generator cannot describe stops it**, naming the table and
+column: a drop-down widget it does not know, a list it cannot find, or the
+lineage columns on the wrong stage. Teach the generator the change, then
+regenerate.

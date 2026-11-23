@@ -31,6 +31,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      # A template change cannot merge without its specification: this
+      # regenerates spec/ in memory and prints how the committed copy differs.
+      - name: The GeoPackage specification is up to date
+        run: python3 development/tools/gpkg_spec.py --check
+
       - name: Run the tests
         run: python3 -m unittest discover -s tests -t . -v
 
