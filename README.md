@@ -23,6 +23,8 @@ Only the plugin needs QGIS.
 | Folder | What it holds | Who it is for |
 | --- | --- | --- |
 | `templates/bng-service/` | **The template.** An empty QGIS project, its GeoPackage, its reference lists, and `BNG Service template - User Guide.docx`, the user guide | Surveyors |
+| `templates/bng-service-labels/` | The template with a label on every habitat feature, built from `templates/bng-service/`. For testing with users | Surveyors, in user research |
+| `templates/bng-service-ukhab/` | The template with the Natural England (extended UKHab) map styles, built from `templates/bng-service/`. Internal use only until the styles are cleared | Surveyors, internally |
 | `templates/legacy-ne/` | The Natural England template, as Natural England publishes it | Comparison and conversion |
 | `plugin/` | **The plugin.** Source, `build_plugin.py`, and `README.md`, which tells you how to install it | Surveyors and maintainers |
 | `reference/` | The Statutory Metric workbooks, the Excel GIS import tool and the published guidance | Maintainers |

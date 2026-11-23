@@ -14,6 +14,8 @@ needs QGIS.
 | --- | --- |
 | `templates/bng-service/` | **The template.** An empty QGIS project, its reference lists, and `BNG Service template - User Guide.docx`, the user guide |
 | `templates/legacy-ne/` | The Natural England template as it ships |
+| `templates/bng-service-labels/` | `templates/bng-service/` with a label on every habitat feature, built by `development/tools/build_labels_template.py`. For testing with users. `templates/README.md` describes the labels |
+| `templates/bng-service-ukhab/` | `templates/bng-service/` with the Natural England map styles, built by `development/tools/build_ukhab_template.py`. Internal use only until the styles are cleared. `templates/README.md` lists its differences and gaps |
 | `plugin/` | **The plugin.** Source, `build_plugin.py`, and `plugin/README.md`, the installation page |
 | `reference/` | The Statutory Metric workbooks, the Excel GIS import tool and the user guide. Every reference list in the template is checked against these |
 | `scale-test-nsip/` | The example site: generator, claim checks, `README.md`, `VERIFICATION.md` and the generated output |
@@ -204,6 +206,7 @@ generated: the first run of the generator copies the whole folder.
 | Change which habitats the Vertical Area Habitats layers offer | The lists in `CSV References/Vertical Area Habitats/`, then `limit_vertical_habitats.py`, then `reset_stale_dropdowns.py`. Keep those habitats out of the area habitat lists in `CSV References/Habitats/` (Options, Distinctiveness and Condition); the tests check it |
 | Change a reference list of either template | `plugin/build_plugin.py`, then send the new zip to the users of the plugin |
 | Test a button against a site | `run_actions_headless.py`, with the Python that comes with QGIS |
+| Change the map styles of the UKHab symbology copy | `build_ukhab_template.py`. The copy is never edited by hand: its styles come from `templates/legacy-ne/` |
 | Change the most characters a text column holds, or add a text column | `TEXT_LIMITS` in `plugin/bng_template_convert/gpkg_common.py`, then `set_text_widths.py`. Make the same change in bng-metric-backend `src/validation/geopackage/text-limits.js`, sync the schema into bng-library and pin it again (see [Text widths](#text-widths)) |
 
 **A paste gives a post-intervention row the same lineage as the Copy
@@ -288,8 +291,8 @@ only `Poor` and no encroachment, so a `Created` culvert is never worse.
 lists, and `CreatedExistingWatercourseTest` in `tests/test_to_metric.py`
 checks what the Metric makes of such a watercourse.
 
-After any change to the template, check that the seven generated settings,
-the text widths and the template version record are in step. Each command gives "no change
+After any change to the template, check that the eight generated settings,
+the Enhanced tree style, the text widths and the template version record are in step. Each command gives "no change
 needed" on a template that is in step, and exits with 1 otherwise:
 
 ```sh
@@ -301,8 +304,17 @@ python3 development/tools/order_dropdowns.py --check "$P"
 python3 development/tools/allow_blank.py --check "$P"
 python3 development/tools/require_shape.py --check "$P"
 python3 development/tools/limit_vertical_habitats.py --check "$P"
+python3 development/tools/style_enhanced_trees.py --check "$P"
 python3 development/tools/set_text_widths.py --check "templates/bng-service/Layers/BNG Service Layers.gpkg"
 python3 development/tools/set_template_version.py --check "templates/bng-service/Layers/BNG Service Layers.gpkg"
+```
+
+Then build the UKHab symbology and labelled copies again, which take every
+change to `templates/bng-service/`, and commit them with the change:
+
+```sh
+python3 development/tools/build_ukhab_template.py
+python3 development/tools/build_labels_template.py
 ```
 
 Then generate the example site again. Its run ends with `dropdown_check.py`.

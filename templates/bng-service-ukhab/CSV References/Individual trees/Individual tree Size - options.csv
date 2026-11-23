@@ -1,0 +1,17 @@
+ID,New
+SmallRetained,Small
+SmallCreated,Small
+MediumRetained,Medium
+MediumCreated,Medium
+LargeRetained,Large
+LargeCreated,Large
+Very largeRetained,Very large
+Very largeCreated,Very large
+N/ACreated,Small
+N/ACreated,Medium
+N/ACreated,Large
+N/ACreated,Very large
+SmallEnhanced,Small
+MediumEnhanced,Medium
+LargeEnhanced,Large
+Very largeEnhanced,Very large

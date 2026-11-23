@@ -1,0 +1,24 @@
+Habitat,Condition,Label,Order
+Canals,Good,Good,1
+Ditches,Good,Good,1
+Other rivers and streams,Good,Good,1
+Priority habitat,Good,Good,1
+Canals,Fairly Good,Fairly Good,2
+Ditches,Fairly Good,Fairly Good,2
+Other rivers and streams,Fairly Good,Fairly Good,2
+Priority habitat,Fairly Good,Fairly Good,2
+Canals,Moderate,Moderate,3
+Ditches,Moderate,Moderate,3
+Other rivers and streams,Moderate,Moderate,3
+Priority habitat,Moderate,Moderate,3
+Canals,Fairly Poor,Fairly Poor,4
+Ditches,Fairly Poor,Fairly Poor,4
+Other rivers and streams,Fairly Poor,Fairly Poor,4
+Priority habitat,Fairly Poor,Fairly Poor,4
+Canals,Poor,Poor,5
+Culvert,Poor,Poor,5
+Ditches,Poor,Poor,5
+Other rivers and streams,Poor,Poor,5
+Priority habitat,Poor,Poor,5
+N/A,N/A,N/A,6
+To be created,N/A,N/A,6
