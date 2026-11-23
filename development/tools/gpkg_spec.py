@@ -83,6 +83,9 @@ CONSTRAINT_NOT_NULL = 1
 STRENGTH = {"0": None, "1": "hard", "2": "soft"}
 LITERAL_DEFAULT = re.compile(r"'((?:[^']|'')*)'\Z|(-?\d+(?:\.\d+)?)\Z")
 TEXT_WIDTH = re.compile(r"TEXT\s*\(\s*(\d+)\s*\)\Z", re.I)
+# A rule about the row's shape. QGIS can hold a rule only on a field, so the
+# template holds this one on the first text column; it is the geometry's.
+GEOMETRY_EXPRESSION = "$geometry"
 CURRENT_VALUE = re.compile(r"current_value\('([^']+)'\)")
 QUOTED_FIELD = re.compile(r'"([^"]+)"')
 
@@ -398,11 +401,31 @@ def layer_settings(layer):
 # Lists
 # ---------------------------------------------------------------------------
 
-def read_csv(path):
-    with open(TEMPLATE_DIR / path, newline="", encoding="utf-8-sig") as handle:
-        reader = csv.reader(handle)
-        header = next(reader)
-        return header, [row for row in reader if any(cell for cell in row)]
+def read_csv(path, where):
+    try:
+        with open(TEMPLATE_DIR / path, newline="",
+                  encoding="utf-8-sig") as handle:
+            reader = csv.reader(handle)
+            header = next(reader, None)
+            rows = [row for row in reader if any(cell for cell in row)]
+    except (OSError, UnicodeDecodeError, csv.Error) as error:
+        raise SpecError(f"{where}: cannot read its list {path}: {error}") \
+            from error
+    if not header:
+        raise SpecError(f"{where}: its list {path} is empty")
+    return header, rows
+
+
+def check_list_columns(path, header, uses):
+    """Every column a drop-down stores, shows or filters on is in its list."""
+    for use in uses:
+        needed = {use["storedColumn"], use["shownColumn"],
+                  *QUOTED_FIELD.findall(use["filter"] or "")}
+        missing = sorted(name for name in needed if name not in header)
+        if missing:
+            raise SpecError(
+                f"{use['table']} / {use['column']}: its list {path} has no "
+                f"column {', '.join(missing)}")
 
 
 def list_columns(header, uses):
@@ -415,7 +438,10 @@ def list_columns(header, uses):
 
 
 def describe_list(path, uses):
-    header, rows = read_csv(path)
+    where = "; ".join(sorted({f"{use['table']} / {use['column']}"
+                              for use in uses}))
+    header, rows = read_csv(path, where)
+    check_list_columns(path, header, uses)
     columns = list_columns(header, uses)
     indexes = [header.index(name) for name in columns]
     seen, kept = set(), []
@@ -446,6 +472,24 @@ def collect_lists(tables):
                     dict(drop_down, table=table["name"],
                          column=column["name"]))
     return [describe_list(path, uses[path]) for path in sorted(uses)]
+
+
+def move_geometry_rules(table):
+    """Report a rule about the row's shape against the geometry column."""
+    geometry = next(column for column in table["columns"]
+                    if column["name"] == table["geometryColumn"])
+    for column in table["columns"]:
+        rule = column["rule"]
+        if column is geometry or not rule or (
+                GEOMETRY_EXPRESSION not in rule["expression"]):
+            continue
+        if geometry["rule"]:
+            raise SpecError(
+                f"{table['name']}: more than one rule about the shape")
+        geometry["rule"] = dict(rule, heldOn=column["name"])
+        column["rule"] = None
+        if rule["strength"] == "hard":
+            geometry["mayBeBlank"] = False
 
 
 def check_lineage(tables):
@@ -484,6 +528,7 @@ def build_spec(gpkg_path=GPKG_PATH, project_path=PROJECT_PATH):
         table["columns"] = [describe_column(column, layer, lists,
                                             table["name"])
                             for column in table["columns"]]
+        move_geometry_rules(table)
     check_lineage(tables)
     return {
         "format": version_record["metadata"].get("format"),

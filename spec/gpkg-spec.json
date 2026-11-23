@@ -64,9 +64,14 @@
           "editable": true,
           "widget": "text",
           "notNullInTemplate": null,
-          "mayBeBlank": true,
+          "mayBeBlank": false,
           "default": null,
-          "rule": null,
+          "rule": {
+            "expression": "$geometry IS NOT NULL",
+            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
+            "strength": "hard",
+            "heldOn": "Site Name"
+          },
           "dropDown": null,
           "lineage": false
         },
@@ -83,11 +88,7 @@
           "notNullInTemplate": null,
           "mayBeBlank": true,
           "default": null,
-          "rule": {
-            "expression": "$geometry IS NOT NULL",
-            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
-            "strength": "hard"
-          },
+          "rule": null,
           "dropDown": null,
           "lineage": false
         },
@@ -232,9 +233,14 @@
           "editable": true,
           "widget": "text",
           "notNullInTemplate": null,
-          "mayBeBlank": true,
+          "mayBeBlank": false,
           "default": null,
-          "rule": null,
+          "rule": {
+            "expression": "$geometry IS NOT NULL",
+            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
+            "strength": "hard",
+            "heldOn": "Habitat Ref"
+          },
           "dropDown": null,
           "lineage": false
         },
@@ -251,11 +257,7 @@
           "notNullInTemplate": null,
           "mayBeBlank": true,
           "default": null,
-          "rule": {
-            "expression": "$geometry IS NOT NULL",
-            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
-            "strength": "hard"
-          },
+          "rule": null,
           "dropDown": null,
           "lineage": false
         },
@@ -566,9 +568,14 @@
           "editable": true,
           "widget": "text",
           "notNullInTemplate": null,
-          "mayBeBlank": true,
+          "mayBeBlank": false,
           "default": null,
-          "rule": null,
+          "rule": {
+            "expression": "$geometry IS NOT NULL",
+            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
+            "strength": "hard",
+            "heldOn": "Habitat Ref"
+          },
           "dropDown": null,
           "lineage": false
         },
@@ -589,11 +596,7 @@
             "value": null,
             "appliedOnUpdate": false
           },
-          "rule": {
-            "expression": "$geometry IS NOT NULL",
-            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
-            "strength": "hard"
-          },
+          "rule": null,
           "dropDown": null,
           "lineage": false
         },
@@ -1466,9 +1469,14 @@
           "editable": true,
           "widget": "text",
           "notNullInTemplate": null,
-          "mayBeBlank": true,
+          "mayBeBlank": false,
           "default": null,
-          "rule": null,
+          "rule": {
+            "expression": "$geometry IS NOT NULL",
+            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
+            "strength": "hard",
+            "heldOn": "Habitat Ref"
+          },
           "dropDown": null,
           "lineage": false
         },
@@ -1485,11 +1493,7 @@
           "notNullInTemplate": null,
           "mayBeBlank": true,
           "default": null,
-          "rule": {
-            "expression": "$geometry IS NOT NULL",
-            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
-            "strength": "hard"
-          },
+          "rule": null,
           "dropDown": null,
           "lineage": false
         },
@@ -1752,9 +1756,14 @@
           "editable": true,
           "widget": "text",
           "notNullInTemplate": null,
-          "mayBeBlank": true,
+          "mayBeBlank": false,
           "default": null,
-          "rule": null,
+          "rule": {
+            "expression": "$geometry IS NOT NULL",
+            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
+            "strength": "hard",
+            "heldOn": "Habitat Ref"
+          },
           "dropDown": null,
           "lineage": false
         },
@@ -1775,11 +1784,7 @@
             "value": null,
             "appliedOnUpdate": false
           },
-          "rule": {
-            "expression": "$geometry IS NOT NULL",
-            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
-            "strength": "hard"
-          },
+          "rule": null,
           "dropDown": null,
           "lineage": false
         },
@@ -2604,9 +2609,14 @@
           "editable": true,
           "widget": "text",
           "notNullInTemplate": null,
-          "mayBeBlank": true,
+          "mayBeBlank": false,
           "default": null,
-          "rule": null,
+          "rule": {
+            "expression": "$geometry IS NOT NULL",
+            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
+            "strength": "hard",
+            "heldOn": "Habitat Ref"
+          },
           "dropDown": null,
           "lineage": false
         },
@@ -2623,11 +2633,7 @@
           "notNullInTemplate": null,
           "mayBeBlank": true,
           "default": null,
-          "rule": {
-            "expression": "$geometry IS NOT NULL",
-            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
-            "strength": "hard"
-          },
+          "rule": null,
           "dropDown": null,
           "lineage": false
         },
@@ -2880,9 +2886,14 @@
           "editable": true,
           "widget": "text",
           "notNullInTemplate": null,
-          "mayBeBlank": true,
+          "mayBeBlank": false,
           "default": null,
-          "rule": null,
+          "rule": {
+            "expression": "$geometry IS NOT NULL",
+            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
+            "strength": "hard",
+            "heldOn": "Habitat Ref"
+          },
           "dropDown": null,
           "lineage": false
         },
@@ -2903,11 +2914,7 @@
             "value": null,
             "appliedOnUpdate": false
           },
-          "rule": {
-            "expression": "$geometry IS NOT NULL",
-            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
-            "strength": "hard"
-          },
+          "rule": null,
           "dropDown": null,
           "lineage": false
         },
@@ -3704,9 +3711,14 @@
           "editable": true,
           "widget": "text",
           "notNullInTemplate": null,
-          "mayBeBlank": true,
+          "mayBeBlank": false,
           "default": null,
-          "rule": null,
+          "rule": {
+            "expression": "$geometry IS NOT NULL",
+            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
+            "strength": "hard",
+            "heldOn": "Habitat Ref"
+          },
           "dropDown": null,
           "lineage": false
         },
@@ -3723,11 +3735,7 @@
           "notNullInTemplate": null,
           "mayBeBlank": true,
           "default": null,
-          "rule": {
-            "expression": "$geometry IS NOT NULL",
-            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
-            "strength": "hard"
-          },
+          "rule": null,
           "dropDown": null,
           "lineage": false
         },
@@ -4010,9 +4018,14 @@
           "editable": true,
           "widget": "text",
           "notNullInTemplate": null,
-          "mayBeBlank": true,
+          "mayBeBlank": false,
           "default": null,
-          "rule": null,
+          "rule": {
+            "expression": "$geometry IS NOT NULL",
+            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
+            "strength": "hard",
+            "heldOn": "Habitat Ref"
+          },
           "dropDown": null,
           "lineage": false
         },
@@ -4033,11 +4046,7 @@
             "value": null,
             "appliedOnUpdate": false
           },
-          "rule": {
-            "expression": "$geometry IS NOT NULL",
-            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
-            "strength": "hard"
-          },
+          "rule": null,
           "dropDown": null,
           "lineage": false
         },
@@ -4945,9 +4954,14 @@
           "editable": true,
           "widget": "text",
           "notNullInTemplate": null,
-          "mayBeBlank": true,
+          "mayBeBlank": false,
           "default": null,
-          "rule": null,
+          "rule": {
+            "expression": "$geometry IS NOT NULL",
+            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
+            "strength": "hard",
+            "heldOn": "Habitat Ref"
+          },
           "dropDown": null,
           "lineage": false
         },
@@ -4964,11 +4978,7 @@
           "notNullInTemplate": null,
           "mayBeBlank": true,
           "default": null,
-          "rule": {
-            "expression": "$geometry IS NOT NULL",
-            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
-            "strength": "hard"
-          },
+          "rule": null,
           "dropDown": null,
           "lineage": false
         },
@@ -5200,9 +5210,14 @@
           "editable": true,
           "widget": "text",
           "notNullInTemplate": null,
-          "mayBeBlank": true,
+          "mayBeBlank": false,
           "default": null,
-          "rule": null,
+          "rule": {
+            "expression": "$geometry IS NOT NULL",
+            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
+            "strength": "hard",
+            "heldOn": "Habitat Ref"
+          },
           "dropDown": null,
           "lineage": false
         },
@@ -5223,11 +5238,7 @@
             "value": null,
             "appliedOnUpdate": false
           },
-          "rule": {
-            "expression": "$geometry IS NOT NULL",
-            "description": "Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.",
-            "strength": "hard"
-          },
+          "rule": null,
           "dropDown": null,
           "lineage": false
         },

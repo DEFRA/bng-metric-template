@@ -62,7 +62,7 @@ Stage: both. Geometry: `geom`, POLYGON, SRS 27700.
 | Column | Type | Width | May be blank | Default | Drop-down | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
-| `geom` | `POLYGON` | — | yes | — | — | — |
+| `geom` | `POLYGON` | — | no | — | — | — |
 | `Site Name` | `TEXT(999)` | 999 | yes | — | — | — |
 | `Location` | `TEXT(99)` | 99 | yes | — | — | — |
 | `Survey Date` | `DATE` | — | yes | — | — | — |
@@ -73,7 +73,7 @@ Stage: both. Geometry: `geom`, POLYGON, SRS 27700.
 
 Rules the template's form holds the columns to (hard: the row cannot be saved without it; soft: a warning):
 
-- `Site Name` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
+- `geom` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
 
 ### Area Habitats Baseline
 
@@ -82,7 +82,7 @@ Stage: Baseline. Geometry: `geom`, POLYGON, SRS 27700.
 | Column | Type | Width | May be blank | Default | Drop-down | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
-| `geom` | `POLYGON` | — | yes | — | — | — |
+| `geom` | `POLYGON` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | — | — | — |
 | `Baseline Broad Habitat Type` | `TEXT(99)` | 99 | yes | — | `Coastal lagoons`, `Coastal saltmarsh`, `Cropland`, `Grassland`, `Heathland and shrub`, `Intertidal sediment`, `Lakes`, `Rocky shore`, `Sparsely vegetated land`, `Urban`, `Watercourse footprint`, `Wetland`, `Woodland and forest` | — |
 | `Baseline Habitat Type` | `TEXT(99)` | 99 | yes | Filled in by the template | List `CSV References/Habitats/Habitat Options- pre.csv`, column `UKHAB`; depends on Baseline Broad Habitat Type | — |
@@ -96,7 +96,7 @@ Stage: Baseline. Geometry: `geom`, POLYGON, SRS 27700.
 
 Rules the template's form holds the columns to (hard: the row cannot be saved without it; soft: a warning):
 
-- `Habitat Ref` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
+- `geom` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
 
 ### Area Habitats Post-Intervention
 
@@ -105,7 +105,7 @@ Stage: Post-Intervention. Geometry: `geom`, POLYGON, SRS 27700.
 | Column | Type | Width | May be blank | Default | Drop-down | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
-| `geom` | `POLYGON` | — | yes | — | — | — |
+| `geom` | `POLYGON` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | — |
 | `Parent Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Lineage; Locked in the template's form |
 | `Baseline Broad Habitat Type` | `TEXT(99)` | 99 | yes | — | `Coastal lagoons`, `Coastal saltmarsh`, `Cropland`, `Grassland`, `Heathland and shrub`, `Intertidal sediment`, `Lakes`, `Rocky shore`, `Sparsely vegetated land`, `Urban`, `Watercourse footprint`, `Wetland`, `Woodland and forest` | Locked in the template's form |
@@ -130,7 +130,7 @@ Stage: Post-Intervention. Geometry: `geom`, POLYGON, SRS 27700.
 
 Rules the template's form holds the columns to (hard: the row cannot be saved without it; soft: a warning):
 
-- `Habitat Ref` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
+- `geom` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
 - `Habitat created in advance/years` (soft): 30+ years created in advance is for a habitat whose condition gets worse: Created, the same habitat type as the baseline, and a worse condition. Check this row: a 30+ left from an earlier choice overstates its units.
 
 ### Vertical Area Habitats Baseline
@@ -140,7 +140,7 @@ Stage: Baseline. Geometry: `geom`, LINESTRING, SRS 27700.
 | Column | Type | Width | May be blank | Default | Drop-down | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
-| `geom` | `LINESTRING` | — | yes | — | — | — |
+| `geom` | `LINESTRING` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | — | — | — |
 | `Baseline Broad Habitat Type` | `TEXT(99)` | 99 | yes | — | `Intertidal hard structures`, `Urban` | — |
 | `Baseline Habitat Type` | `TEXT(99)` | 99 | yes | Filled in by the template | List `CSV References/Vertical Area Habitats/Vertical Area Habitat Options- pre.csv`, column `UKHAB`; depends on Baseline Broad Habitat Type | — |
@@ -154,7 +154,7 @@ Stage: Baseline. Geometry: `geom`, LINESTRING, SRS 27700.
 
 Rules the template's form holds the columns to (hard: the row cannot be saved without it; soft: a warning):
 
-- `Habitat Ref` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
+- `geom` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
 
 ### Vertical Area Habitats Post-Intervention
 
@@ -163,7 +163,7 @@ Stage: Post-Intervention. Geometry: `geom`, LINESTRING, SRS 27700.
 | Column | Type | Width | May be blank | Default | Drop-down | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
-| `geom` | `LINESTRING` | — | yes | — | — | — |
+| `geom` | `LINESTRING` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | — |
 | `Parent Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Lineage; Locked in the template's form |
 | `Baseline Broad Habitat Type` | `TEXT(99)` | 99 | yes | — | `Intertidal hard structures`, `Urban` | Locked in the template's form |
@@ -188,7 +188,7 @@ Stage: Post-Intervention. Geometry: `geom`, LINESTRING, SRS 27700.
 
 Rules the template's form holds the columns to (hard: the row cannot be saved without it; soft: a warning):
 
-- `Habitat Ref` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
+- `geom` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
 - `Habitat created in advance/years` (soft): 30+ years created in advance is for a habitat whose condition gets worse: Created, the same habitat type as the baseline, and a worse condition. Check this row: a 30+ left from an earlier choice overstates its units.
 
 ### Hedgerows Baseline
@@ -198,7 +198,7 @@ Stage: Baseline. Geometry: `geom`, LINESTRING, SRS 27700.
 | Column | Type | Width | May be blank | Default | Drop-down | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
-| `geom` | `LINESTRING` | — | yes | — | — | — |
+| `geom` | `LINESTRING` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | — | — | — |
 | `Baseline Hedge Type` | `TEXT(99)` | 99 | yes | — | `Non-native and ornamental hedgerow`, `Line of trees`, `Line of trees - associated with bank or ditch`, `Ecologically valuable line of trees`, `Ecologically valuable line of trees - associated with bank or ditch`, `Native hedgerow`, `Native hedgerow - associated with bank or ditch`, `Native hedgerow with trees`, `Native hedgerow with trees - associated with bank or ditch`, `Species-rich native hedgerow`, `Species-rich native hedgerow - associated with bank or ditch`, `Species-rich native hedgerow with trees`, `Species-rich native hedgerow with trees - associated with bank or ditch`, `To be created` | — |
 | `Baseline Distinctiveness` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Locked in the template's form |
@@ -210,7 +210,7 @@ Stage: Baseline. Geometry: `geom`, LINESTRING, SRS 27700.
 
 Rules the template's form holds the columns to (hard: the row cannot be saved without it; soft: a warning):
 
-- `Habitat Ref` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
+- `geom` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
 
 ### Hedgerows Post-Intervention
 
@@ -219,7 +219,7 @@ Stage: Post-Intervention. Geometry: `geom`, LINESTRING, SRS 27700.
 | Column | Type | Width | May be blank | Default | Drop-down | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
-| `geom` | `LINESTRING` | — | yes | — | — | — |
+| `geom` | `LINESTRING` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | — |
 | `Parent Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Lineage; Locked in the template's form |
 | `Baseline Hedge Type` | `TEXT(99)` | 99 | yes | — | `Non-native and ornamental hedgerow`, `Line of trees`, `Line of trees - associated with bank or ditch`, `Ecologically valuable line of trees`, `Ecologically valuable line of trees - associated with bank or ditch`, `Native hedgerow`, `Native hedgerow - associated with bank or ditch`, `Native hedgerow with trees`, `Native hedgerow with trees - associated with bank or ditch`, `Species-rich native hedgerow`, `Species-rich native hedgerow - associated with bank or ditch`, `Species-rich native hedgerow with trees`, `Species-rich native hedgerow with trees - associated with bank or ditch`, `To be created` | Locked in the template's form |
@@ -242,7 +242,7 @@ Stage: Post-Intervention. Geometry: `geom`, LINESTRING, SRS 27700.
 
 Rules the template's form holds the columns to (hard: the row cannot be saved without it; soft: a warning):
 
-- `Habitat Ref` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
+- `geom` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
 - `Habitat created in advance/years` (soft): 30+ years created in advance is for a habitat whose condition gets worse: Created, the same habitat type as the baseline, and a worse condition. Check this row: a 30+ left from an earlier choice overstates its units.
 
 ### Watercourses Baseline
@@ -252,7 +252,7 @@ Stage: Baseline. Geometry: `geom`, LINESTRING, SRS 27700.
 | Column | Type | Width | May be blank | Default | Drop-down | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
-| `geom` | `LINESTRING` | — | yes | — | — | — |
+| `geom` | `LINESTRING` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | — | — | — |
 | `Baseline River Type` | `TEXT(99)` | 99 | yes | — | `Priority habitat`, `Other rivers and streams`, `Ditches`, `Canals`, `Culvert`, `To be created` | — |
 | `Baseline Distinctiveness` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Locked in the template's form |
@@ -266,7 +266,7 @@ Stage: Baseline. Geometry: `geom`, LINESTRING, SRS 27700.
 
 Rules the template's form holds the columns to (hard: the row cannot be saved without it; soft: a warning):
 
-- `Habitat Ref` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
+- `geom` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
 
 ### Watercourses Post-Intervention
 
@@ -275,7 +275,7 @@ Stage: Post-Intervention. Geometry: `geom`, LINESTRING, SRS 27700.
 | Column | Type | Width | May be blank | Default | Drop-down | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
-| `geom` | `LINESTRING` | — | yes | — | — | — |
+| `geom` | `LINESTRING` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | — |
 | `Parent Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Lineage; Locked in the template's form |
 | `Baseline River Type` | `TEXT(99)` | 99 | yes | — | `Priority habitat`, `Other rivers and streams`, `Ditches`, `Canals`, `Culvert`, `To be created` | Locked in the template's form |
@@ -303,7 +303,7 @@ Stage: Post-Intervention. Geometry: `geom`, LINESTRING, SRS 27700.
 
 Rules the template's form holds the columns to (hard: the row cannot be saved without it; soft: a warning):
 
-- `Habitat Ref` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
+- `geom` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
 
 ### Individual Trees Baseline
 
@@ -312,7 +312,7 @@ Stage: Baseline. Geometry: `geom`, POINT, SRS 27700.
 | Column | Type | Width | May be blank | Default | Drop-down | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
-| `geom` | `POINT` | — | yes | — | — | — |
+| `geom` | `POINT` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | — | — | — |
 | `Baseline Tree Size` | `TEXT(99)` | 99 | yes | — | List `CSV References/Individual trees/Individual tree Size - pre.csv`, column `Retention` | — |
 | `Baseline Tree Type` | `TEXT(99)` | 99 | yes | — | List `CSV References/Individual trees/Individual tree Type - pre.csv`, column `Type` | — |
@@ -325,7 +325,7 @@ Stage: Baseline. Geometry: `geom`, POINT, SRS 27700.
 
 Rules the template's form holds the columns to (hard: the row cannot be saved without it; soft: a warning):
 
-- `Habitat Ref` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
+- `geom` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
 
 ### Individual Trees Post-Intervention
 
@@ -334,7 +334,7 @@ Stage: Post-Intervention. Geometry: `geom`, POINT, SRS 27700.
 | Column | Type | Width | May be blank | Default | Drop-down | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
-| `geom` | `POINT` | — | yes | — | — | — |
+| `geom` | `POINT` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | — |
 | `Parent Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Lineage; Locked in the template's form |
 | `Baseline Tree Size` | `TEXT(99)` | 99 | yes | — | List `CSV References/Individual trees/Individual tree Size - pre.csv`, column `Retention`; depends on Category | Locked in the template's form |
@@ -359,7 +359,7 @@ Stage: Post-Intervention. Geometry: `geom`, POINT, SRS 27700.
 
 Rules the template's form holds the columns to (hard: the row cannot be saved without it; soft: a warning):
 
-- `Habitat Ref` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
+- `geom` (hard): Every row needs a shape. To copy features, select them and use Copy Features on the Edit menu. Copy Layer copies the layer, not its features.
 - `Habitat Created/Enhanced in advance/years` (soft): 30+ years created in advance is for a habitat whose condition gets worse: Created, the same habitat type as the baseline, and a worse condition. Check this row: a 30+ left from an earlier choice overstates its units.
 
 ## Drop-down lists

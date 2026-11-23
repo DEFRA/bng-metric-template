@@ -449,8 +449,9 @@ python3 development/tools/gpkg_spec.py
 
 It reads no clock, so an unchanged template gives the same bytes. The
 Converters, generators and template files job of `tests.yml` runs it with
-`--check`, which writes nothing and prints how the committed copy differs.
-A pull request whose specification is out of date fails it.
+`--check`, after the tests, which writes nothing and prints how the
+committed copy differs. A pull request whose specification is out of date
+fails it.
 
 **Publishing.** On a merge to `main` that changes `spec/gpkg-spec.md`,
 `.github/workflows/publish-spec.yml` publishes it to its Confluence page,
@@ -466,6 +467,11 @@ and variables → Actions:
 | `CONFLUENCE_USER_EMAIL` | Secret | The Atlassian account's email |
 | `CONFLUENCE_API_TOKEN` | Secret | An Atlassian API token for that account |
 
+The workflow runs only when the Markdown changes, so start it by hand
+(Actions → Publish GeoPackage specification → Run workflow) for the first
+publish once the settings are set, and after a change to
+`publish_spec.py` or `markdown_to_confluence.py`.
+
 To see the page it would publish, without Confluence:
 
 ```sh
@@ -473,6 +479,7 @@ python3 development/tools/publish_spec.py --dry-run
 ```
 
 **A change the generator cannot describe stops it**, naming the table and
-column: a drop-down widget it does not know, a list it cannot find, or the
+column: a drop-down widget it does not know, a list it cannot find or read,
+a list without a column a drop-down stores, shows or filters on, or the
 lineage columns on the wrong stage. Teach the generator the change, then
 regenerate.

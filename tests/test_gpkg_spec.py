@@ -134,10 +134,44 @@ class SpecContentTest(support.TempDirTestCase):
         self.assertTrue(column_of(self.spec, f"Hedgerows {POST}",
                                   "Comment")["editable"])
 
-    def test_the_shape_rule_is_described(self):
-        rule = column_of(self.spec, f"Hedgerows {POST}", "Habitat Ref")["rule"]
-        self.assertEqual("hard", rule["strength"])
-        self.assertIn("$geometry IS NOT NULL", rule["expression"])
+    def test_the_shape_rule_is_the_geometry_column_s(self):
+        for table in self.spec["tables"]:
+            with self.subTest(table=table["name"]):
+                geometry = column_of(self.spec, table["name"],
+                                     table["geometryColumn"])
+                self.assertFalse(geometry["mayBeBlank"])
+                self.assertEqual("hard", geometry["rule"]["strength"])
+                self.assertIn("$geometry IS NOT NULL",
+                              geometry["rule"]["expression"])
+                others = [column["name"] for column in table["columns"]
+                          if column is not geometry and column["rule"]
+                          and "$geometry" in column["rule"]["expression"]]
+                self.assertEqual([], others)
+        self.assertIsNone(column_of(self.spec, "Red Line Boundary",
+                                    "Site Name")["rule"])
+        self.assertTrue(column_of(self.spec, "Red Line Boundary",
+                                  "Site Name")["mayBeBlank"])
+
+    def test_a_list_that_cannot_be_read_is_refused_naming_its_column(self):
+        use = {"table": "Hedgerows Baseline", "column": "Baseline Condition",
+               "storedColumn": "Condition", "shownColumn": "Condition",
+               "filter": None}
+        with self.assertRaisesRegex(
+                gpkg_spec.SpecError,
+                "Hedgerows Baseline / Baseline Condition: cannot read its "
+                "list CSV References/Gone.csv"):
+            gpkg_spec.describe_list("CSV References/Gone.csv", [use])
+
+    def test_a_list_without_a_column_a_drop_down_reads_is_refused(self):
+        path = "CSV References/Hedgerows/Hedgerow Condition.csv"
+        use = {"table": "Hedgerows Baseline", "column": "Baseline Condition",
+               "storedColumn": "Grade", "shownColumn": "Condition",
+               "filter": '"Habitat"=current_value(\'Baseline Hedge Type\')'}
+        with self.assertRaisesRegex(
+                gpkg_spec.SpecError,
+                "Hedgerows Baseline / Baseline Condition: its list .* has no "
+                "column Grade"):
+            gpkg_spec.describe_list(path, [use])
 
     def test_a_template_with_a_lineage_column_missing_is_refused(self):
         spec = json.loads(gpkg_spec.render_json(self.spec))
