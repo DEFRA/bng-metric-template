@@ -33,8 +33,8 @@ LEGACY_TEMPLATE_DIR = TEMPLATES_DIR / "legacy-ne"
 CSV_REFERENCES = "CSV References"
 
 REFERENCE_DIR = REPO_ROOT / "reference"
-METRIC_XLSX = REFERENCE_DIR / "The_Statutory_Metric_Macro_Disabled_1.0.4.xlsx"
-METRIC_XLSM = REFERENCE_DIR / "The_Statutory_Metric_Macro_Enabled_1.0.4.xlsm"
+METRIC_XLSX = REFERENCE_DIR / "The_Statutory_Metric_Macro_Disabled_1.1.1.xlsx"
+METRIC_XLSM = REFERENCE_DIR / "The_Statutory_Metric_Macro_Enabled_1.1.1.xlsm"
 GIS_IMPORT_TOOL = REFERENCE_DIR / "GIS Import Tool.xlsb"
 
 # The converter modules run as plain scripts, the way build_plugin.py and the

@@ -139,7 +139,7 @@ python3 scale-test-nsip/generator/dropdown_check.py \
 
 **Use `--fraction` for a shorter section of the same scheme.** It starts from
 the southern end and keeps the same feature density. Each sheet of the
-Statutory Metric holds 248 rows, and one metric holds about an eighth of this
+Statutory Metric holds 350 rows, and one metric holds about an eighth of this
 scheme.
 
 ```sh

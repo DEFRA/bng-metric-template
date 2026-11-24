@@ -556,8 +556,8 @@ class ExportToMetricAlgorithm(QgsProcessingAlgorithm):
             "something on the map. Watercourses have no flag at all, because "
             "the template has no irreplaceable column on them.</p>"
             "<p><b>A site too large for one workbook is written as "
-            "several.</b> Every sheet in the metric holds 248 rows, and 246 "
-            "on the enhancement tabs. A site needing more is dealt evenly "
+            "several.</b> Every sheet in the metric holds 350 rows. A site "
+            "needing more is dealt evenly "
             "into numbered workbooks, each a complete and valid metric for "
             "its own share of the site. An enhancement always stays in the "
             "same workbook as the baseline parcel it improves. Add the unit "
@@ -591,7 +591,7 @@ class ExportToMetricAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFileDestination(
                 self.OUTPUT_FILE,
-                "Filled metric workbook to write (a site over 248 rows is "
+                "Filled metric workbook to write (a site over 350 rows is "
                 "written as several, numbered)",
                 fileFilter=METRIC_FILTER,
             )

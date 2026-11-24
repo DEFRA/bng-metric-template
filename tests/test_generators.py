@@ -50,7 +50,7 @@ LEGACY_GPKG = support.Path("Layers") / "Net Gain Habitat Mapping Layers.gpkg"
 SITE_GPKGS = (
     support.Path(support.SERVICE_SITE_FOLDER) / support.SERVICE_GPKG_IN_SITE,
     *(support.Path(folder) / LEGACY_GPKG for folder in LEGACY_FOLDERS))
-METRIC_NAME = "The_Statutory_Metric_Macro_Enabled_1.0.4.xlsm"
+METRIC_NAME = "The_Statutory_Metric_Macro_Enabled_1.1.1.xlsm"
 USAGE_ERROR = 2
 BAD_VALUE = "Not a condition"
 

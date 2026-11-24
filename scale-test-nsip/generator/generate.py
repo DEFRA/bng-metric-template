@@ -82,7 +82,7 @@ def parse_args(argv):
         help=("build a shorter section of the same scheme, as a fraction of "
               "the route, into a folder of its own. Use it to get a site "
               "small enough for the Statutory Metric workbook, which holds "
-              "248 rows a sheet"))
+              "350 rows a sheet"))
     return parser.parse_args(argv)
 
 

@@ -231,6 +231,83 @@ class ToMetricTest(support.TempDirTestCase):
         self.assertIn("already holds habitat data", result.stderr)
 
 
+# The Statutory Metric 1.1.1 holds this many data rows on every sheet.
+ROWS_A_SHEET = 350
+# Where each sheet marks a data row: the column of a baseline or creation
+# sheet that holds the metric's own line number, or the column of an
+# enhancement sheet whose formula reaches back to its baseline sheet.
+DATA_ROW_MARKERS = {
+    ("areas", "baseline"): "D", ("areas", "creation"): "B",
+    ("areas", "enhancement"): "E",
+    ("hedgerows", "baseline"): "B", ("hedgerows", "creation"): "B",
+    ("hedgerows", "enhancement"): "B",
+    ("watercourses", "baseline"): "C", ("watercourses", "creation"): "B",
+    ("watercourses", "enhancement"): "B",
+}
+
+
+def cell_body(xml, ref):
+    match = re.search(rf'<c r="{ref}"[^>]*?(?:/>|>(.*?)</c>)', xml, re.S)
+    return (match.group(1) or "") if match else ""
+
+
+def with_cell_cleared(workbook, out, sheet, ref):
+    """A copy of `workbook` whose `ref` on `sheet` holds no value."""
+    with zipfile.ZipFile(workbook) as source:
+        path = to_metric.sheet_paths(source)[sheet]
+        with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as target:
+            for item in source.infolist():
+                data = source.read(item.filename)
+                if item.filename == path:
+                    data = re.sub(
+                        rf'(<c r="{ref}"[^>]*?)>.*?</c>', r"\1/>",
+                        data.decode("utf-8"), count=1, flags=re.S
+                    ).encode("utf-8")
+                target.writestr(item, data)
+    return out
+
+
+class MetricLayoutTest(support.TempDirTestCase):
+    """LAYOUT is the blank workbook's own rows, and nothing else is filled."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.blank = support.copy_to(support.METRIC_XLSX, cls.tmp / "blank")
+
+    def test_every_sheet_holds_350_rows(self):
+        for kind, stages in to_metric.LAYOUT.items():
+            for stage in stages:
+                with self.subTest(kind=kind, stage=stage):
+                    self.assertEqual(ROWS_A_SHEET,
+                                     to_metric.stage_capacity(kind, stage))
+
+    def test_the_last_row_is_the_blank_workbooks_last_data_row(self):
+        for (kind, stage), column in DATA_ROW_MARKERS.items():
+            sheet, _first, last, _columns = to_metric.LAYOUT[kind][stage]
+            xml = sheet_xml(self.blank, sheet)
+            with self.subTest(sheet=sheet):
+                if stage == "enhancement":
+                    self.assertIn("<f>", cell_body(xml, f"{column}{last}"))
+                    self.assertNotIn("<f>",
+                                     cell_body(xml, f"{column}{last + 1}"))
+                else:
+                    self.assertIn(f"<v>{ROWS_A_SHEET}</v>",
+                                  cell_body(xml, f"{column}{last}"))
+                    self.assertNotIn("<v>", cell_body(xml, f"{column}{last + 1}"))
+
+    def test_refuses_a_blank_with_fewer_rows_and_writes_nothing(self):
+        sheet, _first, last, _columns = to_metric.LAYOUT["areas"]["baseline"]
+        earlier = with_cell_cleared(
+            self.blank, self.tmp / "earlier.xlsx", sheet,
+            f"{to_metric.LINE_NUMBER_COLUMN}{last}")
+        site = support.generate_site(self.tmp / "site", *SITE_ARGS)
+        out = self.tmp / "from-earlier.xlsx"
+        with self.assertRaisesRegex(ValueError, "earlier release"):
+            to_metric.convert(support.site_gpkg(site), earlier, out)
+        self.assertFalse(out.exists())
+
+
 def add_watercourse(gpkg):
     """A watercourse enhanced in place, so every module has an enhancement."""
     uuid = "c0ffee00-0000-4000-8000-000000000001"
@@ -1157,12 +1234,14 @@ class VerticalAreaHabitatsTest(support.TempDirTestCase):
     def test_the_metric_leaves_them_out_of_the_site_area(self):
         """AC6: the metric's own site area formula excludes all 5 types.
 
-        A-1 H260 sums the area column except for the "Broad - Type" labels
-        it names from G-1. Each vertical line's broad habitat and type, as
-        written, must be one of those labels.
+        A-1 sums the area column, two rows below its totals row, except for
+        the "Broad - Type" labels it names from G-1. Each vertical line's
+        broad habitat and type, as written, must be one of those labels.
         """
+        site_area = f'H{to_metric.LAYOUT["areas"]["baseline"][2] + 2}'
         formula = html.unescape(re.search(
-            r'<c r="H260"[^>]*><f>(.*?)</f>', self.baseline, re.S).group(1))
+            rf'<c r="{site_area}"[^>]*><f>(.*?)</f>', self.baseline,
+            re.S).group(1))
         excluded_cells = re.findall(r"'G-1 All Habitats'!B(\d+)", formula)
         g1 = sheet_xml(self.out, "G-1 All Habitats")
         with zipfile.ZipFile(self.out) as archive:
@@ -1281,9 +1360,11 @@ class VerticalAreaHabitatsSplitTest(support.TempDirTestCase):
     def test_the_parts_add_up_to_the_whole(self):
         column = AREA_COLUMNS["baseline"]["size"]
 
+        _sheet, first, last, _columns = to_metric.LAYOUT["areas"]["baseline"]
+
         def total(paths):
             return sum(sum(numbers_in_column(
-                sheet_xml(path, AREA_BASELINE_SHEET), column, 11, 258))
+                sheet_xml(path, AREA_BASELINE_SHEET), column, first, last))
                 for path in paths)
 
         self.assertAlmostEqual(total(self.whole.paths),

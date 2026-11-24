@@ -174,7 +174,7 @@ class CorridorMesh:
 
     `fraction` builds a shorter section of the same scheme, measured from the
     southern end. A whole nationally significant project does not fit in the
-    Statutory Metric workbook, which holds 248 rows a sheet, and the published
+    Statutory Metric workbook, which holds 350 rows a sheet, and the published
     guidance says to split it into geographic sections; this is that split.
     """
 

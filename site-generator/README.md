@@ -28,7 +28,7 @@ site:
 | `bng-service/` | The BNG Service template, with the baseline and post-intervention layers |
 | `legacy-ne-baseline/` | The Natural England template, with the baseline in its GeoPackage |
 | `legacy-ne-post-intervention/` | The Natural England template, with the post-intervention stage in its GeoPackage |
-| `The_Statutory_Metric_Macro_Enabled_1.0.4.xlsm` | The macro-enabled Statutory Metric, with the on-site tabs filled |
+| `The_Statutory_Metric_Macro_Enabled_1.1.1.xlsm` | The macro-enabled Statutory Metric, with the on-site tabs filled |
 
 Open the `.qgz` file in a template folder to see the site in QGIS. Open the
 metric in Excel and let it recalculate.
