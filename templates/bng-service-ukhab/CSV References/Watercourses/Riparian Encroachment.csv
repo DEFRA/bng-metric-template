@@ -1,0 +1,44 @@
+Value,Description,Label,Order
+Canals,Major/Major,Major/Major,1
+Ditches,Major/Major,Major/Major,1
+Other rivers and streams,Major/Major,Major/Major,1
+Priority habitat,Major/Major,Major/Major,1
+Canals,Major/Minor,Major/Minor,2
+Ditches,Major/Minor,Major/Minor,2
+Other rivers and streams,Major/Minor,Major/Minor,2
+Priority habitat,Major/Minor,Major/Minor,2
+Canals,Major/Moderate,Major/Moderate,3
+Ditches,Major/Moderate,Major/Moderate,3
+Other rivers and streams,Major/Moderate,Major/Moderate,3
+Priority habitat,Major/Moderate,Major/Moderate,3
+Canals,Major/No Encroachment,Major/No Encroachment,4
+Ditches,Major/No Encroachment,Major/No Encroachment,4
+Other rivers and streams,Major/No Encroachment,Major/No Encroachment,4
+Priority habitat,Major/No Encroachment,Major/No Encroachment,4
+Culvert,N/A - Culvert,N/A - Culvert,5
+Canals,Moderate/ Minor,Moderate/ Minor,6
+Ditches,Moderate/ Minor,Moderate/ Minor,6
+Other rivers and streams,Moderate/ Minor,Moderate/ Minor,6
+Priority habitat,Moderate/ Minor,Moderate/ Minor,6
+Canals,Moderate/ Moderate,Moderate/ Moderate,7
+Ditches,Moderate/ Moderate,Moderate/ Moderate,7
+Other rivers and streams,Moderate/ Moderate,Moderate/ Moderate,7
+Priority habitat,Moderate/ Moderate,Moderate/ Moderate,7
+Canals,Moderate/ No Encroachment,Moderate/ No Encroachment,8
+Ditches,Moderate/ No Encroachment,Moderate/ No Encroachment,8
+Other rivers and streams,Moderate/ No Encroachment,Moderate/ No Encroachment,8
+Priority habitat,Moderate/ No Encroachment,Moderate/ No Encroachment,8
+Canals,Minor/ Minor,Minor/ Minor,9
+Ditches,Minor/ Minor,Minor/ Minor,9
+Other rivers and streams,Minor/ Minor,Minor/ Minor,9
+Priority habitat,Minor/ Minor,Minor/ Minor,9
+Canals,Minor/ No Encroachment,Minor/ No Encroachment,10
+Ditches,Minor/ No Encroachment,Minor/ No Encroachment,10
+Other rivers and streams,Minor/ No Encroachment,Minor/ No Encroachment,10
+Priority habitat,Minor/ No Encroachment,Minor/ No Encroachment,10
+Canals,No Encroachment/ No Encroachment,No Encroachment/ No Encroachment,11
+Ditches,No Encroachment/ No Encroachment,No Encroachment/ No Encroachment,11
+Other rivers and streams,No Encroachment/ No Encroachment,No Encroachment/ No Encroachment,11
+Priority habitat,No Encroachment/ No Encroachment,No Encroachment/ No Encroachment,11
+To be created,N/A,N/A,12
+N/A,N/A,N/A,12

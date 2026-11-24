@@ -375,3 +375,72 @@ def boundary_hedge(cells, zone_of, busy, choose):
                 edges.add(edge)
     length = 3 + int(choose.roll(107) * 5)
     return _walk(edges, edges, busy, length, choose, 109)
+
+
+# ----------------------------------------------------------- watercourses
+#
+# A watercourse runs along cell edges like a hedge, but further, and never
+# on an edge a hedge already takes. A new ditch, a swale for the
+# development's drainage, runs through the green margin.
+
+def build_watercourses(count, cells, owner, busy, choose):
+    edges, between_parcels = internal_edges(cells, owner)
+    busy, courses = set(busy), []
+    for k in range(count):
+        length = 6 + int(choose.roll(k, 503) * 7)
+        path = _walk(edges, between_parcels, busy, length, choose, 500 + k)
+        if path is None:
+            break
+        courses.append(path)
+        busy |= path_edges(path)
+    return courses
+
+
+def zone_edges(cells, zone_of, zone):
+    """Every internal edge with a cell of this zone on both sides."""
+    edges = set()
+    for (i, j) in cells:
+        for other, edge in (((i, j - 1), ((i, j), (i + 1, j))),
+                            ((i - 1, j), ((i, j), (i, j + 1)))):
+            if other in cells and zone_of[other] == zone_of[(i, j)] == zone:
+                edges.add(edge)
+    return edges
+
+
+def new_watercourse(cells, zone_of, busy, choose):
+    """A ditch dug through the green margin, or None if it has no room."""
+    edges = zone_edges(cells, zone_of, MARGIN)
+    length = 3 + int(choose.roll(509) * 4)
+    return _walk(edges, edges, busy, length, choose, 511)
+
+
+# ------------------------------------------------ vertical area habitats
+#
+# A vertical area habitat is a wall, drawn as a short line on cell edges: a
+# green wall on a building or a boundary wall. The development adds green
+# walls to its new buildings.
+
+def build_walls(count, cells, owner, busy, choose):
+    edges, _ = internal_edges(cells, owner)
+    busy, walls = set(busy), []
+    for k in range(count):
+        length = 1 + int(choose.roll(k, 601) * 2)
+        path = _walk(edges, set(), busy, length, choose, 600 + k)
+        if path is None:
+            break
+        walls.append(path)
+        busy |= path_edges(path)
+    return walls
+
+
+def new_walls(cells, zone_of, busy, choose):
+    """Green walls on the development's new buildings: one or two."""
+    edges = zone_edges(cells, zone_of, CORE)
+    busy, walls = set(busy), []
+    for k in range(1 + int(choose.roll(607) * 2)):
+        path = _walk(edges, edges, busy, 1, choose, 610 + k)
+        if path is None:
+            break
+        walls.append(path)
+        busy |= path_edges(path)
+    return walls

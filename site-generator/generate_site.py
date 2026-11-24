@@ -49,6 +49,8 @@ BNG_MAX_NORTHING = 1300000
 MIN_HABITATS, MAX_HABITATS = 1, 50
 MAX_TREES = 50
 MAX_HEDGEROWS = 10
+MAX_WATERCOURSES = 5
+MAX_VERTICAL = 10
 MIN_AREA_HA, MAX_AREA_HA = 0.05, 500.0
 SQ_M_PER_HECTARE = 10000
 AREA_TOLERANCE_SQ_M = 0.01
@@ -95,6 +97,15 @@ def parse_args(argv):
                         help='baseline trees (default 3)')
     parser.add_argument('--hedgerows', type=bounded(int, 0, MAX_HEDGEROWS),
                         default=1, help='baseline hedgerows (default 1)')
+    parser.add_argument('--watercourses', type=bounded(int, 0, MAX_WATERCOURSES),
+                        default=0, help='baseline watercourses, 0 to 5 '
+                                        '(default 0). With any, the green '
+                                        'margin also gets a new ditch')
+    parser.add_argument('--vertical', type=bounded(int, 0, MAX_VERTICAL),
+                        default=0, help='baseline green walls, 0 to 10 '
+                                        '(default 0). With any, the '
+                                        "development's new buildings get "
+                                        'green walls too')
     parser.add_argument('--landscape', choices=sorted(plan.LANDSCAPES),
                         default='pastoral', help='what the land is now '
                                                  '(default pastoral)')
@@ -143,10 +154,26 @@ def plan_site(args, name):
     if choose.roll(113) < plan.SCHEMES[args.scheme]['boundary_hedge']:
         busy = set().union(*map(plan.path_edges, hedges))
         new_hedge = plan.boundary_hedge(cells, zone_of, busy, choose)
+    # Watercourses and walls are planned after the hedges, and only when
+    # asked for, so a site without them is the same as before they existed.
+    busy = set().union(*map(plan.path_edges, hedges + [new_hedge or []]))
+    courses, new_course, walls, new_walls = [], None, [], []
+    if args.watercourses:
+        courses = plan.build_watercourses(args.watercourses, cells, owner,
+                                          busy, choose)
+        busy |= set().union(*map(plan.path_edges, courses))
+        new_course = plan.new_watercourse(cells, zone_of, busy, choose)
+        busy |= plan.path_edges(new_course or [])
+    if args.vertical:
+        walls = plan.build_walls(args.vertical, cells, owner, busy, choose)
+        busy |= set().union(*map(plan.path_edges, walls))
+        new_walls = plan.new_walls(cells, zone_of, busy, choose)
     return {
         'seed': args.seed, 'choose': choose, 'mesh': mesh, 'cells': cells,
         'outline': outline, 'parcels': parcels, 'zones': zone_of,
         'hedges': hedges, 'new_hedge': new_hedge, 'trees': args.trees,
+        'watercourses': courses, 'new_watercourse': new_course,
+        'walls': walls, 'new_walls': new_walls,
         'scheme': args.scheme, 'landscape': args.landscape,
         'centre': args.centre, 'name': name,
     }
@@ -167,7 +194,15 @@ def write_site(site, target):
         'trees': writers.write_trees(conn, site),
         'red line': writers.write_redline(conn, site),
     }
-    for table in LAYERS:
+    tables = list(LAYERS)
+    if site['watercourses']:
+        totals['watercourses'] = writers.write_watercourses(conn, site)
+        tables += ['Watercourses Baseline', 'Watercourses Post-Intervention']
+    if site['walls']:
+        totals['vertical'] = writers.write_vertical(conn, site)
+        tables += ['Vertical Area Habitats Baseline',
+                   'Vertical Area Habitats Post-Intervention']
+    for table in tables:
         update_layer_extent(conn, table, 'geom')
     conn.commit()
     conn.execute('VACUUM')
@@ -195,6 +230,11 @@ def check_totals(args, site, totals):
     if len(site['hedges']) != args.hedgerows:
         problems.append(f"room for {len(site['hedges'])} of {args.hedgerows} "
                         'hedgerows; try fewer, more habitats, or another --seed')
+    for key, asked, what in (('watercourses', args.watercourses, 'watercourses'),
+                             ('walls', args.vertical, 'green walls')):
+        if len(site[key]) != asked:
+            problems.append(f'room for {len(site[key])} of {asked} {what}; '
+                            'try fewer, more habitats, or another --seed')
     return problems
 
 

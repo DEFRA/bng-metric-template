@@ -1,0 +1,395 @@
+ID,New
+Coastal lagoonsCreated,Coastal lagoons
+Coastal lagoonsCreated,Coastal saltmarsh
+Coastal lagoonsCreated,Cropland
+Coastal lagoonsCreated,Grassland
+Coastal lagoonsCreated,Heathland and shrub
+Coastal lagoonsCreated,Intertidal hard structures
+Coastal lagoonsCreated,Intertidal sediment
+Coastal lagoonsCreated,Lakes
+Coastal lagoonsCreated,Rocky shore
+Coastal lagoonsCreated,Sparsely vegetated land
+Coastal lagoonsCreated,Urban
+Coastal lagoonsCreated,Wetland
+Coastal lagoonsCreated,Woodland and forest
+Coastal lagoonsCreated,Watercourse footprint
+Coastal saltmarshCreated,Coastal lagoons
+Coastal saltmarshCreated,Coastal saltmarsh
+Coastal saltmarshCreated,Cropland
+Coastal saltmarshCreated,Grassland
+Coastal saltmarshCreated,Heathland and shrub
+Coastal saltmarshCreated,Intertidal hard structures
+Coastal saltmarshCreated,Intertidal sediment
+Coastal saltmarshCreated,Lakes
+Coastal saltmarshCreated,Rocky shore
+Coastal saltmarshCreated,Sparsely vegetated land
+Coastal saltmarshCreated,Urban
+Coastal saltmarshCreated,Wetland
+Coastal saltmarshCreated,Woodland and forest
+Coastal saltmarshCreated,Watercourse footprint
+CroplandCreated,Coastal lagoons
+CroplandCreated,Coastal saltmarsh
+CroplandCreated,Cropland
+CroplandCreated,Grassland
+CroplandCreated,Heathland and shrub
+CroplandCreated,Intertidal hard structures
+CroplandCreated,Intertidal sediment
+CroplandCreated,Lakes
+CroplandCreated,Rocky shore
+CroplandCreated,Sparsely vegetated land
+CroplandCreated,Urban
+CroplandCreated,Wetland
+CroplandCreated,Woodland and forest
+CroplandCreated,Watercourse footprint
+GrasslandCreated,Coastal lagoons
+GrasslandCreated,Coastal saltmarsh
+GrasslandCreated,Cropland
+GrasslandCreated,Grassland
+GrasslandCreated,Heathland and shrub
+GrasslandCreated,Intertidal hard structures
+GrasslandCreated,Intertidal sediment
+GrasslandCreated,Lakes
+GrasslandCreated,Rocky shore
+GrasslandCreated,Sparsely vegetated land
+GrasslandCreated,Urban
+GrasslandCreated,Wetland
+GrasslandCreated,Woodland and forest
+GrasslandCreated,Watercourse footprint
+Heathland and shrubCreated,Coastal lagoons
+Heathland and shrubCreated,Coastal saltmarsh
+Heathland and shrubCreated,Cropland
+Heathland and shrubCreated,Grassland
+Heathland and shrubCreated,Heathland and shrub
+Heathland and shrubCreated,Intertidal hard structures
+Heathland and shrubCreated,Intertidal sediment
+Heathland and shrubCreated,Lakes
+Heathland and shrubCreated,Rocky shore
+Heathland and shrubCreated,Sparsely vegetated land
+Heathland and shrubCreated,Urban
+Heathland and shrubCreated,Wetland
+Heathland and shrubCreated,Woodland and forest
+Heathland and shrubCreated,Watercourse footprint
+Intertidal hard structuresCreated,Coastal lagoons
+Intertidal hard structuresCreated,Coastal saltmarsh
+Intertidal hard structuresCreated,Cropland
+Intertidal hard structuresCreated,Grassland
+Intertidal hard structuresCreated,Heathland and shrub
+Intertidal hard structuresCreated,Intertidal hard structures
+Intertidal hard structuresCreated,Intertidal sediment
+Intertidal hard structuresCreated,Lakes
+Intertidal hard structuresCreated,Rocky shore
+Intertidal hard structuresCreated,Sparsely vegetated land
+Intertidal hard structuresCreated,Urban
+Intertidal hard structuresCreated,Wetland
+Intertidal hard structuresCreated,Woodland and forest
+Intertidal hard structuresCreated,Watercourse footprint
+Intertidal sedimentCreated,Coastal lagoons
+Intertidal sedimentCreated,Coastal saltmarsh
+Intertidal sedimentCreated,Cropland
+Intertidal sedimentCreated,Grassland
+Intertidal sedimentCreated,Heathland and shrub
+Intertidal sedimentCreated,Intertidal hard structures
+Intertidal sedimentCreated,Intertidal sediment
+Intertidal sedimentCreated,Lakes
+Intertidal sedimentCreated,Rocky shore
+Intertidal sedimentCreated,Sparsely vegetated land
+Intertidal sedimentCreated,Urban
+Intertidal sedimentCreated,Wetland
+Intertidal sedimentCreated,Woodland and forest
+Intertidal sedimentCreated,Watercourse footprint
+LakesCreated,Coastal lagoons
+LakesCreated,Coastal saltmarsh
+LakesCreated,Cropland
+LakesCreated,Grassland
+LakesCreated,Heathland and shrub
+LakesCreated,Intertidal hard structures
+LakesCreated,Intertidal sediment
+LakesCreated,Lakes
+LakesCreated,Rocky shore
+LakesCreated,Sparsely vegetated land
+LakesCreated,Urban
+LakesCreated,Wetland
+LakesCreated,Woodland and forest
+LakesCreated,Watercourse footprint
+Rocky shoreCreated,Coastal lagoons
+Rocky shoreCreated,Coastal saltmarsh
+Rocky shoreCreated,Cropland
+Rocky shoreCreated,Grassland
+Rocky shoreCreated,Heathland and shrub
+Rocky shoreCreated,Intertidal hard structures
+Rocky shoreCreated,Intertidal sediment
+Rocky shoreCreated,Lakes
+Rocky shoreCreated,Rocky shore
+Rocky shoreCreated,Sparsely vegetated land
+Rocky shoreCreated,Urban
+Rocky shoreCreated,Wetland
+Rocky shoreCreated,Woodland and forest
+Rocky shoreCreated,Watercourse footprint
+Sparsely vegetated landCreated,Coastal lagoons
+Sparsely vegetated landCreated,Coastal saltmarsh
+Sparsely vegetated landCreated,Cropland
+Sparsely vegetated landCreated,Grassland
+Sparsely vegetated landCreated,Heathland and shrub
+Sparsely vegetated landCreated,Intertidal hard structures
+Sparsely vegetated landCreated,Intertidal sediment
+Sparsely vegetated landCreated,Lakes
+Sparsely vegetated landCreated,Rocky shore
+Sparsely vegetated landCreated,Sparsely vegetated land
+Sparsely vegetated landCreated,Urban
+Sparsely vegetated landCreated,Wetland
+Sparsely vegetated landCreated,Woodland and forest
+Sparsely vegetated landCreated,Watercourse footprint
+UrbanCreated,Coastal lagoons
+UrbanCreated,Coastal saltmarsh
+UrbanCreated,Cropland
+UrbanCreated,Grassland
+UrbanCreated,Heathland and shrub
+UrbanCreated,Intertidal hard structures
+UrbanCreated,Intertidal sediment
+UrbanCreated,Lakes
+UrbanCreated,Rocky shore
+UrbanCreated,Sparsely vegetated land
+UrbanCreated,Urban
+UrbanCreated,Wetland
+UrbanCreated,Woodland and forest
+UrbanCreated,Watercourse footprint
+WetlandCreated,Coastal lagoons
+WetlandCreated,Coastal saltmarsh
+WetlandCreated,Cropland
+WetlandCreated,Grassland
+WetlandCreated,Heathland and shrub
+WetlandCreated,Intertidal hard structures
+WetlandCreated,Intertidal sediment
+WetlandCreated,Lakes
+WetlandCreated,Rocky shore
+WetlandCreated,Sparsely vegetated land
+WetlandCreated,Urban
+WetlandCreated,Wetland
+WetlandCreated,Woodland and forest
+WetlandCreated,Watercourse footprint
+Woodland and forestCreated,Coastal lagoons
+Woodland and forestCreated,Coastal saltmarsh
+Woodland and forestCreated,Cropland
+Woodland and forestCreated,Grassland
+Woodland and forestCreated,Heathland and shrub
+Woodland and forestCreated,Intertidal hard structures
+Woodland and forestCreated,Intertidal sediment
+Woodland and forestCreated,Lakes
+Woodland and forestCreated,Rocky shore
+Woodland and forestCreated,Sparsely vegetated land
+Woodland and forestCreated,Urban
+Woodland and forestCreated,Wetland
+Woodland and forestCreated,Woodland and forest
+Woodland and forestCreated,Watercourse footprint
+Coastal lagoonsRetained,Coastal lagoons
+Coastal saltmarshRetained,Coastal saltmarsh
+CroplandRetained,Cropland
+GrasslandRetained,Grassland
+Heathland and shrubRetained,Heathland and shrub
+Intertidal hard structuresRetained,Intertidal hard structures
+Intertidal sedimentRetained,Intertidal sediment
+LakesRetained,Lakes
+Rocky shoreRetained,Rocky shore
+Sparsely vegetated landRetained,Sparsely vegetated land
+UrbanRetained,Urban
+WetlandRetained,Wetland
+Woodland and forestRetained,Woodland and forest
+Coastal lagoonsEnhanced,Coastal lagoons
+Coastal lagoonsEnhanced,Coastal saltmarsh
+Coastal lagoonsEnhanced,Cropland
+Coastal lagoonsEnhanced,Grassland
+Coastal lagoonsEnhanced,Heathland and shrub
+Coastal lagoonsEnhanced,Intertidal hard structures
+Coastal lagoonsEnhanced,Intertidal sediment
+Coastal lagoonsEnhanced,Lakes
+Coastal lagoonsEnhanced,Rocky shore
+Coastal lagoonsEnhanced,Sparsely vegetated land
+Coastal lagoonsEnhanced,Urban
+Coastal lagoonsEnhanced,Wetland
+Coastal lagoonsEnhanced,Woodland and forest
+Coastal saltmarshEnhanced,Coastal lagoons
+Coastal saltmarshEnhanced,Coastal saltmarsh
+Coastal saltmarshEnhanced,Cropland
+Coastal saltmarshEnhanced,Grassland
+Coastal saltmarshEnhanced,Heathland and shrub
+Coastal saltmarshEnhanced,Intertidal hard structures
+Coastal saltmarshEnhanced,Intertidal sediment
+Coastal saltmarshEnhanced,Lakes
+Coastal saltmarshEnhanced,Rocky shore
+Coastal saltmarshEnhanced,Sparsely vegetated land
+Coastal saltmarshEnhanced,Urban
+Coastal saltmarshEnhanced,Wetland
+Coastal saltmarshEnhanced,Woodland and forest
+CroplandEnhanced,Coastal lagoons
+CroplandEnhanced,Coastal saltmarsh
+CroplandEnhanced,Cropland
+CroplandEnhanced,Grassland
+CroplandEnhanced,Heathland and shrub
+CroplandEnhanced,Intertidal hard structures
+CroplandEnhanced,Intertidal sediment
+CroplandEnhanced,Lakes
+CroplandEnhanced,Rocky shore
+CroplandEnhanced,Sparsely vegetated land
+CroplandEnhanced,Urban
+CroplandEnhanced,Wetland
+CroplandEnhanced,Woodland and forest
+GrasslandEnhanced,Coastal lagoons
+GrasslandEnhanced,Coastal saltmarsh
+GrasslandEnhanced,Cropland
+GrasslandEnhanced,Grassland
+GrasslandEnhanced,Heathland and shrub
+GrasslandEnhanced,Intertidal hard structures
+GrasslandEnhanced,Intertidal sediment
+GrasslandEnhanced,Lakes
+GrasslandEnhanced,Rocky shore
+GrasslandEnhanced,Sparsely vegetated land
+GrasslandEnhanced,Urban
+GrasslandEnhanced,Wetland
+GrasslandEnhanced,Woodland and forest
+Heathland and shrubEnhanced,Coastal lagoons
+Heathland and shrubEnhanced,Coastal saltmarsh
+Heathland and shrubEnhanced,Cropland
+Heathland and shrubEnhanced,Grassland
+Heathland and shrubEnhanced,Heathland and shrub
+Heathland and shrubEnhanced,Intertidal hard structures
+Heathland and shrubEnhanced,Intertidal sediment
+Heathland and shrubEnhanced,Lakes
+Heathland and shrubEnhanced,Rocky shore
+Heathland and shrubEnhanced,Sparsely vegetated land
+Heathland and shrubEnhanced,Urban
+Heathland and shrubEnhanced,Wetland
+Heathland and shrubEnhanced,Woodland and forest
+Intertidal sedimentEnhanced,Coastal lagoons
+Intertidal sedimentEnhanced,Coastal saltmarsh
+Intertidal sedimentEnhanced,Cropland
+Intertidal sedimentEnhanced,Grassland
+Intertidal sedimentEnhanced,Heathland and shrub
+Intertidal sedimentEnhanced,Intertidal hard structures
+Intertidal sedimentEnhanced,Intertidal sediment
+Intertidal sedimentEnhanced,Lakes
+Intertidal sedimentEnhanced,Rocky shore
+Intertidal sedimentEnhanced,Sparsely vegetated land
+Intertidal sedimentEnhanced,Urban
+Intertidal sedimentEnhanced,Wetland
+Intertidal sedimentEnhanced,Woodland and forest
+Intertidal hard structuresEnhanced,Coastal lagoons
+Intertidal hard structuresEnhanced,Coastal saltmarsh
+Intertidal hard structuresEnhanced,Cropland
+Intertidal hard structuresEnhanced,Grassland
+Intertidal hard structuresEnhanced,Heathland and shrub
+Intertidal hard structuresEnhanced,Intertidal hard structures
+Intertidal hard structuresEnhanced,Intertidal sediment
+Intertidal hard structuresEnhanced,Lakes
+Intertidal hard structuresEnhanced,Rocky shore
+Intertidal hard structuresEnhanced,Sparsely vegetated land
+Intertidal hard structuresEnhanced,Urban
+Intertidal hard structuresEnhanced,Wetland
+Intertidal hard structuresEnhanced,Woodland and forest
+LakesEnhanced,Coastal lagoons
+LakesEnhanced,Coastal saltmarsh
+LakesEnhanced,Cropland
+LakesEnhanced,Grassland
+LakesEnhanced,Heathland and shrub
+LakesEnhanced,Intertidal hard structures
+LakesEnhanced,Intertidal sediment
+LakesEnhanced,Lakes
+LakesEnhanced,Rocky shore
+LakesEnhanced,Sparsely vegetated land
+LakesEnhanced,Urban
+LakesEnhanced,Wetland
+LakesEnhanced,Woodland and forest
+Rocky shoreEnhanced,Coastal lagoons
+Rocky shoreEnhanced,Coastal saltmarsh
+Rocky shoreEnhanced,Cropland
+Rocky shoreEnhanced,Grassland
+Rocky shoreEnhanced,Heathland and shrub
+Rocky shoreEnhanced,Intertidal hard structures
+Rocky shoreEnhanced,Intertidal sediment
+Rocky shoreEnhanced,Lakes
+Rocky shoreEnhanced,Rocky shore
+Rocky shoreEnhanced,Sparsely vegetated land
+Rocky shoreEnhanced,Urban
+Rocky shoreEnhanced,Wetland
+Rocky shoreEnhanced,Woodland and forest
+Sparsely vegetated landEnhanced,Coastal lagoons
+Sparsely vegetated landEnhanced,Coastal saltmarsh
+Sparsely vegetated landEnhanced,Cropland
+Sparsely vegetated landEnhanced,Grassland
+Sparsely vegetated landEnhanced,Heathland and shrub
+Sparsely vegetated landEnhanced,Intertidal hard structures
+Sparsely vegetated landEnhanced,Intertidal sediment
+Sparsely vegetated landEnhanced,Lakes
+Sparsely vegetated landEnhanced,Rocky shore
+Sparsely vegetated landEnhanced,Sparsely vegetated land
+Sparsely vegetated landEnhanced,Urban
+Sparsely vegetated landEnhanced,Wetland
+Sparsely vegetated landEnhanced,Woodland and forest
+UrbanEnhanced,Coastal lagoons
+UrbanEnhanced,Coastal saltmarsh
+UrbanEnhanced,Cropland
+UrbanEnhanced,Grassland
+UrbanEnhanced,Heathland and shrub
+UrbanEnhanced,Intertidal hard structures
+UrbanEnhanced,Intertidal sediment
+UrbanEnhanced,Lakes
+UrbanEnhanced,Rocky shore
+UrbanEnhanced,Sparsely vegetated land
+UrbanEnhanced,Urban
+UrbanEnhanced,Wetland
+UrbanEnhanced,Woodland and forest
+WetlandEnhanced,Coastal lagoons
+WetlandEnhanced,Coastal saltmarsh
+WetlandEnhanced,Cropland
+WetlandEnhanced,Grassland
+WetlandEnhanced,Heathland and shrub
+WetlandEnhanced,Intertidal hard structures
+WetlandEnhanced,Intertidal sediment
+WetlandEnhanced,Lakes
+WetlandEnhanced,Rocky shore
+WetlandEnhanced,Sparsely vegetated land
+WetlandEnhanced,Urban
+WetlandEnhanced,Wetland
+WetlandEnhanced,Woodland and forest
+Woodland and forestEnhanced,Coastal lagoons
+Woodland and forestEnhanced,Coastal saltmarsh
+Woodland and forestEnhanced,Cropland
+Woodland and forestEnhanced,Grassland
+Woodland and forestEnhanced,Heathland and shrub
+Woodland and forestEnhanced,Intertidal hard structures
+Woodland and forestEnhanced,Intertidal sediment
+Woodland and forestEnhanced,Lakes
+Woodland and forestEnhanced,Rocky shore
+Woodland and forestEnhanced,Sparsely vegetated land
+Woodland and forestEnhanced,Urban
+Woodland and forestEnhanced,Wetland
+Woodland and forestEnhanced,Woodland and forest
+Watercourse footprintCreated,Watercourse footprint
+Watercourse footprintCreated,Coastal lagoons
+Watercourse footprintCreated,Coastal saltmarsh
+Watercourse footprintCreated,Cropland
+Watercourse footprintCreated,Grassland
+Watercourse footprintCreated,Heathland and shrub
+Watercourse footprintCreated,Intertidal hard structures
+Watercourse footprintCreated,Intertidal sediment
+Watercourse footprintCreated,Lakes
+Watercourse footprintCreated,Rocky shore
+Watercourse footprintCreated,Sparsely vegetated land
+Watercourse footprintCreated,Urban
+Watercourse footprintCreated,Wetland
+Watercourse footprintCreated,Woodland and forest
+Watercourse footprintRetained,Watercourse footprint
+Watercourse footprintEnhanced,Watercourse footprint
+Created,Coastal lagoons
+Created,Coastal saltmarsh
+Created,Cropland
+Created,Grassland
+Created,Heathland and shrub
+Created,Intertidal hard structures
+Created,Intertidal sediment
+Created,Lakes
+Created,Rocky shore
+Created,Sparsely vegetated land
+Created,Urban
+Created,Watercourse footprint
+Created,Wetland
+Created,Woodland and forest

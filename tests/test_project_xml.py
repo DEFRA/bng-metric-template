@@ -126,7 +126,7 @@ IRREPLACEABLE_LIST_LAYER = "Habitat Irreplaceable"
 CHECK_TOOLS = ("set_field_rules.py", "reset_stale_dropdowns.py",
                "set_paste_defaults.py", "order_dropdowns.py",
                "allow_blank.py", "require_shape.py",
-               "limit_vertical_habitats.py")
+               "limit_vertical_habitats.py", "style_enhanced_trees.py")
 VERTICAL_BROAD_HABITATS = ["Intertidal hard structures", "Urban"]
 NO_CHANGE = "no change needed"
 

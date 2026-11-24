@@ -6,7 +6,9 @@ small section of the route only: the whole corridor is about 100 MB.
 """
 
 import filecmp
+import re
 import shutil
+import sys
 import unittest
 import zipfile
 
@@ -14,6 +16,12 @@ from tests import support
 
 # support puts the converter modules and the NSIP generator on sys.path.
 import gpkg_common
+
+if str(support.SITE_GENERATOR.parent) not in sys.path:
+    sys.path.insert(0, str(support.SITE_GENERATOR.parent))
+
+import site_plan  # noqa: E402
+import site_writers  # noqa: E402
 
 # A 5% section builds in about a second, with every layer populated.
 NSIP_FRACTION = "0.05"
@@ -300,6 +308,175 @@ class SiteGeneratorTest(support.TempDirTestCase):
             support.SITE_GENERATOR, "--out", self.tmp / "Site #3",
             "--habitats", "3", "--no-legacy", "--no-metric")
         self.assertEqual(0, result.returncode, support.describe(result))
+
+
+# Every layer of the template, with each retention category the layer can
+# hold: seed 8 of this site shows them all.
+FULL_SITE_ARGS = ("--habitats", "30", "--area-ha", "8", "--hedgerows", "5",
+                  "--trees", "12", "--watercourses", "2", "--vertical", "4",
+                  "--seed", "8", "--no-legacy", "--no-metric")
+KINDS = ("Area Habitats", "Vertical Area Habitats", "Hedgerows",
+         "Watercourses", "Individual Trees")
+
+
+class _StraightMesh:
+    """A mesh of 10 m squares, each edge a straight line."""
+
+    def edge_line(self, kind, i, j):
+        step = (1, 0) if kind == "A" else (0, 1)
+        return [(10.0 * i, 10.0 * j),
+                (10.0 * (i + step[0]), 10.0 * (j + step[1]))]
+
+
+class _RecordingConnection:
+    """Keeps the rows a writer inserts, by table, as dicts."""
+
+    def __init__(self):
+        self.rows = {}
+
+    def executemany(self, sql, rows):
+        table = re.search(r'INSERT INTO "([^"]+)"', sql).group(1)
+        columns = re.findall(r'"([^"]+)"', sql.split("(", 1)[1].split(")")[0])
+        self.rows[table] = [dict(zip(columns, row)) for row in rows]
+
+
+class SiteGeneratorAllLayersTest(support.TempDirTestCase):
+    """--watercourses and --vertical add the two layers a site did not have."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.first = support.generate_site(cls.tmp / "first", *FULL_SITE_ARGS)
+        cls.second = support.generate_site(cls.tmp / "second", *FULL_SITE_ARGS)
+        cls.gpkg = support.site_gpkg(cls.first)
+
+    def test_same_inputs_give_the_same_geopackage(self):
+        self.assertEqual(self.gpkg.read_bytes(),
+                         support.site_gpkg(self.second).read_bytes())
+
+    def test_site_has_what_was_asked_for(self):
+        for table, expected in (("Watercourses Baseline", 2),
+                                ("Vertical Area Habitats Baseline", 4)):
+            with self.subTest(table=table):
+                self.assertEqual(expected,
+                                 len(support.read_rows(self.gpkg, table)))
+
+    def test_every_layer_shows_each_retention_category(self):
+        for kind in KINDS:
+            rows = support.read_rows(self.gpkg, f"{kind} Post-Intervention")
+            found = {row["Retention Category"] for row in rows}
+            with self.subTest(layer=kind):
+                self.assertEqual({"Retained", "Enhanced", "Created"}, found)
+
+    def test_linear_and_point_layers_lose_a_feature(self):
+        for kind in KINDS[1:]:
+            baseline = {row["feature_uuid"] for row in support.read_rows(
+                self.gpkg, f"{kind} Baseline")}
+            kept = {row["parent_uuid"] for row in support.read_rows(
+                self.gpkg, f"{kind} Post-Intervention")}
+            with self.subTest(layer=kind):
+                self.assertTrue(baseline - kept)
+
+    def test_a_split_watercourse_keeps_its_parent(self):
+        """Each kept stretch is a run of its parent's points, measured, and
+        names its parent; the stretch between them is gone."""
+        parents = {row["Habitat Ref"]: row for row in support.read_rows(
+            self.gpkg, "Watercourses Baseline")}
+        children = {}
+        for row in support.read_rows(self.gpkg,
+                                     "Watercourses Post-Intervention"):
+            if row["Parent Ref"] is not None:
+                children.setdefault(row["Parent Ref"], []).append(row)
+        split = {ref: rows for ref, rows in children.items() if len(rows) > 1}
+        self.assertTrue(split)
+        for ref, rows in split.items():
+            parent = parents[ref]
+            _, points = gpkg_common.blob_geometry(parent["geom"])
+            runs = []
+            for number, row in enumerate(rows, start=1):
+                with self.subTest(ref=row["Habitat Ref"]):
+                    self.assertEqual(f"{ref}-{number}", row["Habitat Ref"])
+                    self.assertEqual(parent["feature_uuid"],
+                                     row["parent_uuid"])
+                    self.assertEqual(parent["Length"], row["Baseline Length"])
+                    self.assertEqual(
+                        [round(v, 3) for point in points for v in point],
+                        [float(v) for v in re.findall(r"-?[\d.]+",
+                                                      row["parent_geom"])])
+                    self.assertAlmostEqual(
+                        gpkg_common.line_blob_length_m(row["geom"]),
+                        row["Length"], places=2)
+                    _, stretch = gpkg_common.blob_geometry(row["geom"])
+                    start = points.index(stretch[0])
+                    self.assertEqual(points[start:start + len(stretch)],
+                                     stretch)
+                    runs.append((start, start + len(stretch) - 1))
+            with self.subTest(parent=ref):
+                self.assertTrue(all(end < next_start for (_, end), (next_start, _)
+                                    in zip(runs, runs[1:])))
+                self.assertLess(sum(row["Length"] for row in rows),
+                                parent["Length"])
+
+    def test_a_watercourse_through_core_keeps_the_exact_stretches(self):
+        """A fixed path of five 10 m edges, the middle one in CORE: the two
+        stretches either side are kept, point for point."""
+        nodes = [(i, 1) for i in range(6)]
+        zones = {(i, j): site_plan.OUTER for i in range(6) for j in (0, 1)}
+        zones[(2, 0)] = zones[(2, 1)] = site_plan.CORE
+        site = {"mesh": _StraightMesh(), "choose": site_plan.Chooser(1),
+                "zones": zones, "scheme": "housing", "seed": 1,
+                "watercourses": [nodes], "new_watercourse": None}
+        conn = _RecordingConnection()
+        site_writers.write_watercourses(conn, site)
+        (parent,) = conn.rows["Watercourses Baseline"]
+        children = conn.rows["Watercourses Post-Intervention"]
+        expected = {"WC-01-1": ([(0.0, 10.0), (10.0, 10.0), (20.0, 10.0)], 20.0),
+                    "WC-01-2": ([(30.0, 10.0), (40.0, 10.0), (50.0, 10.0)], 20.0)}
+        self.assertEqual(50.0, parent["Length"])
+        self.assertEqual(list(expected), [c["Habitat Ref"] for c in children])
+        for child in children:
+            points, length = expected[child["Habitat Ref"]]
+            with self.subTest(ref=child["Habitat Ref"]):
+                self.assertEqual(points, [tuple(point) for point in
+                                          gpkg_common.blob_geometry(
+                                              child["geom"])[1]])
+                self.assertAlmostEqual(length, child["Length"])
+                self.assertEqual("WC-01", child["Parent Ref"])
+                self.assertEqual(parent["feature_uuid"], child["parent_uuid"])
+                self.assertEqual(50.0, child["Baseline Length"])
+                self.assertEqual(
+                    "LINESTRING (0.000 10.000, 10.000 10.000, 20.000 10.000, "
+                    "30.000 10.000, 40.000 10.000, 50.000 10.000)",
+                    child["parent_geom"])
+
+    def test_the_converters_take_every_generated_layer(self):
+        """The new watercourse, the new walls and the split stretches go
+        through new_to_old.py and to_metric.py."""
+        args = [a for a in FULL_SITE_ARGS
+                if a not in ("--no-legacy", "--no-metric")]
+        site = support.generate_site(self.tmp / "converted", *args)
+        for folder in LEGACY_FOLDERS:
+            with self.subTest(folder=folder):
+                self.assertTrue((site / folder / LEGACY_GPKG).is_file())
+        self.assertTrue(zipfile.is_zipfile(site / METRIC_NAME))
+
+    def test_says_when_there_is_no_room(self):
+        result = support.run_python(
+            support.SITE_GENERATOR, "--out", self.tmp / "no-room",
+            "--habitats", "2", "--watercourses", "5",
+            "--no-legacy", "--no-metric")
+        self.assertEqual(1, result.returncode, support.describe(result))
+        self.assertRegex(result.stdout + result.stderr,
+                         r"room for \d+ of 5 watercourses")
+
+    def test_without_them_a_site_has_neither(self):
+        site = support.generate_site(self.tmp / "without", *SITE_ARGS,
+                                     "--no-legacy", "--no-metric")
+        gpkg = support.site_gpkg(site)
+        for table in ("Watercourses Baseline",
+                      "Vertical Area Habitats Baseline"):
+            with self.subTest(table=table):
+                self.assertEqual([], support.read_rows(gpkg, table))
 
 
 if __name__ == "__main__":
