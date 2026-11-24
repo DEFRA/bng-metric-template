@@ -33,7 +33,7 @@ LEGACY_TEMPLATE_DIR = os.path.join(ROOT, 'templates', 'legacy-ne')
 LEGACY_GPKG = os.path.join('Layers', 'Net Gain Habitat Mapping Layers.gpkg')
 LEGACY_STAGES = (('legacy-ne-baseline', 'Baseline'),
                  ('legacy-ne-post-intervention', 'Post-intervention'))
-METRIC_NAME = 'The_Statutory_Metric_Macro_Enabled_1.0.4.xlsm'
+METRIC_NAME = 'The_Statutory_Metric_Macro_Enabled_1.1.1.xlsm'
 METRIC_TEMPLATE = os.path.join(ROOT, 'reference', METRIC_NAME)
 NOT_TEMPLATE_FILES = shutil.ignore_patterns(
     '*.backup-*', '*.gpkg-shm', '*.gpkg-wal', '.DS_Store')

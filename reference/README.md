@@ -6,8 +6,8 @@ follow.
 
 | File | What it is |
 | --- | --- |
-| `The_Statutory_Metric_Macro_Enabled_1.0.4.xlsm` | The Statutory Biodiversity Metric. `to_metric.py` fills a copy of it |
-| `The_Statutory_Metric_Macro_Disabled_1.0.4.xlsx` | The same Metric without macros. The sheets, formulas and cells are the same, so `to_metric.py` fills it in the same way and writes an `.xlsx` |
+| `The_Statutory_Metric_Macro_Enabled_1.1.1.xlsm` | The Statutory Biodiversity Metric 1.1.1, as GOV.UK publishes it. `to_metric.py` fills a copy of it |
+| `The_Statutory_Metric_Macro_Disabled_1.1.1.xlsx` | The same Metric without macros. The sheets, formulas and cells are the same, so `to_metric.py` fills it in the same way and writes an `.xlsx` |
 | `GIS Import Tool.xlsb` | The Excel tool that reads the three CSV files from `new_to_old.py --format csv` |
 | `Biodiversity Metric and SSM - GIS tools User Guide.pdf` | The Natural England guidance for both tools, and the source of the rules that these documents quote |
 
@@ -17,9 +17,11 @@ unless `--allow-occupied` is given.
 
 ## Two limits from the guidance
 
-**Each sheet holds 248 rows.** This applies to the import tool and to each
-sheet of the Metric (User Guide 3.1.5). A larger site must be divided into
-geographic sections or have its rows merged. An NSIP needs both.
+**Each sheet holds a fixed number of rows.** The import tool takes 248 rows
+for each module (User Guide 3.1.5), and each on-site sheet of the Metric 1.1.1
+holds 350. A larger site must be divided into geographic sections or have its
+rows merged. An NSIP needs both. `to_metric.py` refuses a blank Metric with
+fewer rows, from an earlier release, rather than write over its totals.
 
 **Consolidation removes the audit trail** (User Guide 3.2.3). The merge of
 rows that share all attributes does not change the units, because units are

@@ -247,14 +247,14 @@ KEPT_AREA_NEEDS = (IRREPLACEABLE_COLUMN,)
 # nothing shown on screen. The user's reference goes in "Habitat reference
 # number" instead.
 # The last row is the last one the workbook treats as DATA, which is not
-# always the last row of the visible block. Four of the nine sheets keep a
-# totals row two rows inside their apparent range. The numbers below were
-# measured from the blank workbook rather than read off the screen: a
-# baseline or creation data row carries the metric's own line number as a
-# literal in its Ref column, and an enhancement data row carries the formula
-# that reaches back to its baseline sheet. A-2, A-3, B-3 and C-3 stop at 246
-# rows where the rest hold 248, so a habitat sheet can take 248 baseline
-# parcels but only 246 of them can be enhancements.
+# always the last row of the visible block. The numbers below were measured
+# from the blank Statutory Metric 1.1.1 workbook rather than read off the
+# screen: a baseline or creation data row carries the metric's own line
+# number as a literal in its Ref column, and an enhancement data row carries
+# the formula that reaches back to its baseline sheet. Every sheet holds 350
+# rows, the enhancement sheets as many as the baseline sheets they serve, and
+# the totals row follows the last. `_check_metric` refuses a blank workbook
+# laid out with fewer, because this layout would write into its totals rows.
 #
 # The watercourse sheets multiply every row's units by two encroachment
 # multipliers, one for the channel and one for the riparian zone. A blank
@@ -262,42 +262,42 @@ KEPT_AREA_NEEDS = (IRREPLACEABLE_COLUMN,)
 # so a watercourse written without them scores nothing at all.
 LAYOUT = {
     AREAS: {
-        BASELINE: ("A-1 On-Site Habitat Baseline", 11, 258, {
+        BASELINE: ("A-1 On-Site Habitat Baseline", 11, 360, {
             "broad": "E", "habitat": "F", "irreplaceable": "G", "size": "H",
             "condition": "K", "significance": "M", "retained": "S",
             "enhanced": "T", "comment": "Z", "ref": "AB"}),
-        CREATION: ("A-2 On-Site Habitat Creation", 11, 256, {
+        CREATION: ("A-2 On-Site Habitat Creation", 11, 360, {
             "broad": "D", "habitat": "E", "size": "G", "condition": "J",
             "significance": "L", "advance": "P", "delay": "Q",
             "comment": "Z", "ref": "AB"}),
-        ENHANCEMENT: ("A-3 On-Site Habitat Enhancement", 12, 257, {
+        ENHANCEMENT: ("A-3 On-Site Habitat Enhancement", 12, 361, {
             "habitat": "R", "condition": "Y", "significance": "AA",
             "advance": "AE", "delay": "AF", "comment": "AO", "ref": "AQ"}),
     },
     HEDGEROWS: {
-        BASELINE: ("B-1 On-Site Hedge Baseline", 10, 257, {
+        BASELINE: ("B-1 On-Site Hedge Baseline", 10, 359, {
             "number": "C", "habitat": "D", "size": "E", "condition": "H",
             "significance": "J", "retained": "P", "enhanced": "Q",
             "comment": "V", "ref": "X"}),
-        CREATION: ("B-2 On-Site Hedge Creation", 12, 259, {
+        CREATION: ("B-2 On-Site Hedge Creation", 12, 361, {
             "number": "C", "habitat": "D", "size": "E", "condition": "H",
             "significance": "J", "advance": "N", "delay": "O",
             "comment": "X", "ref": "Z"}),
-        ENHANCEMENT: ("B-3 On-Site Hedge Enhancement", 12, 257, {
+        ENHANCEMENT: ("B-3 On-Site Hedge Enhancement", 12, 361, {
             "habitat": "M", "condition": "S", "significance": "U",
             "advance": "Y", "delay": "Z", "comment": "AI", "ref": "AK"}),
     },
     WATERCOURSES: {
-        BASELINE: ("C-1 On-Site WaterC' Baseline", 10, 257, {
+        BASELINE: ("C-1 On-Site WaterC' Baseline", 10, 359, {
             "habitat": "D", "size": "E", "condition": "H",
             "significance": "J", "encroachment": "M", "riparian": "O",
             "retained": "U", "enhanced": "V", "comment": "AB", "ref": "AD"}),
-        CREATION: ("C-2 On-Site WaterC' Creation", 12, 259, {
+        CREATION: ("C-2 On-Site WaterC' Creation", 12, 361, {
             "habitat": "C", "size": "D", "condition": "G",
             "significance": "I", "advance": "M", "delay": "N",
             "encroachment": "V", "riparian": "X", "comment": "AA",
             "ref": "AC"}),
-        ENHANCEMENT: ("C-3 On-Site WaterC' Enhancement", 12, 257, {
+        ENHANCEMENT: ("C-3 On-Site WaterC' Enhancement", 12, 361, {
             "habitat": "N", "condition": "T", "significance": "V",
             "advance": "Z", "delay": "AA", "encroachment": "AI",
             "riparian": "AK", "comment": "AN", "ref": "AP"}),
@@ -363,6 +363,8 @@ POST_INTERVENTION_PREFIX = "Post-intervention: "
 
 # A cell that proves the workbook already holds a site.
 OCCUPIED_PROBE = ("A-1 On-Site Habitat Baseline", "E11")
+# The column in which the area habitat baseline sheet numbers its data rows.
+LINE_NUMBER_COLUMN = "D"
 
 SIZE_FIELDS = ("size", RETAINED_SIZE, ENHANCED_SIZE)
 
@@ -1293,11 +1295,22 @@ def sheet_paths(archive):
     return paths
 
 
-def cell_is_empty(archive, paths, sheet, ref):
+def _cell_body(archive, paths, sheet, ref):
     xml = archive.read(paths[sheet]).decode(UTF8)
     match = re.search(
         r'<c r="%s"(?:\s+[a-zA-Z:]+="[^"]*")*\s*(?:/>|>(.*?)</c>)' % ref, xml, re.S)
-    return match is None or not (match.group(1) or "").strip()
+    return (match.group(1) or "") if match else ""
+
+
+def cell_is_empty(archive, paths, sheet, ref):
+    return not _cell_body(archive, paths, sheet, ref).strip()
+
+
+def cell_value(archive, paths, sheet, ref):
+    """The cell's stored value as text, or None. A shared string's index."""
+    value = re.search(r"<v>(.*?)</v>",
+                      _cell_body(archive, paths, sheet, ref), re.S)
+    return value.group(1) if value else None
 
 
 def drop_incomplete_rows(xml, values):
@@ -1434,7 +1447,7 @@ def stage_capacity(kind, stage):
 def plan_parts(staged, consolidate, report):
     """Split the site into as many workbooks as its longest sheet requires.
 
-    Every sheet in the metric takes 248 rows, and a site that needs more than
+    Every sheet in the metric takes 350 rows, and a site that needs more than
     that cannot be priced in one workbook at all. The parts are cut from the
     baseline and creation lines of each module and dealt out evenly, so a site
     needing two workbooks produces two half-full ones.
@@ -1512,11 +1525,13 @@ def _append_on_area_sheets(lines, tables, table_names, label, consolidate,
 def widen_for_enhancements(lines, parts):
     """Add parts until no run of baseline rows overflows its enhancement sheet.
 
-    The enhancement sheet holds two fewer rows than the baseline sheet it
-    serves, so a run of 248 baseline parcels that happen to be all
-    enhancements needs a finer split even though the baseline sheet has room.
-    Counting the whole site cannot see that, because it is the run that
-    overflows, not the total. Splitting further can only shorten the longest
+    Only an enhancement sheet holding fewer rows than the baseline sheet it
+    serves can overflow: a run of baseline parcels that are all enhancements
+    would then need a finer split even though the baseline sheet has room.
+    The Statutory Metric 1.1.1 gives both sheets 350 rows, so this adds no
+    part with it, but LAYOUT does not promise that. Counting the whole site
+    cannot see an overflow, because it is the run that overflows, not the
+    total. Splitting further can only shorten the longest
     run, so this terminates.
     """
     while True:
@@ -1619,8 +1634,29 @@ def _check_metric(template_path):
                 raise ValueError(
                     f"{os.path.basename(template_path)} has no '{sheet}' sheet, "
                     "so it does not look like the Statutory Metric workbook.")
+        _check_rows(archive, paths, os.path.basename(template_path))
         occupied = not cell_is_empty(archive, paths, *OCCUPIED_PROBE)
     return extension, occupied
+
+
+def _check_rows(archive, paths, name):
+    """Refuse a workbook that does not hold the rows LAYOUT writes into.
+
+    The baseline sheet numbers its data rows in its Ref column, so the last
+    row LAYOUT writes must carry the last line number. An earlier release of
+    the metric holds fewer rows, and filling it to LAYOUT's last row would
+    write over its totals.
+    """
+    sheet, first, last, _columns = LAYOUT[AREAS][BASELINE]
+    capacity = last - first + 1
+    if cell_value(archive, paths, sheet,
+                  f"{LINE_NUMBER_COLUMN}{last}") != str(capacity):
+        raise ValueError(
+            f"{name} is not laid out with the {capacity} rows a sheet of the "
+            "current Statutory Metric holds, so it is most likely a blank "
+            "workbook from an earlier release. Download the current "
+            "calculation tool from GOV.UK (\"Statutory biodiversity metric "
+            "tools and guides\") and export into a copy of that.")
 
 
 def _note_extension(out_path, extension, report):
@@ -1675,10 +1711,8 @@ def _warn_split_site(parts, report):
     report.warn(
         "This site does not fit one workbook, so it was written as "
         f"{len(parts)} of them. The metric holds "
-        f"{stage_capacity(AREAS, BASELINE)} rows per sheet, and "
-        f"{stage_capacity(AREAS, ENHANCEMENT)} on the enhancement "
-        "sheets. Each workbook is a "
-        "complete, valid metric for its own share of the site, and the "
+        f"{stage_capacity(AREAS, BASELINE)} rows per sheet. Each workbook is "
+        "a complete, valid metric for its own share of the site, and the "
         "site's answer is the SUM of their unit columns. Do not read a "
         "net gain percentage off one workbook: a percentage of part of a "
         "site means nothing. Add the baseline units and the "

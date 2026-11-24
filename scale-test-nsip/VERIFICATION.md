@@ -18,7 +18,7 @@ Run all commands from the root of this repo.
 | The 12% section, for step 5 | Run `python3 scale-test-nsip/generator/generate.py --fraction 0.12` |
 | QGIS, with the plugin | See `plugin/README.md`. Restart QGIS after you install or replace the plugin |
 | The service, running locally | Run `docker compose up -d` in the backend, then `npm run dev` in the harness |
-| A blank metric workbook | `reference/The_Statutory_Metric_Macro_Enabled_1.0.4.xlsm` |
+| A blank metric workbook | `reference/The_Statutory_Metric_Macro_Enabled_1.1.1.xlsm` |
 | Excel | For step 4d and step 5 only |
 
 **Close the QGIS project before you run a script that writes to the
@@ -293,8 +293,8 @@ sheets. An `.xlsm` file is a zip of XML, so this needs no Excel and no
 library. Macros, sheet protection and all other parts stay the same. Excel
 recalculates the workbook when it next opens it.
 
-**Each sheet holds 248 rows, and 246 on the enhancement sheets.** A site that
-does not fit goes into several workbooks. Each workbook is a valid metric for
+**Each sheet holds 350 rows.** A site that does not fit goes into several
+workbooks. Each workbook is a valid metric for
 its share of the site. The answer for the site is the sum of their unit
 columns. Do not read a net gain percentage from one workbook.
 
@@ -307,7 +307,7 @@ QGIS.
 | Field | Value |
 | --- | --- |
 | BNG Service GeoPackage | `scale-test-nsip/hs2-phase2a-subsection-12pc/Layers/BNG Service Layers.gpkg` |
-| Blank Statutory Metric workbook | `reference/The_Statutory_Metric_Macro_Enabled_1.0.4.xlsm` |
+| Blank Statutory Metric workbook | `reference/The_Statutory_Metric_Macro_Enabled_1.1.1.xlsm` |
 | Filled metric workbook to write | Any path that ends `.xlsm` |
 | Merge rows with matching values | Ticked |
 
@@ -316,23 +316,28 @@ Or from a terminal:
 ```sh
 python3 plugin/bng_template_convert/to_metric.py \
     "scale-test-nsip/hs2-phase2a-subsection-12pc/Layers/BNG Service Layers.gpkg" \
-    --metric reference/The_Statutory_Metric_Macro_Enabled_1.0.4.xlsm \
+    --metric reference/The_Statutory_Metric_Macro_Enabled_1.1.1.xlsm \
     -o "scale-test-nsip/metric-out/Section 1 - consolidated.xlsm" \
     --consolidate
 ```
 
-**Pass**, measured 30 September 2026: about **1.5 seconds**, **1** workbook
-and **4,292** cells.
+**Pass**, measured 24 November 2026: about **2 seconds**, **1** workbook
+and **5,469** cells.
 
 | Rows mapped | Baseline | Creation | Enhancement |
 | --- | --- | --- | --- |
 | Area habitats | **222** | **151** | **135** |
+| Individual trees | **64** | **26** | **47** |
 | Hedgerows | **45** | **14** | **29** |
 | Watercourses | **28** | **0** | **11** |
 
-The export gives one warning, and it is correct: **19** irreplaceable parcels
-are wholly or partly lost. The metric shows 'Any Loss Unacceptable' for them
-and leaves them out of the baseline total.
+Trees go on the area habitat sheets, after the area habitats, so A-1 holds
+**286** rows.
+
+The export gives two warnings, and both are correct: **19** irreplaceable
+parcels and **28** irreplaceable trees are wholly or partly lost. The metric
+shows 'Any Loss Unacceptable' for them and leaves them out of the baseline
+total.
 
 **Strategic significance is written in the metric's wording**, as in step 3.
 
@@ -344,17 +349,15 @@ errors.
 
 ### Contrasts
 
-- **Without merging**, the same section needs **7** workbooks: **1,533**
-  baseline and **923** creation rows.
-- **The full site, merged**, needs **5** workbooks and **21,832** cells.
+- **Without merging**, the same section needs **6** workbooks: **1,533**
+  baseline and **923** creation rows of area habitat, and **27,833** cells.
+- **The full site, merged**, needs **5** workbooks and **29,077** cells.
 - **A wrong input stops the export.** The `.xlsb` import tool is refused with
   a message. A workbook that already holds a site is refused, unless you add
   `--allow-occupied`.
 
 ### What the export does not fill
 
-- Individual trees, **428** in the 12% section. The metric gets their size
-  from a band lookup, not from the map.
 - The off-site tabs, which have allocation columns and a different layout.
 - The Irreplaceable Habitats sheet. The irreplaceable flag itself is written
   on the on-site baseline habitat sheet.

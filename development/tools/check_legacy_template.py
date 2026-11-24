@@ -23,7 +23,7 @@ HERE = pathlib.Path(__file__).resolve().parent.parent.parent
 PROJECT = HERE / "templates/legacy-ne/Net Gain Habitat Mapping.qgz"
 LEGACY_CSV = HERE / "templates/legacy-ne/CSV References/Habitats"
 SERVICE_CSV = HERE / "templates/bng-service/CSV References/Habitats"
-METRIC = HERE / "reference/The_Statutory_Metric_Macro_Enabled_1.0.4.xlsm"
+METRIC = HERE / "reference/The_Statutory_Metric_Macro_Enabled_1.1.1.xlsm"
 
 NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
