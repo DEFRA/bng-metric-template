@@ -499,10 +499,16 @@ or to `publish_spec.py` or `markdown_to_confluence.py`:
 
 ```sh
 gh workflow run publish-spec.yml -R DEFRA/bng-metric-template
-gh run watch -R DEFRA/bng-metric-template
 ```
 
-(or Actions → Publish GeoPackage specification → Run workflow).
+(or Actions → Publish GeoPackage specification → Run workflow). The
+command returns before GitHub creates the run, so wait a few seconds, then
+find the run and watch it by its ID:
+
+```sh
+gh run list --workflow publish-spec.yml -R DEFRA/bng-metric-template --limit 1
+gh run watch <run-id> -R DEFRA/bng-metric-template
+```
 
 To see the page it would publish, without Confluence:
 
