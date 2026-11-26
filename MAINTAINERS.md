@@ -454,6 +454,11 @@ from the template, so it says what the template holds:
   or filter on, so a list that depends on another column can be followed;
 - the lineage columns, and the version record with the template version.
 
+The hand-written [QGIS template schema and design](https://eaflood.atlassian.net/wiki/spaces/BMD/pages/6607277195/QGIS+template+schema+and+design)
+page explains why the template is designed as it is, and links to the
+specification for its tables and columns rather than repeating them. Keep
+it that way: a table copied onto it falls out of step with the template.
+
 **Regenerate it with every change to the template**, of the GeoPackage or
 the project, and commit `spec/` with the change:
 
