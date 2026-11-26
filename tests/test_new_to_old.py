@@ -572,5 +572,51 @@ class VerticalAreaHabitatsCsvTest(support.TempDirTestCase):
         self.assertEqual(1, len(found))
 
 
+class LegacyNewFeatureValuesTest(unittest.TestCase):
+    """A new hedgerow or watercourse gets the legacy "To be created" values."""
+
+    def staged(self):
+        return {
+            "hedgerows": {"baseline": [], "pi": [
+                {"Habitat Ref": "HN-1", "Retention Category": "Created",
+                 "Baseline Hedge Type": None,
+                 "Baseline Strategic Significance": None},
+                # Condition gets worse: Created, but keeps its type.
+                {"Habitat Ref": "H-2", "Retention Category": "Created",
+                 "Baseline Hedge Type": "Native hedgerow",
+                 "Baseline Condition": "Good"},
+                {"Habitat Ref": "H-3", "Retention Category": "Retained",
+                 "Baseline Hedge Type": None},
+            ]},
+            "watercourses": {"baseline": [], "pi": [
+                {"Habitat Ref": "WN-1", "Retention Category": "Created",
+                 "Baseline River Type": ""},
+            ]},
+        }
+
+    def test_a_new_feature_is_to_be_created_with_na_baseline_values(self):
+        staged = self.staged()
+        report = new_to_old.Report()
+        new_to_old._legacy_new_feature_values(staged, report)
+        new, worse, retained = staged["hedgerows"]["pi"]
+        self.assertEqual("To be created", new["Baseline Hedge Type"])
+        self.assertEqual("N/A", new["Baseline Distinctiveness"])
+        self.assertEqual("N/A", new["Baseline Condition"])
+        self.assertEqual("Native hedgerow", worse["Baseline Hedge Type"])
+        self.assertEqual("Good", worse["Baseline Condition"])
+        self.assertIsNone(retained["Baseline Hedge Type"])
+        (water,) = staged["watercourses"]["pi"]
+        self.assertEqual("To be created", water["Baseline River Type"])
+        self.assertEqual("N/A", water["Baseline Encroachment into riparian zone"])
+        self.assertEqual(2, len(report.lines))
+
+    def test_the_significance_of_a_new_feature_is_na(self):
+        staged = self.staged()
+        new_to_old._legacy_new_feature_values(staged, new_to_old.Report())
+        new_to_old.to_legacy_significance(staged)
+        self.assertEqual("N/A", staged["hedgerows"]["pi"][0][
+            "Baseline Strategic Significance"])
+
+
 if __name__ == "__main__":
     unittest.main()

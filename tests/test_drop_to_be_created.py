@@ -7,6 +7,7 @@ nothing when it runs again.
 
 import sys
 import unittest
+import xml.etree.ElementTree as ET
 
 from tests import support
 
@@ -101,8 +102,32 @@ class DropToBeCreatedTest(unittest.TestCase):
 class TemplateTest(unittest.TestCase):
     """The committed templates offer the value in none of the 4 lists."""
 
+    def projects(self):
+        projects = sorted(support.TEMPLATES_DIR.glob("bng-service*/*.qgz"))
+        self.assertEqual(3, len(projects))
+        return projects
+
+    def test_the_parsed_lists_do_not_offer_it(self):
+        """Read the Value Maps as QGIS does, not with the tool's own regex."""
+        for project in self.projects():
+            qgs, payload = tool.read_project(project)
+            root = ET.fromstring(payload[qgs])
+            layers = {layer.findtext("layername"): layer
+                      for layer in root.iter("maplayer")}
+            for layer_name, column in tool.TARGETS.items():
+                with self.subTest(project=project.parent.name,
+                                  layer=layer_name):
+                    widget = next(
+                        f.find("editWidget") for f in
+                        layers[layer_name].iter("field")
+                        if f.get("name") == column)
+                    values = [o.get("value") for o in widget.iterfind(
+                        "config/Option/Option[@name='map']/Option/Option")]
+                    self.assertGreater(len(values), 1)
+                    self.assertNotIn(tool.TO_BE_CREATED, values)
+
     def test_no_template_offers_it_for_a_baseline_type(self):
-        for project in support.TEMPLATES_DIR.glob("bng-service*/*.qgz"):
+        for project in self.projects():
             with self.subTest(project=project.parent.name):
                 qgs, payload = tool.read_project(project)
                 _, changes = tool.drop(payload[qgs].decode("utf-8"))
