@@ -2,7 +2,7 @@
 name=BNG Template Convert
 qgisMinimumVersion=3.22
 description=Convert habitat mapping between the legacy Natural England template and the BNG Service template.
-version=1.8.9
+version=1.8.10
 author=Defra BNG Metric Service
 email=
 
@@ -12,7 +12,10 @@ about=Moves a habitat map out of the BNG Service QGIS template without anyone ne
     Export to the Statutory Metric fills a copy of the metric workbook directly, with no CSVs and no import tool in between.
     All three appear in the Processing Toolbox and under Plugins > BNG Template Convert. No dependencies beyond QGIS itself.
 
-changelog=1.8.9
+changelog=1.8.10
+    Convert from legacy leaves a new hedgerow, watercourse or tree off the Baseline layer. The legacy template recorded it as a baseline row typed "To be created", or "N/A" for a newly planted tree; the BNG Service template records it on the Post-Intervention layer only. Its post-intervention row now has blank baseline values and no parent, and the log counts both.
+    The BNG Service template no longer offers "To be created" for Baseline Hedge Type or Baseline River Type.
+  1.8.9
     Export to the Statutory Metric writes into the Statutory Metric 1.1.1, which holds 350 rows on each on-site sheet, the enhancement sheets included. A site with more is still written as several numbered workbooks, each a complete metric for its share of the site.
     Export to the Statutory Metric refuses a blank metric workbook from an earlier release, which holds fewer rows, and asks for the current one from GOV.UK, as writing 350 rows into it would overwrite its totals.
   1.8.8
