@@ -115,6 +115,45 @@ def created_on_existing_watercourse(words, context):
     return None
 
 
+def is_new_linear(row, type_column):
+    """A new hedgerow or watercourse: Created, with no baseline type.
+
+    The BNG Service template leaves its baseline columns blank. The legacy
+    template records it with the type "To be created" and "N/A" in its other
+    baseline columns, and conversion writes it so.
+    """
+    return (normalise(row.get("Retention Category")) == CREATED
+            and normalise(row.get(type_column)) == "")
+
+
+def new_feature(column, type_column, entry=None):
+    """A COMPOSE entry for a baseline column of a new hedgerow or watercourse.
+
+    On a new feature (see is_new_linear) the legacy value is "To be created"
+    for the type and "N/A" for any other column. Any other row is judged by
+    `entry`, a COMPOSE entry, or arrives unchanged when there is none.
+    """
+    placeholder = TO_BE_CREATED if column == type_column else NOT_APPLICABLE
+    if entry:
+        entry_sources, other_rule, how = entry
+    else:
+        entry_sources, how = (column,), "carried unchanged"
+
+        def other_rule(row, legacy):
+            return same(row.get(column), legacy)
+
+    def rule(row, legacy):
+        if is_new_linear(row, type_column):
+            return normalise(legacy) == placeholder
+        return other_rule(row, legacy)
+
+    sources = tuple(dict.fromkeys(
+        (*entry_sources, type_column, "Retention Category")))
+    return (sources, rule,
+            f"{placeholder!r} on a new feature, which is Created with no "
+            f"baseline type; else {how}")
+
+
 def numbered(column, ne_list, context_column=None, fallback=None,
              exception=None):
     """A COMPOSE entry for a label that a Natural England list numbers.
@@ -169,11 +208,17 @@ def significance_blank(column, type_column, row):
 
     The earlier template's drop-downs held "N/A" for a hedgerow or
     watercourse type of "To be created" or "N/A", and for a newly planted
-    tree's baseline. Everywhere else they held a blank, and so does legacy.
+    tree's baseline. A new hedgerow or watercourse, Created with a blank
+    baseline type, is written as "To be created", so its baseline
+    significance is "N/A" too. Everywhere else they held a blank, and so does
+    legacy.
     """
     if type_column == "Category":
         is_na = (column.startswith("Baseline")
                  and normalise(row.get("Category")) == NEWLY_PLANTED)
+    elif column.startswith("Baseline") and type_column and is_new_linear(
+            row, type_column):
+        is_na = True
     else:
         is_na = bool(type_column) and normalise(
             row.get(type_column)) in NO_HABITAT_TYPES
@@ -342,9 +387,6 @@ HEDGEROW_BASELINE = {
 
 HEDGEROW_PI = {
     "CARRY": {
-        "Baseline Hedge Type": "Baseline Hedge Type",
-        "Baseline Distinctiveness": "Baseline Distinctiveness",
-        "Baseline Condition": "Baseline Condition",
         "Retention Category": "Retention Category",
         "Proposed Hedge Type": "Proposed Hedge Type",
         "Proposed Distinctiveness": "Proposed Distinctiveness",
@@ -355,6 +397,12 @@ HEDGEROW_PI = {
         "Spatial risk category": "Spatial risk category",
     },
     "COMPOSE": {
+        "Baseline Hedge Type": new_feature(
+            "Baseline Hedge Type", "Baseline Hedge Type"),
+        "Baseline Distinctiveness": new_feature(
+            "Baseline Distinctiveness", "Baseline Hedge Type"),
+        "Baseline Condition": new_feature(
+            "Baseline Condition", "Baseline Hedge Type"),
         "Baseline Strategic Significance": significance(
             "Baseline Strategic Significance", type_column="Baseline Hedge Type"),
         "Proposed Strategic Significance": significance(
@@ -423,10 +471,6 @@ WATERCOURSE_BASELINE = {
 
 WATERCOURSE_PI = {
     "CARRY": {
-        "Baseline River Type": "Baseline River Type",
-        "Baseline Distinctiveness": "Baseline Distinctiveness",
-        "Baseline Encroachment into Watercourse":
-            "Baseline Encroachment into Watercourse",
         "Proposed River Type": "Proposed River Type",
         "Proposed Distinctiveness": "Proposed Distinctiveness",
         "Proposed Encroachment into Watercourse":
@@ -438,17 +482,26 @@ WATERCOURSE_PI = {
         "Spatial risk category": "Spatial risk category",
     },
     "COMPOSE": {
+        "Baseline River Type": new_feature(
+            "Baseline River Type", "Baseline River Type"),
+        "Baseline Distinctiveness": new_feature(
+            "Baseline Distinctiveness", "Baseline River Type"),
+        "Baseline Encroachment into Watercourse": new_feature(
+            "Baseline Encroachment into Watercourse", "Baseline River Type"),
         "Baseline Strategic Significance": significance(
             "Baseline Strategic Significance", type_column="Baseline River Type"),
         "Proposed Strategic Significance": significance(
             "Proposed Strategic Significance", type_column="Proposed River Type"),
         "Parcel Ref": (("Parent Ref", "Habitat Ref"), linear_reference,
                         "the parent's reference, or the feature's own when it\n                         was created from nothing"),
-        "Baseline Condition": numbered(
-            "Baseline Condition", WATERCOURSE_CONDITION, "Baseline River Type"),
-        "Baseline Encroachment into riparian zone": numbered(
-            "Baseline Encroachment into riparian zone", RIPARIAN_ENCROACHMENT,
-            "Baseline River Type"),
+        "Baseline Condition": new_feature(
+            "Baseline Condition", "Baseline River Type", numbered(
+                "Baseline Condition", WATERCOURSE_CONDITION,
+                "Baseline River Type")),
+        "Baseline Encroachment into riparian zone": new_feature(
+            "Baseline Encroachment into riparian zone", "Baseline River Type",
+            numbered("Baseline Encroachment into riparian zone",
+                     RIPARIAN_ENCROACHMENT, "Baseline River Type")),
         "Retention Category": numbered(
             "Retention Category", WATERCOURSE_RETENTION, "Baseline River Type",
             fallback=TO_BE_CREATED, exception=created_on_existing_watercourse),
