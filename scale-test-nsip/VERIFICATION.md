@@ -494,8 +494,17 @@ is written as `Lost`. A tree's proposed condition must have no number.
 as *Area/compensation not in local strategy/ no local strategy*. `High` must
 arrive as *Formally identified in local strategy*, or *Within area formally
 identified in local strategy* for trees. A blank must arrive as *N/A* for a
-hedgerow or watercourse type of *To be created* or *N/A* and for a newly
-planted tree, and as a blank elsewhere.
+hedgerow or watercourse type of *To be created* or *N/A*, for a new hedgerow
+or watercourse and for a newly planted tree, and as a blank elsewhere.
+
+**A new hedgerow or watercourse gets the legacy placeholders.** The BNG
+Service template leaves the baseline columns of a `Created` hedgerow or
+watercourse with no baseline type blank. The legacy template records it with
+the type *To be created* and *N/A* in its other baseline columns, so each of
+those must arrive so. A new watercourse's condition and riparian encroachment
+arrive as the numbered *N/A* that the Natural England list gives for *To be
+created*, such as `6. N/A`. A `Created` row that keeps its baseline type is a
+habitat whose condition gets worse, and its values must arrive unchanged.
 
 **Pass: all eight layer pairs and the red line boundary, about 34,000 rows.**
 

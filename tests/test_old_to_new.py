@@ -646,6 +646,121 @@ class TimingTextTest(unittest.TestCase):
                       offered)
 
 
+class PlaceholderRowsTest(unittest.TestCase):
+    """A legacy new feature goes on the post-intervention layer only.
+
+    The legacy template recorded a new hedgerow or watercourse as a baseline
+    row typed "To be created", and a newly planted tree as one typed "N/A".
+    The BNG Service template has no baseline row for a new feature, and leaves
+    its baseline columns blank.
+    """
+
+    HEDGE_TYPE = old_to_new.BASELINE_HEDGE_TYPE
+    RIVER_TYPE = old_to_new.BASELINE_RIVER_TYPE
+    TREE_TYPE = old_to_new.BASELINE_TREE_TYPE
+
+    def legacy(self):
+        rows = {key: [] for key in old_to_new.LEGACY_REFS}
+        rows[old_to_new.HEDGEROWS_KEY] = [
+            {old_to_new.PARCEL_REF: "H-1", self.HEDGE_TYPE: "Native hedgerow",
+             "Baseline Condition": "Good"},
+            {old_to_new.PARCEL_REF: "H-2", self.HEDGE_TYPE: "To be created",
+             "Baseline Condition": "N/A", "Baseline Distinctiveness": "N/A"},
+            {old_to_new.PARCEL_REF: "H-3", self.HEDGE_TYPE: None},
+        ]
+        rows[old_to_new.WATERCOURSES_KEY] = [
+            {old_to_new.PARCEL_REF: "W-1", self.RIVER_TYPE: "Ditches"},
+            {old_to_new.PARCEL_REF: "W-2", self.RIVER_TYPE: "To be created",
+             "Baseline Encroachment into Watercourse": "N/A"},
+        ]
+        rows[old_to_new.TREES_KEY] = [
+            {old_to_new.TREE_REF: "T-1", self.TREE_TYPE: "Native"},
+            {old_to_new.TREE_REF: "T-2", self.TREE_TYPE: "N/A",
+             old_to_new.BASELINE_TREE_SIZE: "N/A", "Category": "Newly Planted"},
+        ]
+        return rows
+
+    @staticmethod
+    def refs(rows, key=old_to_new.PARCEL_REF):
+        return [row[key] for row in rows]
+
+    def test_the_baseline_layers_leave_out_the_placeholder_rows(self):
+        baseline = self.legacy()
+        report = old_to_new.Report()
+        old_to_new.drop_placeholder_baselines(baseline, report)
+        # A blank type is an unfinished baseline feature, and stays.
+        self.assertEqual(["H-1", "H-3"],
+                         self.refs(baseline[old_to_new.HEDGEROWS_KEY]))
+        self.assertEqual(["W-1"],
+                         self.refs(baseline[old_to_new.WATERCOURSES_KEY]))
+        self.assertEqual(["T-1"], self.refs(baseline[old_to_new.TREES_KEY],
+                                            old_to_new.TREE_REF))
+        self.assertEqual(3, len(report.lines))
+
+    def test_a_new_feature_has_blank_baseline_values(self):
+        post = self.legacy()
+        report = old_to_new.Report()
+        old_to_new.blank_placeholder_baselines(post, report)
+        hedges = post[old_to_new.HEDGEROWS_KEY]
+        self.assertEqual("Native hedgerow", hedges[0][self.HEDGE_TYPE])
+        self.assertEqual("Good", hedges[0]["Baseline Condition"])
+        self.assertEqual({self.HEDGE_TYPE: None, "Baseline Condition": None,
+                          "Baseline Distinctiveness": None},
+                         {k: v for k, v in hedges[1].items()
+                          if k.startswith("Baseline ")})
+        water = post[old_to_new.WATERCOURSES_KEY][1]
+        self.assertIsNone(water[self.RIVER_TYPE])
+        self.assertIsNone(water["Baseline Encroachment into Watercourse"])
+        tree = post[old_to_new.TREES_KEY][1]
+        self.assertIsNone(tree[self.TREE_TYPE])
+        self.assertIsNone(tree[old_to_new.BASELINE_TREE_SIZE])
+        self.assertEqual("Newly Planted", tree["Category"])
+        self.assertEqual(3, len(report.lines))
+
+
+class PlaceholderConversionTest(support.TempDirTestCase):
+    """A converted legacy pair holds no placeholder, and links no new feature."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.baseline, cls.pi = legacy_pair(support.site_gpkg(site),
+                                           cls.tmp / "legacy")
+        new_hedge = {old_to_new.PARCEL_REF: "HN-99",
+                     old_to_new.BASELINE_HEDGE_TYPE: "To be created",
+                     "Baseline Condition": "N/A",
+                     "Baseline Distinctiveness": "N/A"}
+        line = support.line([(0, 0), (10, 0)])
+        support.insert_feature(cls.baseline, "Hedgerows", line, new_hedge)
+        support.insert_feature(cls.pi, "Hedgerows", line, dict(
+            new_hedge, **{RETENTION: "Created",
+                          "Proposed Hedge Type": "Native hedgerow"}))
+        cls.target = template_copy(cls.tmp)
+        fill(cls.baseline, cls.pi, cls.target)
+
+    def test_the_new_hedgerow_is_on_the_post_intervention_layer_only(self):
+        baseline = support.read_rows(self.target, "Hedgerows Baseline")
+        self.assertNotIn("HN-99", [row[REF] for row in baseline])
+        (row,) = [r for r in support.read_rows(
+            self.target, old_to_new.HEDGEROWS_POST_INTERVENTION)
+            if r[REF] == "HN-99"]
+        self.assertEqual("Created", row[RETENTION])
+        self.assertIsNone(row[PARENT_REF])
+        self.assertIsNone(row[old_to_new.BASELINE_HEDGE_TYPE])
+        self.assertIsNone(row["Baseline Condition"])
+
+    def test_no_baseline_type_holds_a_placeholder(self):
+        columns = {"Hedgerows": old_to_new.BASELINE_HEDGE_TYPE,
+                   "Watercourses": old_to_new.BASELINE_RIVER_TYPE,
+                   "Individual Trees": old_to_new.BASELINE_TREE_TYPE}
+        for kind, column in columns.items():
+            for stage in ("Baseline", "Post-Intervention"):
+                for row in support.read_rows(self.target, f"{kind} {stage}"):
+                    with self.subTest(table=f"{kind} {stage}", ref=row[REF]):
+                        self.assertNotIn(row[column], rl.NO_HABITAT_TYPES)
+
+
 class BaselineCommentTest(unittest.TestCase):
     """A breadcrumb typed or pasted onto a legacy baseline row is lineage,
     not the surveyor's comment, so it is taken out there too."""

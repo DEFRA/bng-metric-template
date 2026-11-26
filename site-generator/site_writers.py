@@ -213,7 +213,7 @@ def write_hedgerows(conn, site):
         advance, delay = sc.timing_for('Created', choose.key(1419))
         counts['created'] += 1
         pi_rows.append((
-            gw.line_blob(points), 'HN-01', None, 'To be created', 'N/A', 'N/A',
+            gw.line_blob(points), 'HN-01', None, None, None, None,
             None, None, 'Created', proposed, HEDGE_DISTINCTIVENESS[proposed],
             'Good', lin.significance(choose.key(1421)), advance, delay,
             ON_SITE, line_length(points), None, None))
@@ -424,7 +424,7 @@ def write_watercourses(conn, site):
         advance, delay = sc.timing_for('Created', choose.key(1513))
         counts['created'] += 1
         pi_rows.append((
-            gw.line_blob(points), 'WN-01', None, 'To be created', 'N/A', 'N/A',
+            gw.line_blob(points), 'WN-01', None, None, None, None,
             None, None, None, None, 'Created', 'Ditches',
             WATER_DISTINCTIVENESS['Ditches'], 'Moderate',
             lin.significance(choose.key(1515)), 'No Encroachment',

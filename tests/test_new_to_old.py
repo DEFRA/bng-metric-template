@@ -8,6 +8,7 @@ mapping below is exercised whatever the generator happens to choose.
 
 import csv
 import re
+import sys
 import unittest
 
 from tests import support
@@ -570,6 +571,126 @@ class VerticalAreaHabitatsCsvTest(support.TempDirTestCase):
                  if "vertical area habitat feature(s) are NOT in the legacy"
                  in w]
         self.assertEqual(1, len(found))
+
+
+class LegacyNewFeatureValuesTest(unittest.TestCase):
+    """A new hedgerow or watercourse gets the legacy "To be created" values."""
+
+    def staged(self):
+        return {
+            "hedgerows": {"baseline": [], "pi": [
+                {"Habitat Ref": "HN-1", "Retention Category": "Created",
+                 "Baseline Hedge Type": None,
+                 "Baseline Strategic Significance": None},
+                # Condition gets worse: Created, but keeps its type.
+                {"Habitat Ref": "H-2", "Retention Category": "Created",
+                 "Baseline Hedge Type": "Native hedgerow",
+                 "Baseline Condition": "Good"},
+                {"Habitat Ref": "H-3", "Retention Category": "Retained",
+                 "Baseline Hedge Type": None},
+            ]},
+            "watercourses": {"baseline": [], "pi": [
+                {"Habitat Ref": "WN-1", "Retention Category": "Created",
+                 "Baseline River Type": ""},
+            ]},
+        }
+
+    def test_a_new_feature_is_to_be_created_with_na_baseline_values(self):
+        staged = self.staged()
+        report = new_to_old.Report()
+        new_to_old._legacy_new_feature_values(staged, report)
+        new, worse, retained = staged["hedgerows"]["pi"]
+        self.assertEqual("To be created", new["Baseline Hedge Type"])
+        self.assertEqual("N/A", new["Baseline Distinctiveness"])
+        self.assertEqual("N/A", new["Baseline Condition"])
+        self.assertEqual("Native hedgerow", worse["Baseline Hedge Type"])
+        self.assertEqual("Good", worse["Baseline Condition"])
+        self.assertIsNone(retained["Baseline Hedge Type"])
+        (water,) = staged["watercourses"]["pi"]
+        self.assertEqual("To be created", water["Baseline River Type"])
+        self.assertEqual("N/A", water["Baseline Encroachment into riparian zone"])
+        self.assertEqual(2, len(report.lines))
+
+    def test_the_significance_of_a_new_feature_is_na(self):
+        staged = self.staged()
+        new_to_old._legacy_new_feature_values(staged, new_to_old.Report())
+        new_to_old.to_legacy_significance(staged)
+        self.assertEqual("N/A", staged["hedgerows"]["pi"][0][
+            "Baseline Strategic Significance"])
+
+
+class NewLinearFeatureToLegacyTest(support.TempDirTestCase):
+    """A new hedgerow and watercourse, converted to legacy and judged by claim 2.
+
+    The BNG Service template leaves their baseline columns blank; the legacy
+    template holds "To be created" and "N/A", numbered where its list
+    numbers them. The claim 2 manifest of the NSIP example site must accept
+    what the conversion writes.
+    """
+
+    NEW_WATERCOURSE = "WN-T01"
+    NEW_HEDGE = "HN-T01"
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        site = support.generate_site(cls.tmp / "site", *SITE_ARGS)
+        cls.gpkg = support.copy_to(support.site_gpkg(site), cls.tmp,
+                                   "new-features.gpkg")
+        line = support.line(WATERCOURSE_LINE)
+        support.insert_feature(cls.gpkg, "Watercourses Post-Intervention",
+                               line, {
+                                   REF: cls.NEW_WATERCOURSE, RETENTION: "Created",
+                                   "Proposed River Type": "Ditches",
+                                   "Proposed Condition": "Good",
+                                   SIGNIFICANCE: "Low", "Length": 51.0})
+        support.insert_feature(cls.gpkg, "Hedgerows Post-Intervention", line, {
+            REF: cls.NEW_HEDGE, RETENTION: "Created",
+            "Proposed Hedge Type": "Native hedgerow",
+            "Proposed Condition": "Good", SIGNIFICANCE: "Low",
+            "Length": 51.0})
+        out = cls.tmp / "out"
+        new_to_old.convert(cls.gpkg, out, carry_lineage=False, dry_run=False)
+        cls.legacy = {
+            "Rivers": support.read_rows(out / PI_FILE, "Rivers"),
+            "Hedgerows": support.read_rows(out / PI_FILE, "Hedgerows"),
+        }
+        verify = support.REPO_ROOT / "scale-test-nsip" / "verify"
+        if str(verify) not in sys.path:
+            sys.path.insert(0, str(verify))
+        import claim2_manifest
+        cls.manifest = claim2_manifest
+
+    def pair(self, staged_table, legacy_table, ref):
+        staged = first(support.read_rows(self.gpkg, staged_table),
+                       lambda row: row[REF] == ref)
+        legacy = first(self.legacy[legacy_table],
+                       lambda row: row["Parcel Ref"] == ref)
+        return staged, legacy
+
+    def test_the_new_watercourse_holds_the_legacy_placeholders(self):
+        _, legacy = self.pair("Watercourses Post-Intervention", "Rivers",
+                              self.NEW_WATERCOURSE)
+        self.assertEqual("To be created", legacy["Baseline River Type"])
+        self.assertEqual("N/A", legacy["Baseline Distinctiveness"])
+        self.assertEqual("6. N/A", legacy["Baseline Condition"])
+        self.assertEqual("5. N/A",
+                         legacy["Baseline Encroachment into riparian zone"])
+        self.assertEqual("N/A", legacy["Baseline Strategic Significance"])
+
+    def test_claim_2_accepts_the_new_features(self):
+        cases = (("Watercourses Post-Intervention", "Rivers",
+                  self.NEW_WATERCOURSE, self.manifest.WATERCOURSE_PI),
+                 ("Hedgerows Post-Intervention", "Hedgerows",
+                  self.NEW_HEDGE, self.manifest.HEDGEROW_PI))
+        for staged_table, legacy_table, ref, rules in cases:
+            staged, legacy = self.pair(staged_table, legacy_table, ref)
+            for column, (_sources, rule, _how) in rules["COMPOSE"].items():
+                if not column.startswith("Baseline"):
+                    continue
+                with self.subTest(layer=legacy_table, column=column):
+                    self.assertTrue(rule(staged, legacy[column]),
+                                    f"{legacy[column]!r} rejected")
 
 
 if __name__ == "__main__":

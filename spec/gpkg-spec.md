@@ -200,7 +200,7 @@ Stage: Baseline. Geometry: `geom`, LINESTRING, SRS 27700.
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
 | `geom` | `LINESTRING` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | — | — | — |
-| `Baseline Hedge Type` | `TEXT(99)` | 99 | yes | — | `Non-native and ornamental hedgerow`, `Line of trees`, `Line of trees - associated with bank or ditch`, `Ecologically valuable line of trees`, `Ecologically valuable line of trees - associated with bank or ditch`, `Native hedgerow`, `Native hedgerow - associated with bank or ditch`, `Native hedgerow with trees`, `Native hedgerow with trees - associated with bank or ditch`, `Species-rich native hedgerow`, `Species-rich native hedgerow - associated with bank or ditch`, `Species-rich native hedgerow with trees`, `Species-rich native hedgerow with trees - associated with bank or ditch`, `To be created` | — |
+| `Baseline Hedge Type` | `TEXT(99)` | 99 | yes | — | `Non-native and ornamental hedgerow`, `Line of trees`, `Line of trees - associated with bank or ditch`, `Ecologically valuable line of trees`, `Ecologically valuable line of trees - associated with bank or ditch`, `Native hedgerow`, `Native hedgerow - associated with bank or ditch`, `Native hedgerow with trees`, `Native hedgerow with trees - associated with bank or ditch`, `Species-rich native hedgerow`, `Species-rich native hedgerow - associated with bank or ditch`, `Species-rich native hedgerow with trees`, `Species-rich native hedgerow with trees - associated with bank or ditch` | — |
 | `Baseline Distinctiveness` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Locked in the template's form |
 | `Baseline Condition` | `TEXT(99)` | 99 | yes | Filled in by the template | List `CSV References/Hedgerows/Hedgerow Condition.csv`, column `Condition`; depends on Baseline Hedge Type | — |
 | `Baseline Strategic Significance` | `TEXT(99)` | 99 | yes | `Low` | — | Locked in the template's form |
@@ -222,7 +222,7 @@ Stage: Post-Intervention. Geometry: `geom`, LINESTRING, SRS 27700.
 | `geom` | `LINESTRING` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | — |
 | `Parent Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Lineage; Locked in the template's form |
-| `Baseline Hedge Type` | `TEXT(99)` | 99 | yes | — | `Non-native and ornamental hedgerow`, `Line of trees`, `Line of trees - associated with bank or ditch`, `Ecologically valuable line of trees`, `Ecologically valuable line of trees - associated with bank or ditch`, `Native hedgerow`, `Native hedgerow - associated with bank or ditch`, `Native hedgerow with trees`, `Native hedgerow with trees - associated with bank or ditch`, `Species-rich native hedgerow`, `Species-rich native hedgerow - associated with bank or ditch`, `Species-rich native hedgerow with trees`, `Species-rich native hedgerow with trees - associated with bank or ditch`, `To be created` | Locked in the template's form |
+| `Baseline Hedge Type` | `TEXT(99)` | 99 | yes | — | `Non-native and ornamental hedgerow`, `Line of trees`, `Line of trees - associated with bank or ditch`, `Ecologically valuable line of trees`, `Ecologically valuable line of trees - associated with bank or ditch`, `Native hedgerow`, `Native hedgerow - associated with bank or ditch`, `Native hedgerow with trees`, `Native hedgerow with trees - associated with bank or ditch`, `Species-rich native hedgerow`, `Species-rich native hedgerow - associated with bank or ditch`, `Species-rich native hedgerow with trees`, `Species-rich native hedgerow with trees - associated with bank or ditch` | Locked in the template's form |
 | `Baseline Distinctiveness` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Locked in the template's form |
 | `Baseline Condition` | `TEXT(99)` | 99 | yes | — | List `CSV References/Hedgerows/Hedgerow Condition.csv`, column `Condition`; depends on Baseline Hedge Type | Locked in the template's form |
 | `Baseline Strategic Significance` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Locked in the template's form |
@@ -254,7 +254,7 @@ Stage: Baseline. Geometry: `geom`, LINESTRING, SRS 27700.
 | `fid` | `INTEGER` | — | no | — | — | Primary key |
 | `geom` | `LINESTRING` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | — | — | — |
-| `Baseline River Type` | `TEXT(99)` | 99 | yes | — | `Priority habitat`, `Other rivers and streams`, `Ditches`, `Canals`, `Culvert`, `To be created` | — |
+| `Baseline River Type` | `TEXT(99)` | 99 | yes | — | `Priority habitat`, `Other rivers and streams`, `Ditches`, `Canals`, `Culvert` | — |
 | `Baseline Distinctiveness` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Locked in the template's form |
 | `Baseline Condition` | `TEXT(99)` | 99 | yes | Filled in by the template | List `CSV References/Watercourses/Watercourse Condition.csv`, column `Label`; depends on Baseline River Type | — |
 | `Baseline Strategic Significance` | `TEXT(99)` | 99 | yes | `Low` | — | Locked in the template's form |
@@ -278,7 +278,7 @@ Stage: Post-Intervention. Geometry: `geom`, LINESTRING, SRS 27700.
 | `geom` | `LINESTRING` | — | no | — | — | — |
 | `Habitat Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | — |
 | `Parent Ref` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Lineage; Locked in the template's form |
-| `Baseline River Type` | `TEXT(99)` | 99 | yes | — | `Priority habitat`, `Other rivers and streams`, `Ditches`, `Canals`, `Culvert`, `To be created` | Locked in the template's form |
+| `Baseline River Type` | `TEXT(99)` | 99 | yes | — | `Priority habitat`, `Other rivers and streams`, `Ditches`, `Canals`, `Culvert` | Locked in the template's form |
 | `Baseline Distinctiveness` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Locked in the template's form |
 | `Baseline Condition` | `TEXT(99)` | 99 | yes | — | List `CSV References/Watercourses/Watercourse Condition.csv`, column `Label`; depends on Baseline River Type | Locked in the template's form |
 | `Baseline Strategic Significance` | `TEXT(99)` | 99 | yes | Filled in by the template | — | Locked in the template's form |

@@ -1110,6 +1110,7 @@ def convert(input_path, out_dir, carry_lineage, dry_run, formats=("gpkg",),
     site = site_details(redline)
     srs_rows = read_srs_rows(source)
     source.close()
+    _legacy_new_feature_values(staged, report)
     _number_list_values(staged, report)
 
     if not redline:
@@ -1645,6 +1646,50 @@ def _write_trees(baseline_conn, pi_conn, tables, site, carry_lineage, report):
         detail = summarise_list(str(parent.get(REF_FIELD)) for parent, _size in losses)
         report.note(f"Urban Trees: synthesised {len(losses)} 'Lost' row(s) — {detail}")
     return pi_rows
+
+
+# The baseline columns of a new hedgerow or watercourse in the legacy
+# template, which recorded it with the type "To be created".
+LEGACY_NEW_LINEAR = {
+    "hedgerows": ("Baseline Hedge Type", (
+        "Baseline Distinctiveness", "Baseline Condition")),
+    "watercourses": ("Baseline River Type", (
+        "Baseline Distinctiveness", "Baseline Condition",
+        "Baseline Encroachment into Watercourse",
+        "Baseline Encroachment into riparian zone")),
+}
+LEGACY_TO_BE_CREATED = "To be created"
+LEGACY_NOT_APPLICABLE = "N/A"
+
+
+def _legacy_new_feature_values(staged, report):
+    """Give a new hedgerow or watercourse the baseline values of the legacy template.
+
+    The BNG Service template leaves the baseline columns of a Created
+    feature blank. The legacy template recorded a new hedgerow or watercourse
+    with the baseline type "To be created" and "N/A" in its other baseline
+    columns, and its drop-downs offer "Created" only for that type. A Created
+    row that keeps a baseline type is a habitat whose condition gets worse,
+    and keeps its values. Done before the significance is written, which
+    gives "To be created" an "N/A".
+    """
+    for key, (type_column, other_columns) in LEGACY_NEW_LINEAR.items():
+        filled = 0
+        for row in staged[key]["pi"]:
+            if (row.get("Retention Category") != "Created"
+                    or row.get(type_column) not in (None, "")):
+                continue
+            row[type_column] = LEGACY_TO_BE_CREATED
+            for column in other_columns:
+                if row.get(column) in (None, ""):
+                    row[column] = LEGACY_NOT_APPLICABLE
+            filled += 1
+        if filled:
+            report.note(
+                f"{key.capitalize()}: recorded {filled} new feature(s) with "
+                f"the baseline type '{LEGACY_TO_BE_CREATED}', as the legacy "
+                "template does"
+            )
 
 
 def _number_list_values(staged, report):

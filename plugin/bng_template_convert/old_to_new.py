@@ -111,8 +111,10 @@ try:
         NE_SIGNIFICANCE_LOW,
         NE_SIGNIFICANCE_MEDIUM,
         NOT_APPLICABLE,
+        NO_HABITAT_TYPES,
         PROPOSED_SIGNIFICANCE,
         SIGNIFICANCE_LOW,
+        TYPE_COLUMNS,
         TREE_NEWLY_PLANTED,
         VERTICAL_HABITATS,
         fill_template_values,
@@ -128,8 +130,10 @@ except ImportError:  # pragma: no cover - running as a plain script
         NE_SIGNIFICANCE_LOW,
         NE_SIGNIFICANCE_MEDIUM,
         NOT_APPLICABLE,
+        NO_HABITAT_TYPES,
         PROPOSED_SIGNIFICANCE,
         SIGNIFICANCE_LOW,
+        TYPE_COLUMNS,
         TREE_NEWLY_PLANTED,
         VERTICAL_HABITATS,
         fill_template_values,
@@ -726,6 +730,71 @@ def stamp_parent(values, parent_ref, index, report_unmatched, own_ref=None):
     values[PARENT_UUID] = parent["uuid"]
     values["parent_geom"] = parent["geom"]
     return True
+
+
+# The layers on which the legacy template recorded a new feature as a
+# baseline row with no baseline habitat.
+PLACEHOLDER_LAYERS = (
+    (HEDGEROWS_KEY, HEDGEROWS),
+    (WATERCOURSES_KEY, WATERCOURSES),
+    (TREES_KEY, TREES),
+)
+
+
+def is_placeholder(key, row):
+    """Whether a legacy row's baseline type says it has no baseline habitat.
+
+    The legacy template recorded a new hedgerow or watercourse with the
+    baseline type "To be created", and a newly planted tree with "N/A". A
+    blank type is not one: it is a baseline feature the surveyor has not
+    finished, and it stays.
+    """
+    return row.get(TYPE_COLUMNS[key][0]) in NO_HABITAT_TYPES
+
+
+def drop_placeholder_baselines(legacy, report):
+    """Leave the legacy placeholder rows off the baseline layers.
+
+    The BNG Service template records a new feature on the post-intervention
+    layer only. A baseline row for it is not a habitat: the service reads it
+    as one with no type, and a post-intervention row linked to it claims a
+    parent that never existed.
+    """
+    for key, label in PLACEHOLDER_LAYERS:
+        kept = [row for row in legacy[key] if not is_placeholder(key, row)]
+        dropped = len(legacy[key]) - len(kept)
+        if dropped:
+            legacy[key] = kept
+            report.note(
+                f"{label}: left {dropped} baseline row(s) with no baseline "
+                "habitat ('To be created' or 'N/A') off the baseline layer. "
+                "The new template records a new feature on the "
+                "post-intervention layer only"
+            )
+
+
+def blank_placeholder_baselines(post, report):
+    """Blank the baseline columns of a new post-intervention feature.
+
+    The legacy template filled them with "To be created" or "N/A". The new
+    template leaves them blank, and its drop-downs do not offer those values
+    for a baseline type.
+    """
+    for key, label in PLACEHOLDER_LAYERS:
+        blanked = 0
+        for row in post[key]:
+            if not is_placeholder(key, row):
+                continue
+            for column in row:
+                if column.startswith("Baseline "):
+                    row[column] = None
+            blanked += 1
+        if blanked:
+            report.note(
+                f"{label}: cleared the baseline values of {blanked} new "
+                "post-intervention feature(s), which the legacy template "
+                "filled with 'To be created' or 'N/A'"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -1372,6 +1441,7 @@ def convert(baseline_path, pi_path, out_dir, into_path, force, dry_run,
     if post:
         _strip_list_numbers(post, report, "Post-intervention file")
 
+    drop_placeholder_baselines(baseline, report)
     _baseline_significance(baseline, report)
 
     if not baseline[REDLINE]:
@@ -1483,6 +1553,7 @@ def _post_intervention_rows(post, report, area_index, hedge_index,
     post[TREES_KEY] = drop_lost_rows(
         post[TREES_KEY], TREE_REF, TREES, report, tree_index
     )
+    blank_placeholder_baselines(post, report)
     _post_significance(post, report)
     _post_spatial_risk(post, report)
     _post_timing(post, report)
