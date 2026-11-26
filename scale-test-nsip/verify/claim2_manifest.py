@@ -130,8 +130,11 @@ def new_feature(column, type_column, entry=None):
     """A COMPOSE entry for a baseline column of a new hedgerow or watercourse.
 
     On a new feature (see is_new_linear) the legacy value is "To be created"
-    for the type and "N/A" for any other column. Any other row is judged by
-    `entry`, a COMPOSE entry, or arrives unchanged when there is none.
+    for the type and "N/A" for any other column. A column that a Natural
+    England list numbers, given as a `numbered` `entry`, holds that "N/A"
+    with the number its list gives for "To be created", such as "6. N/A".
+    Any other row is judged by `entry`, or arrives unchanged when there is
+    none.
     """
     placeholder = TO_BE_CREATED if column == type_column else NOT_APPLICABLE
     if entry:
@@ -143,9 +146,15 @@ def new_feature(column, type_column, entry=None):
             return same(row.get(column), legacy)
 
     def rule(row, legacy):
-        if is_new_linear(row, type_column):
+        if not is_new_linear(row, type_column):
+            return other_rule(row, legacy)
+        if not entry:
             return normalise(legacy) == placeholder
-        return other_rule(row, legacy)
+        # A numbered column: judge the placeholder as the legacy template
+        # holds it, numbered as its list numbers it for "To be created".
+        return other_rule(
+            dict(row, **{type_column: TO_BE_CREATED, column: placeholder}),
+            legacy)
 
     sources = tuple(dict.fromkeys(
         (*entry_sources, type_column, "Retention Category")))

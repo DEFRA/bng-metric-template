@@ -501,7 +501,9 @@ or watercourse and for a newly planted tree, and as a blank elsewhere.
 Service template leaves the baseline columns of a `Created` hedgerow or
 watercourse with no baseline type blank. The legacy template records it with
 the type *To be created* and *N/A* in its other baseline columns, so each of
-those must arrive so. A `Created` row that keeps its baseline type is a
+those must arrive so. A new watercourse's condition and riparian encroachment
+arrive as the numbered *N/A* that the Natural England list gives for *To be
+created*, such as `6. N/A`. A `Created` row that keeps its baseline type is a
 habitat whose condition gets worse, and its values must arrive unchanged.
 
 **Pass: all eight layer pairs and the red line boundary, about 34,000 rows.**
