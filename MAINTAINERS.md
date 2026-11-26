@@ -474,17 +474,35 @@ dictionary. An unchanged specification is not republished. The job is
 skipped until these repository settings are set, under Settings → Secrets
 and variables → Actions:
 
-| Setting | Kind | Meaning |
+| Setting | Kind | Value |
 | --- | --- | --- |
-| `CONFLUENCE_BASE_URL` | Variable | The wiki, e.g. `https://example.atlassian.net/wiki` |
-| `CONFLUENCE_GPKG_SPEC_PAGE_ID` | Variable | The numeric ID of the page to update |
-| `CONFLUENCE_USER_EMAIL` | Secret | The Atlassian account's email |
+| `CONFLUENCE_BASE_URL` | Variable | `https://eaflood.atlassian.net/wiki`, the wiki the backend publishes to |
+| `CONFLUENCE_GPKG_SPEC_PAGE_ID` | Variable | `6650628812`, the ID of [BNG Service Template GeoPackage Specification](https://eaflood.atlassian.net/wiki/spaces/BMD/pages/6650628812/BNG+Service+Template+GeoPackage+Specification), under 3rd Party Interoperability in the BMD space |
+| `CONFLUENCE_USER_EMAIL` | Secret | The email of an Atlassian account that can edit that page |
 | `CONFLUENCE_API_TOKEN` | Secret | An Atlassian API token for that account |
 
-The workflow runs only when the Markdown changes, so start it by hand
-(Actions → Publish GeoPackage specification → Run workflow) for the first
-publish once the settings are set, and after a change to
-`publish_spec.py` or `markdown_to_confluence.py`.
+The page must exist before the first publish: the script updates it by its
+ID, keeps its title, and replaces its whole body, so anything written on it
+by hand is lost at the next publish. To set the settings again, for a new
+page or a rotated token, with an account that administers the repository:
+
+```sh
+gh variable set CONFLUENCE_BASE_URL -R DEFRA/bng-metric-template --body "https://eaflood.atlassian.net/wiki"
+gh variable set CONFLUENCE_GPKG_SPEC_PAGE_ID -R DEFRA/bng-metric-template --body "6650628812"
+gh secret set CONFLUENCE_USER_EMAIL -R DEFRA/bng-metric-template   # prompts for the value
+gh secret set CONFLUENCE_API_TOKEN -R DEFRA/bng-metric-template    # prompts for the value
+```
+
+The workflow runs only when the Markdown changes, so start it by hand for
+the first publish once the settings are set, after a change to the settings
+or to `publish_spec.py` or `markdown_to_confluence.py`:
+
+```sh
+gh workflow run publish-spec.yml -R DEFRA/bng-metric-template
+gh run watch -R DEFRA/bng-metric-template
+```
+
+(or Actions → Publish GeoPackage specification → Run workflow).
 
 To see the page it would publish, without Confluence:
 
