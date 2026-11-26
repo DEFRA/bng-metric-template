@@ -204,6 +204,7 @@ generated: the first run of the generator copies the whole folder.
 | Change a filtered drop-down, or a field of a post-intervention layer | `reset_stale_dropdowns.py`, then `set_paste_defaults.py` |
 | Add an `Order` column to a reference list | `order_dropdowns.py` |
 | Change which habitats the Vertical Area Habitats layers offer | The lists in `CSV References/Vertical Area Habitats/`, then `limit_vertical_habitats.py`, then `reset_stale_dropdowns.py`. Keep those habitats out of the area habitat lists in `CSV References/Habitats/` (Options, Distinctiveness and Condition); the tests check it |
+| Keep `To be created` off the baseline hedgerow and watercourse type lists | `drop_to_be_created.py`. The reference lists keep it, as the key of a Created feature's lists |
 | Change a reference list of either template | `plugin/build_plugin.py`, then send the new zip to the users of the plugin |
 | Test a button against a site | `run_actions_headless.py`, with the Python that comes with QGIS |
 | Change the map styles of the UKHab symbology copy | `build_ukhab_template.py`. The copy is never edited by hand: its styles come from `templates/legacy-ne/` |
@@ -291,7 +292,7 @@ only `Poor` and no encroachment, so a `Created` culvert is never worse.
 lists, and `CreatedExistingWatercourseTest` in `tests/test_to_metric.py`
 checks what the Metric makes of such a watercourse.
 
-After any change to the template, check that the eight generated settings,
+After any change to the template, check that the nine generated settings,
 the Enhanced tree style, the text widths and the template version record are in step. Each command gives "no change
 needed" on a template that is in step, and exits with 1 otherwise:
 
@@ -305,6 +306,7 @@ python3 development/tools/allow_blank.py --check "$P"
 python3 development/tools/require_shape.py --check "$P"
 python3 development/tools/limit_vertical_habitats.py --check "$P"
 python3 development/tools/style_enhanced_trees.py --check "$P"
+python3 development/tools/drop_to_be_created.py --check "$P"
 python3 development/tools/set_text_widths.py --check "templates/bng-service/Layers/BNG Service Layers.gpkg"
 python3 development/tools/set_template_version.py --check "templates/bng-service/Layers/BNG Service Layers.gpkg"
 ```

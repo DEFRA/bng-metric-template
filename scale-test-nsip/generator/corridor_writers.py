@@ -284,8 +284,8 @@ def write_hedgerows(conn, mesh):
         advance, delay = sc.timing_for('Created', seed)
         counts['created'] += 1
         pi_rows.append((
-            gw.line_blob(points), f'HN-{extra + 1:05d}', None, 'To be created',
-            'N/A', 'N/A', None, None, 'Created', proposed,
+            gw.line_blob(points), f'HN-{extra + 1:05d}', None, None,
+            None, None, None, None, 'Created', proposed,
             HEDGE_DISTINCTIVENESS[proposed], 'Good', lin.significance(seed),
             advance, delay, ON_SITE, line_length(points), None, None))
 
