@@ -286,7 +286,9 @@ def _vertical_part(ref, baseline, retention):
         "Proposed Broad Habitat Type": values["Baseline Broad Habitat Type"],
         "Proposed Habitat Type": proposed,
         "Proposed Distinctiveness": "Medium" if proposed == IGGI else "Low",
-        "Proposed Condition": "Moderate" if retention == "Enhanced" else "Good",
+        # The enhancement raises distinctiveness and keeps the condition. A
+        # lower one is a reduction the metric refuses to score.
+        "Proposed Condition": "Good",
         "Proposed Strategic Significance": "Low",
         "Spatial risk category": "N/A",
     })

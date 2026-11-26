@@ -89,6 +89,31 @@ def cells_by_row(xml, column):
             for row, text in pattern.findall(xml)}
 
 
+def typed_cell(xml, ref):
+    """The value of one cell as Excel reads it: a number, text or None."""
+    cell = re.search(rf'<c r="{ref}"((?:\s+[a-zA-Z:]+="[^"]*")*)\s*'
+                     rf'(?:/>|>(.*?)</c>)', xml, re.S)
+    if cell is None or not cell.group(2):
+        return None
+    text = re.search(r'<t xml:space="preserve">(.*?)</t>', cell.group(2), re.S)
+    if 't="inlineStr"' in cell.group(1) and text:
+        return html.unescape(text.group(1))
+    number = re.search(r"<v>([^<]*)</v>", cell.group(2))
+    if number is None or 't="' in cell.group(1):
+        return None
+    value = float(number.group(1))
+    return int(value) if value.is_integer() else value
+
+
+def typed_on_row_of(xml, ref_column, ref, column):
+    """The typed value in `column` on the row whose reference cell is `ref`."""
+    rows = [number for number, text in cells_by_row(xml, ref_column).items()
+            if text == ref]
+    if len(rows) != 1:
+        raise AssertionError(f"{ref!r} is on {len(rows)} row(s)")
+    return typed_cell(xml, f"{column}{rows[0]}")
+
+
 def cell_on_row_of(xml, ref_column, ref, column):
     """The text in `column` on the row whose reference cell holds `ref`."""
     rows = [number for number, text in cells_by_row(xml, ref_column).items()
@@ -1018,8 +1043,10 @@ def _area(ref, **values):
 class TextTimingExportTest(support.TempDirTestCase):
     """A text advance or delay from an older file is a blank years cell.
 
-    A year the metric offers, including 0 and 30+, is written as the row
-    stores it. The log names each row whose text was left blank.
+    A year the metric offers is written as its drop-down stores it: 0 to 30
+    as a number and 30+ as text. Excel counts any text as more than any
+    number, so a year written as text breaks the metric's checks. The log
+    names each row whose text was left blank.
     """
 
     @classmethod
@@ -1049,6 +1076,8 @@ class TextTimingExportTest(support.TempDirTestCase):
                                ADVANCE: "4", DELAY: "6"}),
             _area("A-pad", **{"Retention Category": "Created",
                               ADVANCE: " 5", DELAY: "  "}),
+            _area("A-zero", **{"Retention Category": "Created",
+                               ADVANCE: "0", DELAY: "0"}),
             _area("A-ret", **{"Retention Category": "Retained",
                               "parent_uuid": kept, ADVANCE: "N/A"}),
             _area("A-enh", **{"Retention Category": "Enhanced",
@@ -1072,15 +1101,15 @@ class TextTimingExportTest(support.TempDirTestCase):
     def years(self, stage, ref):
         sheet, _first, _last, columns = to_metric.LAYOUT["areas"][stage]
         xml = sheet_xml(self.out, sheet)
-        return (cell_on_row_of(xml, columns["ref"], ref, columns["advance"]),
-                cell_on_row_of(xml, columns["ref"], ref, columns["delay"]))
+        return (typed_on_row_of(xml, columns["ref"], ref, columns["advance"]),
+                typed_on_row_of(xml, columns["ref"], ref, columns["delay"]))
 
     def warnings_for(self, table):
         return [w for w in self.report.warnings
                 if w.startswith(f"{table}:") and "left blank" in w]
 
     def test_a_text_advance_is_blank_and_a_year_is_kept(self):
-        self.assertEqual((None, "0"), self.years("creation", "A-text"))
+        self.assertEqual((None, 0), self.years("creation", "A-text"))
 
     def test_text_on_both_cells_is_blank(self):
         self.assertEqual((None, None), self.years("creation", "A-na"))
@@ -1088,24 +1117,29 @@ class TextTimingExportTest(support.TempDirTestCase):
     def test_thirty_plus_is_written_as_the_row_stores_it(self):
         self.assertEqual(("30+", None), self.years("creation", "A-year"))
 
-    def test_years_above_zero_are_written_as_the_row_stores_them(self):
-        self.assertEqual(("4", "6"), self.years("creation", "A-both"))
+    def test_years_up_to_thirty_are_written_as_numbers(self):
+        self.assertEqual((4, 6), self.years("creation", "A-both"))
+
+    def test_zero_in_both_cells_is_written_as_numbers(self):
+        # As text, "0" would read as more than 0 and raise the metric's
+        # "both advance and delayed" error.
+        self.assertEqual((0, 0), self.years("creation", "A-zero"))
 
     def test_a_year_is_written_without_spaces_around_it(self):
-        self.assertEqual(("5", None), self.years("creation", "A-pad"))
+        self.assertEqual((5, None), self.years("creation", "A-pad"))
 
     def test_an_enhanced_row_blanks_its_text_and_keeps_its_year(self):
-        self.assertEqual(("12", None), self.years("enhancement", "A-enh"))
+        self.assertEqual((12, None), self.years("enhancement", "A-enh"))
 
     def test_a_created_tree_uses_its_own_timing_columns(self):
-        self.assertEqual((None, "1"), self.years("creation", "T-text"))
+        self.assertEqual((None, 1), self.years("creation", "T-text"))
 
     def test_the_log_names_the_rows_whose_text_was_left_blank(self):
         areas = self.warnings_for(AREA_PI_TABLE)
         self.assertEqual(1, len(areas))
         for ref in ("A-text", "A-na", "A-enh"):
             self.assertIn(ref, areas[0])
-        for ref in ("A-year", "A-both", "A-pad", "A-ret"):
+        for ref in ("A-year", "A-both", "A-pad", "A-zero", "A-ret"):
             self.assertNotIn(ref, areas[0])
         trees = self.warnings_for(TREE_PI)
         self.assertEqual(1, len(trees))
