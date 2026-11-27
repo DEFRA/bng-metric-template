@@ -43,6 +43,11 @@ HOW IT MAPS
     Years created in advance and years of delay are written as the row
     stores them. The metric holds blank, 0 to 30 and 30+. Text from an
     older file, such as N/A, is left blank, and the report names the rows.
+    A year from 0 to 30 is written as a number and 30+ as text, the types
+    its drop-down stores. The metric compares these cells with numbers, and
+    Excel counts any text as more than any number: "0" written as text
+    reads as more than 0, which raises "both advance and delayed" for 0 and
+    0, and gives a created habitat no time to target.
 
     A value the metric needs and the layer leaves blank is written as a
     blank. The metric then flags that row or leaves its units blank, and a
@@ -339,9 +344,12 @@ TREE_DELAY = "Delay in starting habitat creation/enhancement in years"
 ADVANCE_FIELD = "Habitat created in advance/years"
 DELAY_FIELD = "Delay in starting habitat creation/years"
 # Blank, 0 to 30 and 30+: the years the Statutory Metric's drop-down stores.
-# 30+ is the only text it holds. Anything else, such as N/A from an older
-# file, is not a year.
-METRIC_YEARS = {str(year) for year in range(31)} | {"30+"}
+# 0 to 30 are numbers there and 30+ is the only text. Anything else, such as
+# N/A from an older file, is not a year.
+MAX_NUMERIC_YEAR = 30
+THIRTY_PLUS = "30+"
+METRIC_YEARS = ({str(year) for year in range(MAX_NUMERIC_YEAR + 1)}
+                | {THIRTY_PLUS})
 TREE_BASELINE_NEEDS = (BASELINE_TREE_SIZE, "Baseline Rural or Urban Tree",
                        BASELINE_CONDITION, BASELINE_SIGNIFICANCE,
                        IRREPLACEABLE_COLUMN)
@@ -570,13 +578,15 @@ def _year_as_stored(value):
     """A year the metric offers, as its drop-down stores it, or None.
 
     None covers a blank and any text that is not a year, such as N/A from
-    an older file. A year is returned as text without spaces around it,
-    which is the form the metric's list holds.
+    an older file. 0 to 30 are returned as whole numbers and 30+ as text,
+    which are the types the metric's list holds (see METRIC_YEARS).
     """
     text = _timing_text(value)
-    if text in METRIC_YEARS:
+    if text not in METRIC_YEARS:
+        return None
+    if text == THIRTY_PLUS:
         return text
-    return None
+    return int(text)
 
 
 def _is_text_timing(value):
