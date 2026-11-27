@@ -716,8 +716,8 @@ def render_markdown(spec):
     for table in spec["tables"]:
         lines += columns_md(table)
     lines += ["## Drop-down lists", "",
-              "Each list's rows, in the columns the drop-downs store, show "
-              "or filter on.", ""]
+              "The rows of each list, with the columns a drop-down stores, "
+              "shows or filters on.", ""]
     for described in spec["lists"]:
         lines += list_md(described)
     lines += ["## Extensions", "",
