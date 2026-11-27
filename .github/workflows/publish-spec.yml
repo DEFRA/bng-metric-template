@@ -2,14 +2,17 @@ name: Publish GeoPackage specification
 
 # Publishes spec/gpkg-spec.md to Confluence whenever it changes on main, as
 # bng-metric-backend's publish-data-dictionary.yml publishes the data
-# dictionary. The `paths` filter makes the job run only when the Markdown
-# differs in the push, so an unchanged specification is never republished.
+# dictionary. The `paths` filter makes the job run only when the Markdown,
+# or the scripts that turn it into the page, differ in the push, so an
+# unchanged page is never republished.
 on:
   push:
     branches:
       - main
     paths:
       - spec/gpkg-spec.md
+      - development/tools/publish_spec.py
+      - development/tools/markdown_to_confluence.py
   workflow_dispatch:
 
 permissions:
