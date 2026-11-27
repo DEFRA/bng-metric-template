@@ -364,7 +364,7 @@ Rules the template's form holds the columns to (hard: the row cannot be saved wi
 
 ## Drop-down lists
 
-Each list's rows, in the columns the drop-downs store, show or filter on.
+The rows of each list, with the columns a drop-down stores, shows or filters on.
 
 ### CSV References/Habitats/Habitat Condition.csv
 
