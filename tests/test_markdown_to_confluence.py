@@ -66,6 +66,18 @@ class MarkdownToStorageTest(unittest.TestCase):
             "<h1>BNG Service template: GeoPackage specification</h1>", body)
         self.assertNotIn("| ---", body)
 
+    def test_a_table_of_contents_comes_before_the_first_section(self):
+        body = publish_spec.storage_body(
+            "# Title\n\nIntroduction.\n\n## Section\n\n## Another")
+        contents = body.index('<ac:structured-macro ac:name="toc">')
+        self.assertLess(body.index("<p>Introduction.</p>"), contents)
+        self.assertLess(contents, body.index("<h2>Section</h2>"))
+        self.assertEqual(1, body.count('ac:name="toc"'))
+        self.assertIn('<ac:parameter ac:name="minLevel">2</ac:parameter>',
+                      body)
+        self.assertIn('<ac:parameter ac:name="maxLevel">3</ac:parameter>',
+                      body)
+
 
 if __name__ == "__main__":
     unittest.main()

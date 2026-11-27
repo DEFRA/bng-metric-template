@@ -45,9 +45,25 @@ GENERATED_BANNER = (
     "template and regenerate the specification instead.</p>"
     "</ac:rich-text-body></ac:structured-macro>")
 
+# A Confluence table of contents, built by Confluence from the page's
+# headings so its links follow Confluence's own anchors: the sections, and
+# each table and list under them. The page title, level 1, is left out. It
+# goes after the title and introduction, before the first section.
+TABLE_OF_CONTENTS = (
+    '<ac:structured-macro ac:name="toc">'
+    '<ac:parameter ac:name="minLevel">2</ac:parameter>'
+    '<ac:parameter ac:name="maxLevel">3</ac:parameter>'
+    "</ac:structured-macro>")
+FIRST_SECTION = "<h2>"
+
 
 def storage_body(markdown):
-    return f"{GENERATED_BANNER}\n{markdown_to_storage(markdown)}"
+    page = markdown_to_storage(markdown)
+    split = page.find(FIRST_SECTION)
+    if split < 0:
+        split = len(page)
+    return (f"{GENERATED_BANNER}\n{page[:split]}{TABLE_OF_CONTENTS}\n"
+            f"{page[split:]}")
 
 
 def request(url, headers, method="GET", body=None):

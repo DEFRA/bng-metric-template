@@ -471,12 +471,15 @@ Converters, generators and template files job of `tests.yml` runs it with
 committed copy differs. A pull request whose specification is out of date
 fails it.
 
-**Publishing.** On a merge to `main` that changes `spec/gpkg-spec.md`,
-`.github/workflows/publish-spec.yml` publishes it to its Confluence page,
-with `development/tools/publish_spec.py`, as the backend publishes its data
-dictionary. An unchanged specification is not republished. The job is
-skipped until these repository settings are set, under Settings → Secrets
-and variables → Actions:
+**Publishing.** On a merge to `main` that changes `spec/gpkg-spec.md`, or
+`publish_spec.py` or `markdown_to_confluence.py`, which turn it into the
+page, `.github/workflows/publish-spec.yml` publishes it to its Confluence
+page, with `development/tools/publish_spec.py`, as the backend publishes its
+data dictionary. After its introduction, the page has a table of contents
+of its sections and of each table and list, which Confluence builds from the
+headings. An unchanged page is not republished. The job is skipped until
+these repository settings are set, under Settings → Secrets and variables →
+Actions:
 
 | Setting | Kind | Value |
 | --- | --- | --- |
@@ -497,9 +500,9 @@ gh secret set CONFLUENCE_USER_EMAIL -R DEFRA/bng-metric-template   # prompts for
 gh secret set CONFLUENCE_API_TOKEN -R DEFRA/bng-metric-template    # prompts for the value
 ```
 
-The workflow runs only when the Markdown changes, so start it by hand for
-the first publish once the settings are set, after a change to the settings
-or to `publish_spec.py` or `markdown_to_confluence.py`:
+The workflow runs only when those files change, so start it by hand for
+the first publish once the settings are set, or after a change to the
+settings:
 
 ```sh
 gh workflow run publish-spec.yml -R DEFRA/bng-metric-template
